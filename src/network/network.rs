@@ -26,6 +26,29 @@ impl Network<'_>{
         }
         net
     }
+    pub fn from<'a>(network_from: &'a Network, newlayer_pos: usize, newlayer_len: usize) -> Network<'a>{
+        let mut new_net = Network { 
+            layers: vec![],
+            weights: vec![],
+            biases: vec![],
+            data: vec![],
+            learning_rate: network_from.learning_rate,
+            activation: network_from.activation.clone()
+        };
+
+        for i in 0..network_from.layers.len(){
+            if i == newlayer_pos{
+                new_net.layers.push(newlayer_len);
+            }
+            new_net.layers.push(network_from.layers[i]);
+        }
+        
+        for i in 0..new_net.layers.len() - 1 {
+            new_net.weights.push(Matrix::new_random(new_net.layers[i+1],new_net.layers[i]));
+        }
+
+        new_net
+    }
     pub fn feed_to_point(&mut self, inputs: &Vec<f64>, layer_to: usize) -> Vec<f64>{
          if inputs.len() != self.layers[0]{
              panic!("Invalid numer of inputs");
@@ -80,7 +103,7 @@ impl Network<'_>{
         current.transpose().data[0].to_owned()
     }
 
-    pub fn back_propegate(&mut self, outputs: Vec<f64>, targets: Vec<f64>){
+    pub fn back_propegate(&mut self, outputs: Vec<f64>, targets: Vec<f64>, error_per_col: bool) -> Option<Vec<f64>> {
         if targets.len() != self.layers[self.layers.len()-1] {
             panic!("Invalid number of targets found :(");
         }
@@ -99,15 +122,16 @@ impl Network<'_>{
 
             gradients = self.data[i].map(self.activation.derivative);
         }
+        None
     }
     pub fn train(&mut self, inputs: Vec<Vec<f64>>, targets: Vec<Vec<f64>>, epochs: usize) {
         for i in 1..=epochs{
-            if epochs < 100 || i % (epochs/100) == 0 {
-                println!("Epoch {} of {}", i, epochs);
+            if epochs < 1000 || i % (epochs/1000) == 0 {
+                println!("Kiloepoch {} of {}", i, epochs/1000);
             }
             for j in 0..inputs.len(){
                 let outputs = self.feed_forward(&inputs[j]);
-                self.back_propegate(outputs, targets[j].clone());
+                self.back_propegate(outputs, targets[j].clone(), false);
             }
         }
     }
