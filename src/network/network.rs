@@ -130,6 +130,28 @@ impl Network<'_>{
         //1. Move backwards in network until we reach the desired columns
         //2. Adjust weights and biases for this layer only
         //3. Break
+        if targets.len() != self.layers[self.layers.len()-1] {
+            panic!("Invalid number of targets found :(");
+        }
+        if !(column_target <= 1 && self.layers.len()-2 <= column_target){
+            panic!("Target column out of bounds or illegal column choice (input row or output row)");
+        }
+        let mut parsed = Matrix::from(vec![outputs]).transpose();
+        let mut errors = Matrix::from(vec![targets]).transpose() - &parsed;
+
+        let mut gradients = parsed.map(self.activation.derivative);
+        for i in (0..self.layers.len()-1).rev() {
+            gradients = gradients.dot_multiply(&errors).map(&|x| x * self.learning_rate);
+
+            errors = self.weights[i].transpose() * (&errors);
+            if i == column_target {
+                self.weights[i] = self.weights[i].clone() + &(gradients.clone() * (&self.data[i].transpose()));
+
+                self.biases[i] = self.biases[i].clone() + &gradients;
+ 
+            }
+            gradients = self.data[i].map(self.activation.derivative);
+        }
     }
     pub fn train(&mut self, inputs: Vec<Vec<f64>>, targets: Vec<Vec<f64>>, epochs: usize) {
         for i in 1..=epochs{
