@@ -124,6 +124,13 @@ impl Network<'_>{
         }
         None
     }
+    pub fn back_propegate_one_layer(&mut self, outputs: Vec<f64>, targets: Vec<f64>, column_target: usize){
+        //TODO: Allow for back propegation to only happen to the newly added column. We can achieve
+        //this by:
+        //1. Move backwards in network until we reach the desired columns
+        //2. Adjust weights and biases for this layer only
+        //3. Break
+    }
     pub fn train(&mut self, inputs: Vec<Vec<f64>>, targets: Vec<Vec<f64>>, epochs: usize) {
         for i in 1..=epochs{
             if epochs < 1000 || i % (epochs/1000) == 0 {
