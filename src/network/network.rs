@@ -1,7 +1,8 @@
 use super::{matrix::Matrix, activations::Activation};
 
+#[derive(Clone)]
 pub struct Network<'a> {
-    layers: Vec<usize>,
+    pub layers: Vec<usize>,
     weights: Vec<Matrix>,
     biases: Vec<Matrix>,
     data: Vec<Matrix>,
@@ -10,6 +11,19 @@ pub struct Network<'a> {
 }
 
 impl Network<'_>{
+    ///Creates a new neural network instance filled with random neuron weights and biases
+    ///
+    ///layers: a vector with the size of each column you desire
+    ///EX: vec![1,10,5,3];
+    ///activation: the activation function you wish to use
+    ///learning_rate: the steps taken during back propegation to get closer to the desired values
+    ///
+    ///Example:
+    ///```
+    ///let mut new_net = Network::new(vec![2,4,8,14,1], Activation::SIGMOID, 0.1);
+    ///```
+    ///Creates a new neural net with 2 input parameters, 3 hidden layers with sizes 4, 8 and 14,
+    ///and 1 output
     pub fn new<'a>(layers: Vec<usize>, activation: Activation<'a>, learning_rate: f64) -> Network{
         let mut net = Network{
             layers: layers,
@@ -26,7 +40,19 @@ impl Network<'_>{
         }
         net
     }
+    ///Creates a neural network from one network, but splices in a new column for dynamic growth
+    ///
+    ///Example:
+    ///```
+    ///let mut new_net = Network::new(vec![2,4,8,14,1], activation::SIGMOID, 0.1);
+    ///let mut newer_net = Network::from(&new_net, 2, 10);
+    ///
+    ///assert_eq!(newer_net.layers, vec![2,4,10,8,14,1]);
+    ///```
     pub fn from<'a>(network_from: &'a Network, newlayer_pos: usize, newlayer_len: usize) -> Network<'a>{
+        if !(newlayer_pos > 0 && newlayer_pos < network_from.layers.len()){
+            panic!("Attempting to add a new layer in an invalid slot [out of bounds, input layer, output layer]");
+        }
         let mut new_net = Network { 
             layers: vec![],
             weights: vec![],
