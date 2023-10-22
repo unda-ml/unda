@@ -1,3 +1,5 @@
+use rand::Rng;
+
 use super::{matrix::Matrix, activations::Activation, modes::Mode};
 
 #[derive(Clone)]
@@ -10,7 +12,7 @@ pub struct Network<'a> {
     activation: Activation<'a>
 }
 
-impl Network<'_>{
+impl<'a> Network<'a>{
     ///Creates a new neural network instance filled with random neuron weights and biases
     ///
     ///layers: a vector with the size of each column you desire
@@ -24,7 +26,7 @@ impl Network<'_>{
     ///```
     ///Creates a new neural net with 2 input parameters, 3 hidden layers with sizes 4, 8 and 14,
     ///and 1 output
-    pub fn new<'a>(layers: Vec<usize>, activation: Activation<'a>, learning_rate: f64) -> Network{
+    pub fn new(layers: Vec<usize>, activation: Activation<'a>, learning_rate: f64) -> Network{
         let mut net = Network{
             layers: layers,
             weights: vec![],
@@ -49,7 +51,7 @@ impl Network<'_>{
     ///
     ///assert_eq!(newer_net.layers, vec![2,4,10,8,14,1]);
     ///```
-    pub fn from<'a>(network_from: &'a Network, newlayer_pos: usize, newlayer_len: usize) -> Network<'a>{
+    pub fn from(network_from: Network<'a>, newlayer_pos: usize, newlayer_len: usize) -> Network<'a>{
         if !(newlayer_pos > 0 && newlayer_pos < network_from.layers.len()){
             panic!("Attempting to add a new layer in an invalid slot [out of bounds, input layer, output layer]");
         }
@@ -61,7 +63,7 @@ impl Network<'_>{
             learning_rate: network_from.learning_rate,
             activation: network_from.activation.clone()
         };
-
+        println!("newlayer at {}", newlayer_pos);
         for i in 0..network_from.layers.len(){
             if i == newlayer_pos{
                 new_net.layers.push(newlayer_len);
@@ -70,7 +72,16 @@ impl Network<'_>{
         }
         
         for i in 0..new_net.layers.len() - 1 {
+            /*if i == newlayer_pos {
+                new_net.weights.push(Matrix::new_random(new_net.layers[i+1],new_net.layers[i]));
+                new_net.biases.push(Matrix::new_random(new_net.layers[i+1], 1));
+            }*/
+
             new_net.weights.push(Matrix::new_random(new_net.layers[i+1],new_net.layers[i]));
+            new_net.biases.push(Matrix::new_random(new_net.layers[i+1], 1));
+
+            //new_net.weights.push(network_from.weights[i].clone());
+            //new_net.biases.push(network_from.biases[i].clone());
         }
 
         new_net
@@ -151,11 +162,6 @@ impl Network<'_>{
         None
     }
     pub fn back_propegate_one_layer(&mut self, outputs: Vec<f64>, targets: Vec<f64>, column_target: usize){
-        //TODO: Allow for back propegation to only happen to the newly added column. We can achieve
-        //this by:
-        //1. Move backwards in network until we reach the desired columns
-        //2. Adjust weights and biases for this layer only
-        //3. Break
         if targets.len() != self.layers[self.layers.len()-1] {
             panic!("Invalid number of targets found :(");
         }
@@ -174,6 +180,7 @@ impl Network<'_>{
                 self.weights[i] = self.weights[i].clone() + &(gradients.clone() * (&self.data[i].transpose()));
 
                 self.biases[i] = self.biases[i].clone() + &gradients;
+                break;
  
             }
             gradients = self.data[i].map(self.activation.derivative);
@@ -190,7 +197,18 @@ impl Network<'_>{
             }
         }
     }
-    pub fn get_loss(&mut self, inputs: Vec<Vec<f64>>, targets: Vec<Vec<f64>>, mode: &Mode) -> f64{
+    pub fn train_one_layer(&mut self, inputs: Vec<Vec<f64>>, targets: Vec<Vec<f64>>, epochs: usize, layer: usize) {
+        for i in 1..=epochs{
+            if epochs < 1000 || i % (epochs/1000) == 0 {
+                //println!("Epoch {} of {}", i, epochs);
+            }
+            for j in 0..inputs.len(){
+                let outputs = self.feed_forward(&inputs[j]);
+                self.back_propegate_one_layer(outputs, targets[j].clone(), layer);
+            }
+        }
+    }
+    pub fn get_loss(&mut self, inputs: Vec<Vec<f64>>, targets: Vec<Vec<f64>>, mode: &Mode) -> (Vec<f64>, f64){
         let mut accuracies: Vec<f64> = vec![];
         inputs.iter().enumerate().for_each(|(place, input)| {
             let mut inner_accuracy: Vec<f64> = vec![];
@@ -201,28 +219,36 @@ impl Network<'_>{
             }
             accuracies.push(inner_accuracy.iter().sum::<f64>() / inner_accuracy.len() as f64);
         });
-        return match mode{
+        let val = match mode{
             Mode::Min => accuracies.iter().fold(f64::INFINITY, |prev, &post| prev.min(post)),
             Mode::Max => accuracies.iter().fold(f64::INFINITY, |prev, &post| prev.max(post)),
             Mode::Avg => accuracies.iter().sum::<f64>() / accuracies.len() as f64
         };
+        (accuracies, val)
     }
-    pub fn add_row(&mut self, pos: usize){
-        
-    }
-    pub fn train_to_loss(&mut self, inputs: Vec<Vec<f64>>, targets: Vec<Vec<f64>>, desired_loss: f64, steps_per: usize, accuracy_mode: Mode){
+    pub fn train_to_loss(mut self, inputs: Vec<Vec<f64>>, targets: Vec<Vec<f64>>, desired_loss: f64, steps_per: usize, accuracy_mode: Mode, newlayer_chance: f64, min: usize, max: usize) -> Network<'a>{
+        let mut rng = rand::thread_rng();
         let mut accuracy_cache: Vec<f64> = vec![1.0];
+        let mut network_cache: Vec<Network<'a>> = vec![self.clone()];
         let mut total_steps_taken: usize = 0;
         while accuracy_cache[accuracy_cache.len()-1] > desired_loss {
             //Train model for [steps_per] steps, then analyze accuracy
             self.train(inputs.clone(), targets.clone(), steps_per);
             total_steps_taken += steps_per;
             let new_accuracy = self.get_loss(inputs.clone(), targets.clone(), &accuracy_mode);
-            /*if new_accuracy < desired_accuracy {
+            println!("{:?}", new_accuracy);
+            if new_accuracy.1 > desired_loss && rng.gen::<f64>() > newlayer_chance {
                 //Mutate self
-            }*/
-            accuracy_cache.push(new_accuracy);
+                println!("New layer");
+                let layer = rng.gen_range(1..self.layers.len()-1);
+                let mut new_net = Network::from(self.clone(), layer, rng.gen_range(min..=max));
+                new_net.train(inputs.clone(), targets.clone(), total_steps_taken);
+                self = new_net;
+            }
+            accuracy_cache.push(new_accuracy.1);
+            network_cache.push(self.clone());
         }
         println!("Done in {} epochs", total_steps_taken);
+        network_cache[network_cache.len()-1].clone()
     }
 }
