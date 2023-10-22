@@ -9,7 +9,6 @@ pub struct Activation<'a>{
 pub const SIGMOID: Activation = Activation {
     function: &|x| {
         let res = 1.0 / (1.0 + E.powf(-x));
-        println!("{} - {}",res,x);
         return res;
     },
     derivative: &|x| x * (1.0 - x)
@@ -17,11 +16,10 @@ pub const SIGMOID: Activation = Activation {
 
 pub const TANH: Activation = Activation {
     function: &|x| {
-        let res = (E.powf(x) - E.powf(-x)) / ((E.powf(x) + E.powf(-x)));
-        println!("{}", x);
+        let res = f64::tanh(x);
         return res;
     },
-    derivative: &|x| 1.0 - (((E.powf(x) - E.powf(-x)) / ((E.powf(x) + E.powf(-x)))).powf(2.0))
+    derivative: &|x| 1.0 - f64::tanh(x).powf(2.0)
 };
 
 pub const RELU: Activation = Activation {

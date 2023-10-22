@@ -1,4 +1,4 @@
-use super::{matrix::Matrix, activations::Activation};
+use super::{matrix::Matrix, activations::Activation, modes::Mode};
 
 #[derive(Clone)]
 pub struct Network<'a> {
@@ -129,7 +129,7 @@ impl Network<'_>{
         current.transpose().data[0].to_owned()
     }
 
-    pub fn back_propegate(&mut self, outputs: Vec<f64>, targets: Vec<f64>, error_per_col: bool) -> Option<Vec<f64>> {
+    pub fn back_propegate(&mut self, outputs: Vec<f64>, targets: Vec<f64>) -> Option<Vec<f64>> {
         if targets.len() != self.layers[self.layers.len()-1] {
             panic!("Invalid number of targets found :(");
         }
@@ -182,12 +182,47 @@ impl Network<'_>{
     pub fn train(&mut self, inputs: Vec<Vec<f64>>, targets: Vec<Vec<f64>>, epochs: usize) {
         for i in 1..=epochs{
             if epochs < 1000 || i % (epochs/1000) == 0 {
-                println!("Kiloepoch {} of {}", i, epochs/1000);
+                //println!("Epoch {} of {}", i, epochs);
             }
             for j in 0..inputs.len(){
                 let outputs = self.feed_forward(&inputs[j]);
-                self.back_propegate(outputs, targets[j].clone(), false);
+                self.back_propegate(outputs, targets[j].clone());
             }
         }
+    }
+    pub fn get_loss(&mut self, inputs: Vec<Vec<f64>>, targets: Vec<Vec<f64>>, mode: &Mode) -> f64{
+        let mut accuracies: Vec<f64> = vec![];
+        inputs.iter().enumerate().for_each(|(place, input)| {
+            let mut inner_accuracy: Vec<f64> = vec![];
+            let resp: Vec<f64> = self.feed_forward(input);
+            for i in 0..resp.len() {
+                let accuracy_at_node:f64 = (&targets[place][i] - resp[i]).abs();//(1.0 + (&targets[place][i] - resp[i])).abs() / (1.0 + targets[place][i]).abs(); 
+                inner_accuracy.push(accuracy_at_node);
+            }
+            accuracies.push(inner_accuracy.iter().sum::<f64>() / inner_accuracy.len() as f64);
+        });
+        return match mode{
+            Mode::Min => accuracies.iter().fold(f64::INFINITY, |prev, &post| prev.min(post)),
+            Mode::Max => accuracies.iter().fold(f64::INFINITY, |prev, &post| prev.max(post)),
+            Mode::Avg => accuracies.iter().sum::<f64>() / accuracies.len() as f64
+        };
+    }
+    pub fn add_row(&mut self, pos: usize){
+        
+    }
+    pub fn train_to_loss(&mut self, inputs: Vec<Vec<f64>>, targets: Vec<Vec<f64>>, desired_loss: f64, steps_per: usize, accuracy_mode: Mode){
+        let mut accuracy_cache: Vec<f64> = vec![1.0];
+        let mut total_steps_taken: usize = 0;
+        while accuracy_cache[accuracy_cache.len()-1] > desired_loss {
+            //Train model for [steps_per] steps, then analyze accuracy
+            self.train(inputs.clone(), targets.clone(), steps_per);
+            total_steps_taken += steps_per;
+            let new_accuracy = self.get_loss(inputs.clone(), targets.clone(), &accuracy_mode);
+            /*if new_accuracy < desired_accuracy {
+                //Mutate self
+            }*/
+            accuracy_cache.push(new_accuracy);
+        }
+        println!("Done in {} epochs", total_steps_taken);
     }
 }
