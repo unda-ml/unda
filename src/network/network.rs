@@ -272,6 +272,7 @@ impl<'a> Network<'a>{
             self.train(inputs.clone(), targets.clone(), steps_per);
             total_steps_taken += steps_per;
             let new_accuracy = self.get_loss(inputs.clone(), targets.clone(), &accuracy_mode);
+            println!("{:?}", new_accuracy);
             let mut layer_loss: Vec<Vec<f64>> = vec![];
             for i in 0..inputs.len(){
                 let resp = self.feed_forward(&inputs[i]);
