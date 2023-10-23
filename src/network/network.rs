@@ -161,6 +161,41 @@ impl<'a> Network<'a>{
         }
         None
     }
+    pub fn get_layer_loss(&mut self, outputs: Vec<f64>, targets: Vec<f64>, mode: &Mode) -> Vec<f64> {
+        let mut response: Vec<f64> = vec![0.0; self.layers.len()-2];
+        
+        if targets.len() != self.layers[self.layers.len()-1] {
+            panic!("Invalid number of targets found :(");
+        }
+        let mut parsed = Matrix::from(vec![outputs]).transpose();
+        let mut errors = Matrix::from(vec![targets]).transpose() - &parsed;
+
+        let mut gradients = parsed.map(self.activation.derivative);
+
+        let mut weights: Vec<Matrix> = self.weights.clone();
+        let mut biases: Vec<Matrix> = self.biases.clone();
+        let mut data: Vec<Matrix> = self.data.clone();
+
+        for i in (1..self.layers.len()-1).rev() {
+            gradients = gradients.dot_multiply(&errors).map(&|x| x * self.learning_rate);
+
+            errors = weights[i].transpose() * (&errors);
+            weights[i] = weights[i].clone() + &(gradients.clone() * (&self.data[i].transpose()));
+            biases[i] = biases[i].clone() + &gradients;
+            gradients = data[i].map(self.activation.derivative);
+
+            let loses = &errors.transpose().data[0];
+            let val = match mode{
+                Mode::Min => loses.iter().fold(f64::INFINITY, |prev, &post| prev.min(post)),
+                Mode::Max => loses.iter().fold(f64::INFINITY, |prev, &post| prev.max(post)),
+                Mode::Avg => loses.iter().sum::<f64>() / loses.len() as f64
+            };
+
+            response[i-1] = val;
+        }
+
+        response
+    }
     pub fn back_propegate_one_layer(&mut self, outputs: Vec<f64>, targets: Vec<f64>, column_target: usize){
         if targets.len() != self.layers[self.layers.len()-1] {
             panic!("Invalid number of targets found :(");
@@ -226,7 +261,8 @@ impl<'a> Network<'a>{
         };
         (accuracies, val)
     }
-    pub fn train_to_loss(mut self, inputs: Vec<Vec<f64>>, targets: Vec<Vec<f64>>, desired_loss: f64, steps_per: usize, accuracy_mode: Mode, newlayer_chance: f64, min: usize, max: usize) -> Network<'a>{
+
+    pub fn train_to_loss(mut self, inputs: Vec<Vec<f64>>, targets: Vec<Vec<f64>>, desired_loss: f64, steps_per: usize, accuracy_mode: Mode, newlayer_chance: f64, loss_threshold: f64, min: usize, max: usize) -> Network<'a>{
         let mut rng = rand::thread_rng();
         let mut accuracy_cache: Vec<f64> = vec![1.0];
         let mut network_cache: Vec<Network<'a>> = vec![self.clone()];
@@ -236,14 +272,43 @@ impl<'a> Network<'a>{
             self.train(inputs.clone(), targets.clone(), steps_per);
             total_steps_taken += steps_per;
             let new_accuracy = self.get_loss(inputs.clone(), targets.clone(), &accuracy_mode);
-            println!("{:?}", new_accuracy);
-            if new_accuracy.1 > desired_loss && rng.gen::<f64>() > newlayer_chance {
+            let mut layer_loss: Vec<Vec<f64>> = vec![];
+            for i in 0..inputs.len(){
+                let resp = self.feed_forward(&inputs[i]);
+                let targ = targets[i].clone();
+                let input_accuracy = self.get_layer_loss(resp, targ, &accuracy_mode);
+                layer_loss.push(input_accuracy);
+            }
+            let mut std_dev_per_layer: Vec<f64> = vec![];
+            for x in 0..layer_loss[0].len(){
+                let mut total: f64 = 0.0;
+                let mut all_vals: Vec<f64> = vec![];
+                for y in 0..layer_loss.len(){
+                    total += layer_loss[y][x];
+                    all_vals.push(layer_loss[y][x]);
+                }
+                let avg = total / layer_loss.len() as f64;
+                all_vals = all_vals.into_iter().map(|v| (avg - v).powf(2.0)).collect::<Vec<f64>>();
+                let std_dev = (all_vals.iter().sum::<f64>()).sqrt() / (all_vals.len()-1) as f64;
+                std_dev_per_layer.push(std_dev);
+            }
+            //let max_std_dev = std_dev_per_layer.iter().enumerate().fold(f64::MIN, |prev, (_, &post)| prev.max(post));
+            let max_std_dev = std_dev_per_layer.iter()
+                .enumerate()
+                .fold((0, f64::MIN), |(max_index, max_val), (i, &post)| {
+                    if post > max_val {
+                        (i, post)
+                    } else {
+                        (max_index, max_val)
+                    }
+                });
+            if new_accuracy.1 > desired_loss && rng.gen_range(0.0..1.0) > newlayer_chance &&  max_std_dev.1 > loss_threshold {
                 //Mutate self
-                println!("New layer");
-                let layer = rng.gen_range(1..self.layers.len()-1);
-                let mut new_net = Network::from(self.clone(), layer, rng.gen_range(min..=max));
-                new_net.train(inputs.clone(), targets.clone(), total_steps_taken);
-                self = new_net;
+                println!("Add a new layer at index {}", 0);
+                //let layer = rng.gen_range(1..self.layers.len()-1);
+                //let mut new_net = Network::from(self.clone(), layer, rng.gen_range(min..=max));
+                //new_net.train(inputs.clone(), targets.clone(), total_steps_taken);
+                //self = new_net;
             }
             accuracy_cache.push(new_accuracy.1);
             network_cache.push(self.clone());
