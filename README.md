@@ -46,9 +46,9 @@ Currently, triton is in a very beta stage, the following features are still in d
 - [X]  Back propegation only affecting a single column (allows for a newly added layer to 'catch up')
 - [X]  *Analysis* mode during back propegation allowing for all individual errors to be recorded
 - [ ]  Updated training function
-    - [ ]  Input desired success rate
-    - [ ]  Dynamic error analysis to allow for choosing if the network should grow or shrink
-    - [ ]  Acceptable threshold of +/- in the errors to allow for a less punishing learning process especially when a new neuron layer has been added
+    - [X]  Input desired success rate
+    - [X]  Dynamic error analysis to allow for choosing if the network should grow or shrink
+    - [X]  Acceptable threshold of +/- in the errors to allow for a less punishing learning process especially when a new neuron layer has been added
 - [ ]  Model serialization (serde)
 
 ## License
