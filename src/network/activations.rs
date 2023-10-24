@@ -1,4 +1,5 @@
 use std::f64::consts::E;
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone)]
 pub struct Activation<'a>{
@@ -6,7 +7,24 @@ pub struct Activation<'a>{
     pub derivative: &'a dyn Fn(f64) -> f64
 }
 
-pub const SIGMOID: Activation = Activation {
+#[derive(Clone, Serialize, Deserialize)]
+pub enum Activations{
+    SIGMOID,
+    TANH,
+    RELU
+}
+impl Activations{
+    pub fn get_function(&self) -> Activation{
+        return match self{
+            Activations::SIGMOID => SIGMOID,
+            Activations::TANH => TANH,
+            Activations::RELU => RELU
+        };
+    }
+}
+
+
+const SIGMOID: Activation = Activation {
     function: &|x| {
         let res = 1.0 / (1.0 + E.powf(-x));
         return res;
@@ -14,7 +32,7 @@ pub const SIGMOID: Activation = Activation {
     derivative: &|x| x * (1.0 - x)
 };
 
-pub const TANH: Activation = Activation {
+const TANH: Activation = Activation {
     function: &|x| {
         let res = f64::tanh(x);
         return res;
@@ -22,7 +40,7 @@ pub const TANH: Activation = Activation {
     derivative: &|x| 1.0 - f64::tanh(x).powf(2.0)
 };
 
-pub const RELU: Activation = Activation {
+const RELU: Activation = Activation {
     function: &|x| x.max(0.0),
     derivative: &|x| {
         if x.max(0.0) == x {

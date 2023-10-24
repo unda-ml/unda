@@ -1,18 +1,25 @@
 use rand::Rng;
 
-use super::{matrix::Matrix, activations::Activation, modes::Mode};
+use super::{matrix::Matrix, activations::Activations, modes::Mode, helper::Serializer};
+use serde::{Serialize, Deserialize};
+use serde_json::{to_string, json, from_str};
+use std::{
+    fs::File,
+    io::{Read,Write},
+};
 
-#[derive(Clone)]
-pub struct Network<'a> {
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Network {
     pub layers: Vec<usize>,
+    pub loss: f64,
     weights: Vec<Matrix>,
     biases: Vec<Matrix>,
     data: Vec<Matrix>,
     learning_rate: f64,
-    activation: Activation<'a>
+    activation: Activations
 }
 
-impl<'a> Network<'a>{
+impl<'a> Network{
     ///Creates a new neural network instance filled with random neuron weights and biases
     ///
     ///layers: a vector with the size of each column you desire
@@ -26,9 +33,10 @@ impl<'a> Network<'a>{
     ///```
     ///Creates a new neural net with 2 input parameters, 3 hidden layers with sizes 4, 8 and 14,
     ///and 1 output
-    pub fn new(layers: Vec<usize>, activation: Activation<'a>, learning_rate: f64) -> Network{
+    pub fn new(layers: Vec<usize>, activation: Activations, learning_rate: f64) -> Network{
         let mut net = Network{
             layers: layers,
+            loss: 1.0,
             weights: vec![],
             biases: vec![],
             data: vec![],
@@ -56,7 +64,7 @@ impl<'a> Network<'a>{
     ///
     ///assert_eq!(newer_net.layers, vec![2,4,8,10,8,14,1]);
     ///```
-    pub fn from(network_from: Network<'a>, newlayer_pos: usize, newlayer_len: usize) -> Network<'a>{
+    pub fn from(network_from: Network, newlayer_pos: usize, newlayer_len: usize) -> Network{
         if !(newlayer_pos > 0 && newlayer_pos < network_from.layers.len()){
             panic!("Attempting to add a new layer in an invalid slot [out of bounds, input layer, output layer]");
         }
@@ -65,6 +73,7 @@ impl<'a> Network<'a>{
             weights: vec![],
             biases: vec![],
             data: vec![],
+            loss: network_from.loss,
             learning_rate: network_from.learning_rate,
             activation: network_from.activation.clone()
         };
@@ -113,7 +122,7 @@ impl<'a> Network<'a>{
              current = ((self.weights[i].clone()
                         * &current)
                         + &self.biases[i])
-                        .map(self.activation.function);
+                        .map(self.activation.get_function().function);
              self.data.push(current.clone());
          }
          current.transpose().data[0].to_owned()
@@ -129,7 +138,7 @@ impl<'a> Network<'a>{
             current = ((self.weights[i].clone()
                         * &current)
                         + &self.biases[i])
-                        .map(self.activation.function);
+                        .map(self.activation.get_function().function);
             self.data.push(current.clone());
         }
         current.transpose().data[0].to_owned()
@@ -147,7 +156,7 @@ impl<'a> Network<'a>{
             current = ((self.weights[i].clone()
                  * &current)
                  + &self.biases[i]) 
-                .map(self.activation.function);
+                .map(self.activation.get_function().function);
             self.data.push(current.clone());
         }
         current.transpose().data[0].to_owned()
@@ -162,7 +171,7 @@ impl<'a> Network<'a>{
         
         let mut errors = Matrix::from(vec![targets]).transpose() - &parsed;
 
-        let mut gradients = parsed.map(self.activation.derivative);
+        let mut gradients = parsed.map(self.activation.get_function().derivative);
         for i in (0..self.layers.len() - 1).rev() {
             gradients = gradients.dot_multiply(&errors).map(&|x| x * self.learning_rate);
             self.weights[i] = self.weights[i].clone() + &(gradients.clone() * (&self.data[i].transpose()));
@@ -170,7 +179,7 @@ impl<'a> Network<'a>{
             self.biases[i] = self.biases[i].clone() + &gradients;
             errors = self.weights[i].transpose() * (&errors);
 
-            gradients = self.data[i].map(self.activation.derivative);
+            gradients = self.data[i].map(self.activation.get_function().derivative);
         }
         None
     }
@@ -184,7 +193,7 @@ impl<'a> Network<'a>{
         let mut parsed = Matrix::from(vec![outputs]).transpose();
         let mut errors = Matrix::from(vec![targets]).transpose() - &parsed;
 
-        let mut gradients = parsed.map(self.activation.derivative);
+        let mut gradients = parsed.map(self.activation.get_function().derivative);
 
         let mut weights: Vec<Matrix> = self.weights.clone();
         let mut biases: Vec<Matrix> = self.biases.clone();
@@ -196,7 +205,7 @@ impl<'a> Network<'a>{
             errors = weights[i].transpose() * (&errors);
             weights[i] = weights[i].clone() + &(gradients.clone() * (&self.data[i].transpose()));
             biases[i] = biases[i].clone() + &gradients;
-            gradients = data[i].map(self.activation.derivative);
+            gradients = data[i].map(self.activation.get_function().derivative);
 
             let loses = &errors.transpose().data[0];
             let val = match mode{
@@ -222,7 +231,7 @@ impl<'a> Network<'a>{
         let mut parsed = Matrix::from(vec![outputs]).transpose();
         let mut errors = Matrix::from(vec![targets]).transpose() - &parsed;
 
-        let mut gradients = parsed.map(self.activation.derivative);
+        let mut gradients = parsed.map(self.activation.get_function().derivative);
         for i in (0..self.layers.len()-1).rev() {
             gradients = gradients.dot_multiply(&errors).map(&|x| x * self.learning_rate);
 
@@ -234,7 +243,7 @@ impl<'a> Network<'a>{
                 break;
  
             }
-            gradients = self.data[i].map(self.activation.derivative);
+            gradients = self.data[i].map(self.activation.get_function().derivative);
         }
     }
     pub fn train(&mut self, inputs: Vec<Vec<f64>>, targets: Vec<Vec<f64>>, epochs: usize) {
@@ -278,10 +287,10 @@ impl<'a> Network<'a>{
         (accuracies, val)
     }
 
-    pub fn train_to_loss(mut self, inputs: Vec<Vec<f64>>, targets: Vec<Vec<f64>>, desired_loss: f64, steps_per: usize, accuracy_mode: Mode, loss_threshold: f64, min: usize, max: usize) -> Network<'a>{
+    pub fn train_to_loss(mut self, inputs: Vec<Vec<f64>>, targets: Vec<Vec<f64>>, desired_loss: f64, steps_per: usize, accuracy_mode: Mode, loss_threshold: f64, min: usize, max: usize) -> Network{
         let mut rng = rand::thread_rng();
         let mut accuracy_cache: Vec<f64> = vec![1.0];
-        let mut network_cache: Vec<Network<'a>> = vec![self.clone()];
+        let mut network_cache: Vec<Network> = vec![self.clone()];
         let mut total_steps_taken: usize = 0;
         while accuracy_cache[accuracy_cache.len()-1] > desired_loss {
             //Train model for [steps_per] steps, then analyze accuracy
@@ -330,9 +339,26 @@ impl<'a> Network<'a>{
                 }
             }
             accuracy_cache.push(new_accuracy.1);
+            self.loss = new_accuracy.1;
             network_cache.push(self.clone());
         }
         println!("Done in {} epochs", total_steps_taken);
         network_cache[network_cache.len()-1].clone()
+    }
+    
+    //Save and Load functions
+    pub fn save(&self, path: &'a str) {
+        let mut file = File::create(path).expect("Unable to hit save file :(");
+        let file_ser = to_string(self).expect("Unable to serialize network :(((");
+        file.write_all(file_ser.to_string().as_bytes()).expect("Write failed :(");
+    }
+    pub fn load(path: &'a str) -> Network{
+        let mut buffer = String::new();
+        let mut file = File::open(path).expect("Unable to read file :(");
+
+        file.read_to_string(&mut buffer).expect("Unable to read file but even sadder :(");
+
+        let net: Network = from_str(&buffer).expect("Json was not formatted well >:(");
+        net
     }
 }

@@ -1,6 +1,6 @@
 [package]
 name = "triton_grow"
-version = "1.0.1"
+version = "1.1.0"
 authors = ["BradenEverson"]
 description = "A self sustaining growing neural net that can repair itself until reaching a desired accuracy"
 edition = "2021"
@@ -10,3 +10,5 @@ license = "MIT"
 
 [dependencies]
 rand = "0.8.5"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
