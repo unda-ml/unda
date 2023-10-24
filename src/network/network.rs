@@ -43,13 +43,18 @@ impl<'a> Network<'a>{
         net
     }
     ///Creates a neural network from one network, but splices in a new column for dynamic growth
+    ///At column {newlayer_pos}, insert a new layer. The layer initially at that spot is randomized
+    ///for its matrices and spliced in two, acting as a wrapper around the new layer
+    ///
+    ///This method allows for most weights to remain constant, with only the new layer and the
+    ///wrapper layer having new weights.
     ///
     ///Example:
     ///```
     ///let mut new_net = Network::new(vec![2,4,8,14,1], activation::SIGMOID, 0.1);
     ///let mut newer_net = Network::from(&new_net, 2, 10);
     ///
-    ///assert_eq!(newer_net.layers, vec![2,4,10,8,14,1]);
+    ///assert_eq!(newer_net.layers, vec![2,4,8,10,8,14,1]);
     ///```
     pub fn from(network_from: Network<'a>, newlayer_pos: usize, newlayer_len: usize) -> Network<'a>{
         if !(newlayer_pos > 0 && newlayer_pos < network_from.layers.len()){
@@ -169,6 +174,7 @@ impl<'a> Network<'a>{
         }
         None
     }
+    ///Does back propegation at every layer and caches the net loss found at each layer
     pub fn get_layer_loss(&mut self, outputs: Vec<f64>, targets: Vec<f64>, mode: &Mode) -> Vec<f64> {
         let mut response: Vec<f64> = vec![0.0; self.layers.len()-2];
         
@@ -204,6 +210,8 @@ impl<'a> Network<'a>{
 
         response
     }
+    ///Performs back propegation only on a specified layer and the layers around it. This is
+    ///especially important for 'catching up' when a new layer is dynamically added.
     pub fn back_propegate_one_layer(&mut self, outputs: Vec<f64>, targets: Vec<f64>, column_target: usize){
         if targets.len() != self.layers[self.layers.len()-1] {
             panic!("Invalid number of targets found :(");

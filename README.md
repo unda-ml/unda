@@ -66,9 +66,9 @@ Upon testing Triton's self growth method against a traditional preconfigured net
 | ------------- | ------------- | ------------- |
 | Minimum  | 2 - { *3* } - 1  |  7,880,000 |
 | Well Fit  | 2 - { *3 - 4 - 3* } - 1 | 2,790,000  |
-| Triton  | 2 - { *self growing* } - 1 | 300,000  |
+| Triton  | 2 - { *self growing* } - 1 | 150,000  |
 
-Triton was 97.46% more efficient than the minimum fit model, and 92.83% more than even the well fit model.
+Triton was 98.09% more efficient than the minimum fit model, and 94.62% more than even the well fit model.
 
 
 ## TODO
