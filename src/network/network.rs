@@ -75,8 +75,6 @@ impl<'a> Network<'a>{
         for i in 0..network_from.layers.len() - 1 {
 
             if i == newlayer_pos {
-                println!("{} - {} - {}", i, new_net.layers[i+1], network_from.layers[i]);
-
                 new_net.weights.push(Matrix::new_random(newlayer_len, new_net.layers[i]));
                 new_net.biases.push(Matrix::new_random(newlayer_len, 1));
 
@@ -282,7 +280,6 @@ impl<'a> Network<'a>{
             self.train(inputs.clone(), targets.clone(), steps_per);
             total_steps_taken += steps_per;
             let new_accuracy = self.get_loss(inputs.clone(), targets.clone(), &accuracy_mode);
-            println!("{:?}", new_accuracy);
             let mut layer_loss: Vec<Vec<f64>> = vec![];
             for i in 0..inputs.len(){
                 let resp = self.feed_forward(&inputs[i]);
@@ -317,10 +314,10 @@ impl<'a> Network<'a>{
                 if max_std_dev.1 > loss_threshold {
                     //Mutate self
                     let pos = max_std_dev.0 + 1;
-                    println!("Add a new layer at index {}", pos);
+                    //println!("Add a new layer at index {}", pos);
                     let mut new_net = Network::from(self.clone(), pos, rng.gen_range(min..=max));
                     new_net.train_one_layer(inputs.clone(), targets.clone(),total_steps_taken, pos+1);
-                    println!("{:?}", new_net.layers);
+                    //println!("{:?}", new_net.layers);
                     self = new_net;
                 }
             }
