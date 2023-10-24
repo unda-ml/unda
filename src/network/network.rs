@@ -63,27 +63,37 @@ impl<'a> Network<'a>{
             learning_rate: network_from.learning_rate,
             activation: network_from.activation.clone()
         };
-        println!("newlayer at {}", newlayer_pos);
         for i in 0..network_from.layers.len(){
+            new_net.layers.push(network_from.layers[i]);
             if i == newlayer_pos{
                 new_net.layers.push(newlayer_len);
+
+                new_net.layers.push(network_from.layers[i]);
             }
-            new_net.layers.push(network_from.layers[i]);
         }
         
-        for i in 0..new_net.layers.len() - 1 {
-            /*if i == newlayer_pos {
-                new_net.weights.push(Matrix::new_random(new_net.layers[i+1],new_net.layers[i]));
-                new_net.biases.push(Matrix::new_random(new_net.layers[i+1], 1));
-            }*/
+        for i in 0..network_from.layers.len() - 1 {
 
-            new_net.weights.push(Matrix::new_random(new_net.layers[i+1],new_net.layers[i]));
-            new_net.biases.push(Matrix::new_random(new_net.layers[i+1], 1));
+            if i == newlayer_pos {
+                println!("{} - {} - {}", i, new_net.layers[i+1], network_from.layers[i]);
 
-            //new_net.weights.push(network_from.weights[i].clone());
-            //new_net.biases.push(network_from.biases[i].clone());
+                new_net.weights.push(Matrix::new_random(newlayer_len, new_net.layers[i]));
+                new_net.biases.push(Matrix::new_random(newlayer_len, 1));
+
+                new_net.weights.push(Matrix::new_random(network_from.layers[i], newlayer_len));
+                new_net.biases.push(Matrix::new_random(network_from.layers[i], 1));
+
+
+                new_net.weights.push(Matrix::new_random(network_from.layers[i+1], network_from.layers[i]));
+                new_net.biases.push(Matrix::new_random(network_from.layers[i+1], 1));
+
+            }else{
+
+                new_net.weights.push(network_from.weights[i].clone());
+                new_net.biases.push(network_from.biases[i].clone());
+            }
+
         }
-
         new_net
     }
     pub fn feed_to_point(&mut self, inputs: &Vec<f64>, layer_to: usize) -> Vec<f64>{
@@ -187,7 +197,7 @@ impl<'a> Network<'a>{
             let loses = &errors.transpose().data[0];
             let val = match mode{
                 Mode::Min => loses.iter().fold(f64::INFINITY, |prev, &post| prev.min(post)),
-                Mode::Max => loses.iter().fold(f64::INFINITY, |prev, &post| prev.max(post)),
+                Mode::Max => loses.iter().fold(f64::MIN, |prev, &post| prev.max(post)),
                 Mode::Avg => loses.iter().sum::<f64>() / loses.len() as f64
             };
 
@@ -200,7 +210,7 @@ impl<'a> Network<'a>{
         if targets.len() != self.layers[self.layers.len()-1] {
             panic!("Invalid number of targets found :(");
         }
-        if !(column_target <= 1 && self.layers.len()-2 <= column_target){
+        if column_target <= 1 && self.layers.len()-2 >= column_target{
             panic!("Target column out of bounds or illegal column choice (input row or output row)");
         }
         let mut parsed = Matrix::from(vec![outputs]).transpose();
@@ -211,7 +221,7 @@ impl<'a> Network<'a>{
             gradients = gradients.dot_multiply(&errors).map(&|x| x * self.learning_rate);
 
             errors = self.weights[i].transpose() * (&errors);
-            if i == column_target {
+            if i == column_target || i == column_target-1 || i == column_target+1 {
                 self.weights[i] = self.weights[i].clone() + &(gradients.clone() * (&self.data[i].transpose()));
 
                 self.biases[i] = self.biases[i].clone() + &gradients;
@@ -262,7 +272,7 @@ impl<'a> Network<'a>{
         (accuracies, val)
     }
 
-    pub fn train_to_loss(mut self, inputs: Vec<Vec<f64>>, targets: Vec<Vec<f64>>, desired_loss: f64, steps_per: usize, accuracy_mode: Mode, newlayer_chance: f64, loss_threshold: f64, min: usize, max: usize) -> Network<'a>{
+    pub fn train_to_loss(mut self, inputs: Vec<Vec<f64>>, targets: Vec<Vec<f64>>, desired_loss: f64, steps_per: usize, accuracy_mode: Mode, loss_threshold: f64, min: usize, max: usize) -> Network<'a>{
         let mut rng = rand::thread_rng();
         let mut accuracy_cache: Vec<f64> = vec![1.0];
         let mut network_cache: Vec<Network<'a>> = vec![self.clone()];
@@ -294,22 +304,25 @@ impl<'a> Network<'a>{
                 std_dev_per_layer.push(std_dev);
             }
             //let max_std_dev = std_dev_per_layer.iter().enumerate().fold(f64::MIN, |prev, (_, &post)| prev.max(post));
-            let max_std_dev = std_dev_per_layer.iter()
-                .enumerate()
-                .fold((0, f64::MIN), |(max_index, max_val), (i, &post)| {
-                    if post > max_val {
-                        (i, post)
-                    } else {
-                        (max_index, max_val)
-                    }
-                });
-            if new_accuracy.1 > desired_loss && rng.gen_range(0.0..1.0) > newlayer_chance &&  max_std_dev.1 > loss_threshold {
-                //Mutate self
-                println!("Add a new layer at index {}", 0);
-                //let layer = rng.gen_range(1..self.layers.len()-1);
-                //let mut new_net = Network::from(self.clone(), layer, rng.gen_range(min..=max));
-                //new_net.train(inputs.clone(), targets.clone(), total_steps_taken);
-                //self = new_net;
+            if new_accuracy.1 > desired_loss {
+                let max_std_dev = std_dev_per_layer.iter()
+                    .enumerate()
+                    .fold((0, f64::MIN), |(max_index, max_val), (i, &post)| {
+                        if post > max_val {
+                            (i, post)
+                        } else {
+                            (max_index, max_val)
+                        }
+                    });
+                if max_std_dev.1 > loss_threshold {
+                    //Mutate self
+                    let pos = max_std_dev.0 + 1;
+                    println!("Add a new layer at index {}", pos);
+                    let mut new_net = Network::from(self.clone(), pos, rng.gen_range(min..=max));
+                    new_net.train_one_layer(inputs.clone(), targets.clone(),total_steps_taken, pos+1);
+                    println!("{:?}", new_net.layers);
+                    self = new_net;
+                }
             }
             accuracy_cache.push(new_accuracy.1);
             network_cache.push(self.clone());
