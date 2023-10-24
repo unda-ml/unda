@@ -25,12 +25,20 @@ Triton acts as a typical neural network implementation, but allows for a more dy
 Triton will train and grow a desirable neural network until a specific accuracy is matched, returning the finished model
 
 ```rust
-use triton_grow::network::{network::Network, activations};
+use triton_grow::network::{network::Network, activations, modes::Mode};
 
-async fn main() -> Result<(),Error>{
-    let new_net = Network::new(vec![1,2,3,2], activations::SIGMOID, 0.1);
+fn main() {
+    let mut inputs = vec![vec![0.0,0.0],vec![1.0,0.0],vec![0.0,1.0],vec![1.0,1.0]];
+    let mut outputs = vec![vec![0.0],vec![1.0],vec![1.0],vec![0.0]];
+    let mut new_net: Network = Network::new(vec![2,3,1], activations::SIGMOID, 0.1);
+    
+    new_net = new_net.train_to_loss(inputs, outputs, 0.001, 100000, Mode::Avg, 0.001, 3, 10);
+    println!("1 and 0: {:?}", new_net.feed_forward(&vec![1.0,0.0])[0].round());
+    println!("0 and 1: {:?}", new_net.feed_forward(&vec![0.0,1.0])[0].round());
+    println!("1 and 1: {:?}", new_net.feed_forward(&vec![1.0,1.0])[0].round());
+    println!("0 and 0: {:?}", new_net.feed_forward(&vec![0.0,0.0])[0].round());
+    println!("Net network made: {:?}", new_net.layers);
 
-    let newer_net = Network::from(&new_net, 2, 4);
 }
 ```
 
@@ -41,11 +49,9 @@ Currently, triton is in a very beta stage, the following features are still in d
  - [ ]  Mutating a neural network (1/4)
     - [X]  Adding a new layer with ```n``` neurons into any point of an existent network
     - [ ]  Removing a layer from an existent network
-    - [ ]  Adding a single neuron to a layer
-    - [ ]  Removing a single neuron from a layer
 - [X]  Back propegation only affecting a single column (allows for a newly added layer to 'catch up')
 - [X]  *Analysis* mode during back propegation allowing for all individual errors to be recorded
-- [ ]  Updated training function
+- [X]  Updated training function
     - [X]  Input desired success rate
     - [X]  Dynamic error analysis to allow for choosing if the network should grow or shrink
     - [X]  Acceptable threshold of +/- in the errors to allow for a less punishing learning process especially when a new neuron layer has been added
