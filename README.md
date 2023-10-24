@@ -17,7 +17,29 @@ or add the dependency directly in your **cargo.toml** file
 [dependencies]
 triton_grow = "{version}"
 ```
+## Usage
 
+Triton acts as a typical neural network implementation, but allows for a more dynamic way of solving problems you may not know how to solve. Acting as a 'brute force' approach to the world of deep learning, after ```n``` epochs in the training process triton will evaluate the specific error of each neuron and column, deciding whether to add a neuron to a column, add a new column entirely, remove a neuron or remove a column. 
+
+Triton will train and grow a desirable neural network until a specific accuracy is matched, returning the finished model
+
+```rust
+use triton_grow::network::{network::Network, activations, modes::Mode};
+
+fn main() {
+    let mut inputs = vec![vec![0.0,0.0],vec![1.0,0.0],vec![0.0,1.0],vec![1.0,1.0]];
+    let mut outputs = vec![vec![0.0],vec![1.0],vec![1.0],vec![0.0]];
+    let mut new_net: Network = Network::new(vec![2,3,1], activations::SIGMOID, 0.1);
+    
+    new_net = new_net.train_to_loss(inputs, outputs, 0.001, 100000, Mode::Avg, 0.001, 3, 10);
+    println!("1 and 0: {:?}", new_net.feed_forward(&vec![1.0,0.0])[0].round());
+    println!("0 and 1: {:?}", new_net.feed_forward(&vec![0.0,1.0])[0].round());
+    println!("1 and 1: {:?}", new_net.feed_forward(&vec![1.0,1.0])[0].round());
+    println!("0 and 0: {:?}", new_net.feed_forward(&vec![0.0,0.0])[0].round());
+    println!("Net network made: {:?}", new_net.layers);
+
+}
+```
 ## Proven Results
 
 Upon testing Triton's self growth method against a traditional preconfigured network model. Three neural networks were all tasked with learning a simple **XOR predictor** with the following inputs and outputs:
@@ -48,29 +70,6 @@ Upon testing Triton's self growth method against a traditional preconfigured net
 
 Triton was 97.46% more efficient than the minimum fit model, and 92.83% more than even the well fit model.
 
-## Usage
-
-Triton acts as a typical neural network implementation, but allows for a more dynamic way of solving problems you may not know how to solve. Acting as a 'brute force' approach to the world of deep learning, after ```n``` epochs in the training process triton will evaluate the specific error of each neuron and column, deciding whether to add a neuron to a column, add a new column entirely, remove a neuron or remove a column. 
-
-Triton will train and grow a desirable neural network until a specific accuracy is matched, returning the finished model
-
-```rust
-use triton_grow::network::{network::Network, activations, modes::Mode};
-
-fn main() {
-    let mut inputs = vec![vec![0.0,0.0],vec![1.0,0.0],vec![0.0,1.0],vec![1.0,1.0]];
-    let mut outputs = vec![vec![0.0],vec![1.0],vec![1.0],vec![0.0]];
-    let mut new_net: Network = Network::new(vec![2,3,1], activations::SIGMOID, 0.1);
-    
-    new_net = new_net.train_to_loss(inputs, outputs, 0.001, 100000, Mode::Avg, 0.001, 3, 10);
-    println!("1 and 0: {:?}", new_net.feed_forward(&vec![1.0,0.0])[0].round());
-    println!("0 and 1: {:?}", new_net.feed_forward(&vec![0.0,1.0])[0].round());
-    println!("1 and 1: {:?}", new_net.feed_forward(&vec![1.0,1.0])[0].round());
-    println!("0 and 0: {:?}", new_net.feed_forward(&vec![0.0,0.0])[0].round());
-    println!("Net network made: {:?}", new_net.layers);
-
-}
-```
 
 ## TODO
 
