@@ -18,6 +18,36 @@ or add the dependency directly in your **cargo.toml** file
 triton_grow = "{version}"
 ```
 
+## Proven Results
+
+Upon testing Triton's self growth method against a traditional preconfigured network model. Three neural networks were all tasked with learning a simple **XOR predictor** with the following inputs and outputs:
+
+### Inputs
+```
+[ 1.0 , 0.0 ]
+[ 0.0 , 1.0 ]
+[ 0.0 , 0.0 ]
+[ 1.0 , 1.0 ]
+```
+
+### Outputs
+```
+[ 1.0 ]
+[ 1.0 ]
+[ 0.0 ]
+[ 0.0 ]
+```
+
+### Testing
+
+| Model Name    | Layers {input -[hidden] - output} | Epochs Needed to Get 0.001 Avg Loss |
+| ------------- | ------------- | ------------- |
+| Minimum  | 2 - { *3* } - 1  |  7,880,000 |
+| Well Fit  | 2 - { *3 - 4 - 3* } - 1 | 2,790,000  |
+| Triton  | 2 - { *self growing* } - 1 | 300,000  |
+
+Triton was 97.46% more efficient than the minimum fit model, and 92.83% more than even the well fit model.
+
 ## Usage
 
 Triton acts as a typical neural network implementation, but allows for a more dynamic way of solving problems you may not know how to solve. Acting as a 'brute force' approach to the world of deep learning, after ```n``` epochs in the training process triton will evaluate the specific error of each neuron and column, deciding whether to add a neuron to a column, add a new column entirely, remove a neuron or remove a column. 
