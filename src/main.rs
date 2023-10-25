@@ -12,5 +12,5 @@ fn main() {
     println!("1 and 1: {:?}", new_net.feed_forward(&vec![1.0,1.0])[0].round());
     println!("0 and 0: {:?}", new_net.feed_forward(&vec![0.0,0.0])[0].round());
     println!("New network made: {:?}", new_net.layers);
-    new_net.save("/root/source/rust/triton/save/net.json");
+    new_net.save("/home/braden/source/rust/triton/save/net.json");
 }

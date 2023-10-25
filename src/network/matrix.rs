@@ -6,7 +6,7 @@ use std::ops;
 pub struct Matrix{
     pub rows: usize,
     pub columns: usize,
-    pub data: Vec<Vec<f64>>
+    pub data: Vec<Vec<f32>>
 }
 
 impl ops::Add<&Matrix> for Matrix{
@@ -82,7 +82,7 @@ impl Matrix{
         let mut res = Matrix::new_empty(rows, cols); 
         for row in 0..rows{
             for col in 0..cols{
-                res.data[row][col] = rng.gen::<f64>() * 2.0 - 1.0;
+                res.data[row][col] = rng.gen::<f32>() * 2.0 - 1.0;
             }
         }
         res
@@ -126,14 +126,14 @@ impl Matrix{
         }
         res
     } */
-    pub fn from(data: Vec<Vec<f64>>) -> Matrix {
+    pub fn from(data: Vec<Vec<f32>>) -> Matrix {
         Matrix{
             rows: data.len(),
             columns: data[0].len(),
             data
         }
     }
-    pub fn map(&mut self, function: &dyn Fn(f64) -> f64) -> Matrix{
+    pub fn map(&mut self, function: &dyn Fn(f32) -> f32) -> Matrix{
         Matrix::from((self.data).clone()
                      .into_iter()
                      .map(|row| row

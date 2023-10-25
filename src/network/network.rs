@@ -11,11 +11,11 @@ use std::{
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Network {
     pub layers: Vec<usize>,
-    pub loss: f64,
+    pub loss: f32,
     weights: Vec<Matrix>,
     biases: Vec<Matrix>,
     data: Vec<Matrix>,
-    learning_rate: f64,
+    learning_rate: f32,
     activation: Activations
 }
 
@@ -33,7 +33,7 @@ impl<'a> Network{
     ///```
     ///Creates a new neural net with 2 input parameters, 3 hidden layers with sizes 4, 8 and 14,
     ///and 1 output
-    pub fn new(layers: Vec<usize>, activation: Activations, learning_rate: f64) -> Network{
+    pub fn new(layers: Vec<usize>, activation: Activations, learning_rate: f32) -> Network{
         let mut net = Network{
             layers: layers,
             loss: 1.0,
@@ -108,7 +108,7 @@ impl<'a> Network{
         }
         new_net
     }
-    pub fn feed_to_point(&mut self, inputs: &Vec<f64>, layer_to: usize) -> Vec<f64>{
+    pub fn feed_to_point(&mut self, inputs: &Vec<f32>, layer_to: usize) -> Vec<f32>{
          if inputs.len() != self.layers[0]{
              panic!("Invalid numer of inputs");
          }
@@ -127,7 +127,7 @@ impl<'a> Network{
          }
          current.transpose().data[0].to_owned()
     }
-    pub fn point_to_feed(&mut self, inputs_at_point: &Vec<f64>, layer_at: usize) -> Vec<f64> {
+    pub fn point_to_feed(&mut self, inputs_at_point: &Vec<f32>, layer_at: usize) -> Vec<f32> {
         if inputs_at_point.len() != self.layers[layer_at]{
             panic!("Invalid number of inputs for layer");
         }
@@ -144,7 +144,7 @@ impl<'a> Network{
         current.transpose().data[0].to_owned()
     }
 
-    pub fn feed_forward(&mut self, inputs: &Vec<f64>) -> Vec<f64> {
+    pub fn feed_forward(&mut self, inputs: &Vec<f32>) -> Vec<f32> {
         if inputs.len() != self.layers[0] {
             panic!("Invalid number of inputs");
         }
@@ -162,7 +162,7 @@ impl<'a> Network{
         current.transpose().data[0].to_owned()
     }
 
-    pub fn back_propegate(&mut self, outputs: Vec<f64>, targets: Vec<f64>) -> Option<Vec<f64>> {
+    pub fn back_propegate(&mut self, outputs: Vec<f32>, targets: Vec<f32>) -> Option<Vec<f32>> {
         if targets.len() != self.layers[self.layers.len()-1] {
             panic!("Invalid number of targets found :(");
         }
@@ -184,8 +184,8 @@ impl<'a> Network{
         None
     }
     ///Does back propegation at every layer and caches the net loss found at each layer
-    pub fn get_layer_loss(&mut self, outputs: Vec<f64>, targets: Vec<f64>, mode: &Mode) -> Vec<f64> {
-        let mut response: Vec<f64> = vec![0.0; self.layers.len()-2];
+    pub fn get_layer_loss(&mut self, outputs: Vec<f32>, targets: Vec<f32>, mode: &Mode) -> Vec<f32> {
+        let mut response: Vec<f32> = vec![0.0; self.layers.len()-2];
         
         if targets.len() != self.layers[self.layers.len()-1] {
             panic!("Invalid number of targets found :(");
@@ -209,9 +209,9 @@ impl<'a> Network{
 
             let loses = &errors.transpose().data[0];
             let val = match mode{
-                Mode::Min => loses.iter().fold(f64::INFINITY, |prev, &post| prev.min(post)),
-                Mode::Max => loses.iter().fold(f64::MIN, |prev, &post| prev.max(post)),
-                Mode::Avg => loses.iter().sum::<f64>() / loses.len() as f64
+                Mode::Min => loses.iter().fold(f32::INFINITY, |prev, &post| prev.min(post)),
+                Mode::Max => loses.iter().fold(f32::MIN, |prev, &post| prev.max(post)),
+                Mode::Avg => loses.iter().sum::<f32>() / loses.len() as f32
             };
 
             response[i-1] = val;
@@ -221,7 +221,7 @@ impl<'a> Network{
     }
     ///Performs back propegation only on a specified layer and the layers around it. This is
     ///especially important for 'catching up' when a new layer is dynamically added.
-    pub fn back_propegate_one_layer(&mut self, outputs: Vec<f64>, targets: Vec<f64>, column_target: usize){
+    pub fn back_propegate_one_layer(&mut self, outputs: Vec<f32>, targets: Vec<f32>, column_target: usize){
         if targets.len() != self.layers[self.layers.len()-1] {
             panic!("Invalid number of targets found :(");
         }
@@ -246,7 +246,7 @@ impl<'a> Network{
             gradients = self.data[i].map(self.activation.get_function().derivative);
         }
     }
-    pub fn train(&mut self, inputs: Vec<Vec<f64>>, targets: Vec<Vec<f64>>, epochs: usize) {
+    pub fn train(&mut self, inputs: Vec<Vec<f32>>, targets: Vec<Vec<f32>>, epochs: usize) {
         for i in 1..=epochs{
             if epochs < 1000 || i % (epochs/1000) == 0 {
                 //println!("Epoch {} of {}", i, epochs);
@@ -257,7 +257,7 @@ impl<'a> Network{
             }
         }
     }
-    pub fn train_one_layer(&mut self, inputs: Vec<Vec<f64>>, targets: Vec<Vec<f64>>, epochs: usize, layer: usize) {
+    pub fn train_one_layer(&mut self, inputs: Vec<Vec<f32>>, targets: Vec<Vec<f32>>, epochs: usize, layer: usize) {
         for i in 1..=epochs{
             if epochs < 1000 || i % (epochs/1000) == 0 {
                 //println!("Epoch {} of {}", i, epochs);
@@ -268,28 +268,28 @@ impl<'a> Network{
             }
         }
     }
-    pub fn get_loss(&mut self, inputs: Vec<Vec<f64>>, targets: Vec<Vec<f64>>, mode: &Mode) -> (Vec<f64>, f64){
-        let mut accuracies: Vec<f64> = vec![];
+    pub fn get_loss(&mut self, inputs: Vec<Vec<f32>>, targets: Vec<Vec<f32>>, mode: &Mode) -> (Vec<f32>, f32){
+        let mut accuracies: Vec<f32> = vec![];
         inputs.iter().enumerate().for_each(|(place, input)| {
-            let mut inner_accuracy: Vec<f64> = vec![];
-            let resp: Vec<f64> = self.feed_forward(input);
+            let mut inner_accuracy: Vec<f32> = vec![];
+            let resp: Vec<f32> = self.feed_forward(input);
             for i in 0..resp.len() {
-                let accuracy_at_node:f64 = (&targets[place][i] - resp[i]).abs();//(1.0 + (&targets[place][i] - resp[i])).abs() / (1.0 + targets[place][i]).abs(); 
+                let accuracy_at_node:f32 = (&targets[place][i] - resp[i]).abs();//(1.0 + (&targets[place][i] - resp[i])).abs() / (1.0 + targets[place][i]).abs(); 
                 inner_accuracy.push(accuracy_at_node);
             }
-            accuracies.push(inner_accuracy.iter().sum::<f64>() / inner_accuracy.len() as f64);
+            accuracies.push(inner_accuracy.iter().sum::<f32>() / inner_accuracy.len() as f32);
         });
         let val = match mode{
-            Mode::Min => accuracies.iter().fold(f64::INFINITY, |prev, &post| prev.min(post)),
-            Mode::Max => accuracies.iter().fold(f64::INFINITY, |prev, &post| prev.max(post)),
-            Mode::Avg => accuracies.iter().sum::<f64>() / accuracies.len() as f64
+            Mode::Min => accuracies.iter().fold(f32::MAX, |prev, &post| prev.min(post)),
+            Mode::Max => accuracies.iter().fold(f32::MIN, |prev, &post| prev.max(post)),
+            Mode::Avg => accuracies.iter().sum::<f32>() / accuracies.len() as f32
         };
         (accuracies, val)
     }
 
-    pub fn train_to_loss(mut self, inputs: Vec<Vec<f64>>, targets: Vec<Vec<f64>>, desired_loss: f64, steps_per: usize, accuracy_mode: Mode, loss_threshold: f64, min: usize, max: usize) -> Network{
+    pub fn train_to_loss(mut self, inputs: Vec<Vec<f32>>, targets: Vec<Vec<f32>>, desired_loss: f32, steps_per: usize, accuracy_mode: Mode, loss_threshold: f32, min: usize, max: usize) -> Network{
         let mut rng = rand::thread_rng();
-        let mut accuracy_cache: Vec<f64> = vec![1.0];
+        let mut accuracy_cache: Vec<f32> = vec![1.0];
         let mut network_cache: Vec<Network> = vec![self.clone()];
         let mut total_steps_taken: usize = 0;
         while accuracy_cache[accuracy_cache.len()-1] > desired_loss {
@@ -297,31 +297,31 @@ impl<'a> Network{
             self.train(inputs.clone(), targets.clone(), steps_per);
             total_steps_taken += steps_per;
             let new_accuracy = self.get_loss(inputs.clone(), targets.clone(), &accuracy_mode);
-            let mut layer_loss: Vec<Vec<f64>> = vec![];
+            let mut layer_loss: Vec<Vec<f32>> = vec![];
             for i in 0..inputs.len(){
                 let resp = self.feed_forward(&inputs[i]);
                 let targ = targets[i].clone();
                 let input_accuracy = self.get_layer_loss(resp, targ, &accuracy_mode);
                 layer_loss.push(input_accuracy);
             }
-            let mut std_dev_per_layer: Vec<f64> = vec![];
+            let mut std_dev_per_layer: Vec<f32> = vec![];
             for x in 0..layer_loss[0].len(){
-                let mut total: f64 = 0.0;
-                let mut all_vals: Vec<f64> = vec![];
+                let mut total: f32 = 0.0;
+                let mut all_vals: Vec<f32> = vec![];
                 for y in 0..layer_loss.len(){
                     total += layer_loss[y][x];
                     all_vals.push(layer_loss[y][x]);
                 }
-                let avg = total / layer_loss.len() as f64;
-                all_vals = all_vals.into_iter().map(|v| (avg - v).powf(2.0)).collect::<Vec<f64>>();
-                let std_dev = (all_vals.iter().sum::<f64>()).sqrt() / (all_vals.len()-1) as f64;
+                let avg = total / layer_loss.len() as f32;
+                all_vals = all_vals.into_iter().map(|v| (avg - v).powf(2.0)).collect::<Vec<f32>>();
+                let std_dev = (all_vals.iter().sum::<f32>()).sqrt() / (all_vals.len()-1) as f32;
                 std_dev_per_layer.push(std_dev);
             }
             //let max_std_dev = std_dev_per_layer.iter().enumerate().fold(f64::MIN, |prev, (_, &post)| prev.max(post));
             if new_accuracy.1 > desired_loss {
                 let max_std_dev = std_dev_per_layer.iter()
                     .enumerate()
-                    .fold((0, f64::MIN), |(max_index, max_val), (i, &post)| {
+                    .fold((0, f32::MIN), |(max_index, max_val), (i, &post)| {
                         if post > max_val {
                             (i, post)
                         } else {
