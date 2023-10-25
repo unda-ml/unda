@@ -5,7 +5,7 @@
 
 ## Installation
 
-Use the package manager [cargo](https://crates.io/) to add triton to your rust project.
+Use the package manager [cargo](https://crates.io/) to add [triton](https://crates.io/crates/triton_grow) to your rust project.
 
 ```bash
 cargo add triton_grow
