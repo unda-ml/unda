@@ -318,6 +318,7 @@ impl<'a> Network{
                 std_dev_per_layer.push(std_dev);
             }
             //let max_std_dev = std_dev_per_layer.iter().enumerate().fold(f64::MIN, |prev, (_, &post)| prev.max(post));
+            println!("{:?}", new_accuracy);
             if new_accuracy.1 > desired_loss {
                 let max_std_dev = std_dev_per_layer.iter()
                     .enumerate()
