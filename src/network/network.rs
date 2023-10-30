@@ -257,13 +257,12 @@ impl<'a> Network{
             gradients = self.data[i].map(self.activation.get_function().derivative);
         }
     }
-    pub fn train(&mut self, inputs: Vec<Vec<f32>>, targets: Vec<Vec<f32>>, epochs: usize, mode: &Mode) -> (f32, Vec<f32>) {
+    pub fn train(&mut self, inputs: &Vec<Vec<f32>>, targets: &Vec<Vec<f32>>, epochs: usize, mode: &Mode) -> (f32, Vec<f32>) {
         let mut accuracy: f32 = match mode {
             Mode::Min => f32::MAX,
             Mode::Max => f32::MIN,
             Mode::Avg => 0.0
         };
-        let mut accuracies: Vec<f32> = vec![];
         let mut layer_loss: Vec<f32> = match mode{
             Mode::Min => vec![f32::MAX; self.layers.len()],
             Mode::Max => vec![f32::MIN; self.layers.len()],
@@ -296,8 +295,6 @@ impl<'a> Network{
                         Mode::Min => running_num,
                         Mode::Max => running_num
                     };
-                    accuracies.push(running_num);
-
                 }
                 accuracy = match mode {
                     Mode::Avg => {
@@ -327,12 +324,12 @@ impl<'a> Network{
                 }
             }
         }
-        let val:f32 = match mode {
+        /*let val:f32 = match mode {
             Mode::Min => accuracies.iter().fold(f32::MAX, |prev, &post| prev.min(post)),
             Mode::Max => accuracies.iter().fold(f32::MIN, |prev, &post| prev.max(post)),
             Mode::Avg => accuracies.iter().sum::<f32>() / accuracies.len() as f32
-        };
-        (val, layer_loss_avg)
+        };*/
+        (accuracy, layer_loss_avg)
     }
     pub fn train_one_layer(&mut self, inputs: Vec<Vec<f32>>, targets: Vec<Vec<f32>>, epochs: usize, layer: usize) {
         for i in 1..=epochs{
@@ -368,8 +365,10 @@ impl<'a> Network{
         let mut layer_loss: Vec<f32>;
         let mut total_steps_taken: usize = 0;
         while loss > desired_loss {
+            println!("Enter train");
+
             //Train model for [steps_per] steps, then analyze accuracy
-            (loss, layer_loss) = self.train(inputs.clone(), targets.clone(), steps_per, &accuracy_mode);
+            (loss, layer_loss) = self.train(&inputs, &targets, steps_per, &accuracy_mode);
             total_steps_taken += steps_per;
             //let new_accuracy = self.get_loss(inputs.clone(), targets.clone(), &accuracy_mode);
 
