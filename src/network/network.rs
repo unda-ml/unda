@@ -279,6 +279,7 @@ impl<'a> Network{
         };
 
         for i in 1..=epochs{
+            println!("Epoch {} of {}", i, epochs);
             let mut inner_accuracy: Vec<f32> = vec![];
             for j in 0..inputs.len(){
                 let outputs = self.feed_forward(&inputs[j]);
