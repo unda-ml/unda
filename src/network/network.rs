@@ -162,13 +162,18 @@ impl<'a> Network{
         current.transpose().data[0].to_owned()
     }
 
-    pub fn back_propegate(&mut self, outputs: Vec<f32>, targets: Vec<f32>) -> Vec<f32>{
+    pub fn back_propegate(&mut self, outputs: Vec<f32>, targets: Vec<f32>, mode: &Mode) -> Vec<f32>{
         if targets.len() != self.layers[self.layers.len()-1] {
             panic!("Invalid number of targets found :(");
         }
         let mut parsed = Matrix::from(vec![outputs]).transpose();
 
         let mut layer_loss: Vec<f32> = vec![]; 
+        layer_loss = match mode{
+            Mode::Min => vec![f32::MAX; self.data.len()],
+            Mode::Max => vec![f32::MIN; self.data.len()],
+            Mode::Avg => vec![0.0; self.data.len()],
+        };
         let mut errors = Matrix::from(vec![targets]).transpose() - &parsed;
 
         let mut gradients = parsed.map(self.activation.get_function().derivative);
@@ -180,6 +185,12 @@ impl<'a> Network{
             errors = self.weights[i].transpose() * (&errors);
 
             gradients = self.data[i].map(self.activation.get_function().derivative);
+            let loses = &errors.transpose().data[0];
+            layer_loss[i] = match mode{
+                Mode::Min => loses.iter().fold(f32::INFINITY, |prev, &post| prev.min(post)),
+                Mode::Max => loses.iter().fold(f32::MIN, |prev, &post| prev.max(post)),
+                Mode::Avg => loses.iter().sum::<f32>() / loses.len() as f32
+            };
         }
         layer_loss
     }
@@ -246,9 +257,24 @@ impl<'a> Network{
             gradients = self.data[i].map(self.activation.get_function().derivative);
         }
     }
-    pub fn train(&mut self, inputs: Vec<Vec<f32>>, targets: Vec<Vec<f32>>, epochs: usize, mode: &Mode) -> (f32, Vec<Vec<f32>>) {
+    pub fn train(&mut self, inputs: Vec<Vec<f32>>, targets: Vec<Vec<f32>>, epochs: usize, mode: &Mode) -> (f32, Vec<f32>) {
+        let mut accuracy: f32 = match mode {
+            Mode::Min => f32::MAX,
+            Mode::Max => f32::MIN,
+            Mode::Avg => 0.0
+        };
         let mut accuracies: Vec<f32> = vec![];
-        let mut layer_loss_avg: Vec<Vec<f32>> = vec![];
+        let mut layer_loss: Vec<f32> = match mode{
+            Mode::Min => vec![f32::MAX; self.layers.len()],
+            Mode::Max => vec![f32::MIN; self.layers.len()],
+            Mode::Avg => vec![0.0; self.layers.len()]
+        };
+        let mut layer_loss_avg: Vec<f32> = match mode{
+            Mode::Min => vec![f32::MAX; self.layers.len()],
+            Mode::Max => vec![f32::MIN; self.layers.len()],
+            Mode::Avg => vec![0.0; self.layers.len()]
+        };
+
         for i in 1..=epochs{
             let mut inner_accuracy: Vec<f32> = vec![];
             for j in 0..inputs.len(){
@@ -256,11 +282,49 @@ impl<'a> Network{
                 let mut running_num:f32 = 0.0;
                 for i in 0..outputs.len() {
                     let accuracy_at_node:f32 = (targets[j][i] - outputs[i]).abs();//(1.0 + (&targets[place][i] - resp[i])).abs() / (1.0 + targets[place][i]).abs(); 
+
                     inner_accuracy.push(accuracy_at_node);
-                    running_num = ((running_num * (i as f32 + 1.0)) + accuracy_at_node) / i as f32 +1.0;
+                    running_num = match mode{
+                        Mode::Avg => {
+                            if i == 0 {
+                                accuracy_at_node
+                            }else{
+                                ((running_num * (i as f32)) + accuracy_at_node) / i as f32 +1.0
+                            }
+
+                        },
+                        Mode::Min => running_num,
+                        Mode::Max => running_num
+                    };
                     accuracies.push(running_num);
+
                 }
-                layer_loss_avg.push(self.back_propegate(outputs, targets[j].clone()));
+                accuracy = match mode {
+                    Mode::Avg => {
+                        if j == 0 {
+                            running_num
+                        }else{
+                            ((accuracy * (j as f32)) + running_num) / j as f32 +1.0
+                        }
+                    },
+                    Mode::Min => f32::min(accuracy, running_num),
+                    Mode::Max => f32::max(accuracy, running_num)
+                };
+                layer_loss = self.back_propegate(outputs, targets[j].clone(), mode);
+                for layer in 1..layer_loss.len()-1{
+                    layer_loss_avg[layer] = match mode{
+                        Mode::Avg => {
+                            if j == 0 {
+                                layer_loss[layer]
+                            }else{
+                                ((layer_loss_avg[layer] * (j as f32)) + layer_loss[layer]) / j as f32 + 1.0
+                            }
+                        }
+                        Mode::Min => f32::min(layer_loss_avg[layer], layer_loss[layer]),
+                        Mode::Max => f32::max(layer_loss_avg[layer], layer_loss[layer])
+                    };
+   
+                }
             }
         }
         let val:f32 = match mode {
@@ -300,10 +364,9 @@ impl<'a> Network{
     pub fn train_to_loss(mut self, inputs: Vec<Vec<f32>>, targets: Vec<Vec<f32>>, desired_loss: f32, steps_per: usize, accuracy_mode: Mode, loss_threshold: f32, min: usize, max: usize) -> Network{
         let mut rng = rand::thread_rng();
         let mut loss: f32 = 1.0;
-        let mut loss_cache: Vec<f32> = vec![];
-        let mut layer_loss: Vec<Vec<f32>>;
+        let mut loss_cache: Vec<f32> = vec![1.0];
+        let mut layer_loss: Vec<f32>;
         let mut total_steps_taken: usize = 0;
-        let mut std_dev_per_layer: Vec<f32> = vec![];
         while loss > desired_loss {
             //Train model for [steps_per] steps, then analyze accuracy
             (loss, layer_loss) = self.train(inputs.clone(), targets.clone(), steps_per, &accuracy_mode);
@@ -318,9 +381,10 @@ impl<'a> Network{
                 layer_loss.push(input_accuracy);
             }*/
             //let max_std_dev = std_dev_per_layer.iter().enumerate().fold(f64::MIN, |prev, (_, &post)| prev.max(post));
+            println!("{:?}", loss);
             
             if loss > desired_loss && (loss - loss_cache[loss_cache.len()-1]).abs() >= loss_threshold {
-                std_dev_per_layer.clear();
+                /*std_dev_per_layer.clear();
                 for x in 0..layer_loss[0].len(){
                     let mut total: f32 = 0.0;
                     let mut all_vals: Vec<f32> = vec![];
@@ -341,14 +405,22 @@ impl<'a> Network{
                         } else {
                             (max_index, max_val)
                         }
+                    });*/
+                let max_loss = layer_loss.iter()
+                    .enumerate()
+                    .fold((0, f32::MIN), |(max_index, max_val), (i, &post)| {
+                        if post > max_val {
+                            (i, post)
+                        } else {
+                            (max_index, max_val)
+                        }
                     });
-                if max_std_dev.1 > loss_threshold {
+                if max_loss.1 > loss_threshold {
                     //Mutate self
-                    let pos = max_std_dev.0 + 1;
-                    //println!("Add a new layer at index {}", pos);
+                    let pos = max_loss.0;
+                    println!("Add a new layer at index {}", pos);
                     let mut new_net = Network::from(self.clone(), pos, rng.gen_range(min..=max));
                     new_net.train_one_layer(inputs.clone(), targets.clone(),total_steps_taken, pos+1);
-                    //println!("{:?}", new_net.layers);
                     self = new_net;
                 }
             }
