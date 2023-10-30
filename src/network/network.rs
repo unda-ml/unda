@@ -162,18 +162,20 @@ impl<'a> Network{
         current.transpose().data[0].to_owned()
     }
 
-    pub fn back_propegate(&mut self, outputs: Vec<f32>, targets: Vec<f32>, mode: &Mode) -> Vec<f32>{
+    pub fn back_propegate(&mut self, outputs: Vec<f32>, targets: Vec<f32>, mode: &Mode, get_loss: bool) -> Vec<f32>{
         if targets.len() != self.layers[self.layers.len()-1] {
             panic!("Invalid number of targets found :(");
         }
         let mut parsed = Matrix::from(vec![outputs]).transpose();
 
         let mut layer_loss: Vec<f32> = vec![]; 
-        layer_loss = match mode{
-            Mode::Min => vec![f32::MAX; self.data.len()],
-            Mode::Max => vec![f32::MIN; self.data.len()],
-            Mode::Avg => vec![0.0; self.data.len()],
-        };
+        if get_loss{
+            layer_loss = match mode{
+                Mode::Min => vec![f32::MAX; self.data.len()],
+                Mode::Max => vec![f32::MIN; self.data.len()],
+                Mode::Avg => vec![0.0; self.data.len()],
+            };
+        }
         let mut errors = Matrix::from(vec![targets]).transpose() - &parsed;
 
         let mut gradients = parsed.map(self.activation.get_function().derivative);
@@ -185,12 +187,14 @@ impl<'a> Network{
             errors = self.weights[i].transpose() * (&errors);
 
             gradients = self.data[i].map(self.activation.get_function().derivative);
-            let loses = &errors.transpose().data[0];
-            layer_loss[i] = match mode{
-                Mode::Min => loses.iter().fold(f32::INFINITY, |prev, &post| prev.min(post)),
-                Mode::Max => loses.iter().fold(f32::MIN, |prev, &post| prev.max(post)),
-                Mode::Avg => loses.iter().sum::<f32>() / loses.len() as f32
-            };
+            if get_loss {
+                let loses = &errors.transpose().data[0];
+                layer_loss[i] = match mode{
+                    Mode::Min => loses.iter().fold(f32::INFINITY, |prev, &post| prev.min(post)),
+                    Mode::Max => loses.iter().fold(f32::MIN, |prev, &post| prev.max(post)),
+                    Mode::Avg => loses.iter().sum::<f32>() / loses.len() as f32
+                };
+            }
         }
         layer_loss
     }
@@ -279,49 +283,56 @@ impl<'a> Network{
             for j in 0..inputs.len(){
                 let outputs = self.feed_forward(&inputs[j]);
                 let mut running_num:f32 = 0.0;
-                for i in 0..outputs.len() {
-                    let accuracy_at_node:f32 = (targets[j][i] - outputs[i]).abs();//(1.0 + (&targets[place][i] - resp[i])).abs() / (1.0 + targets[place][i]).abs(); 
+                if i == epochs{
+                    for i in 0..outputs.len() {
+                        let accuracy_at_node:f32 = (targets[j][i] - outputs[i]).abs();//(1.0 + (&targets[place][i] - resp[i])).abs() / (1.0 + targets[place][i]).abs(); 
 
-                    inner_accuracy.push(accuracy_at_node);
-                    running_num = match mode{
-                        Mode::Avg => {
-                            if i == 0 {
-                                accuracy_at_node
-                            }else{
-                                ((running_num * (i as f32)) + accuracy_at_node) / i as f32 +1.0
-                            }
+                        inner_accuracy.push(accuracy_at_node);
+                        running_num = match mode{
+                            Mode::Avg => {
+                                if i == 0 {
+                                    accuracy_at_node
+                                }else{
+                                    ((running_num * (i as f32)) + accuracy_at_node) / i as f32 +1.0
+                                }
 
-                        },
-                        Mode::Min => running_num,
-                        Mode::Max => running_num
-                    };
-                }
-                accuracy = match mode {
-                    Mode::Avg => {
-                        if j == 0 {
-                            running_num
-                        }else{
-                            ((accuracy * (j as f32)) + running_num) / j as f32 +1.0
-                        }
-                    },
-                    Mode::Min => f32::min(accuracy, running_num),
-                    Mode::Max => f32::max(accuracy, running_num)
-                };
-                layer_loss = self.back_propegate(outputs, targets[j].clone(), mode);
-                for layer in 1..layer_loss.len()-1{
-                    layer_loss_avg[layer] = match mode{
+                            },
+                            Mode::Min => running_num,
+                            Mode::Max => running_num
+                        };
+                    }
+                    accuracy = match mode {
                         Mode::Avg => {
                             if j == 0 {
-                                layer_loss[layer]
+                                running_num
                             }else{
-                                ((layer_loss_avg[layer] * (j as f32)) + layer_loss[layer]) / j as f32 + 1.0
+                                ((accuracy * (j as f32)) + running_num) / j as f32 +1.0
                             }
-                        }
-                        Mode::Min => f32::min(layer_loss_avg[layer], layer_loss[layer]),
-                        Mode::Max => f32::max(layer_loss_avg[layer], layer_loss[layer])
+                        },
+                        Mode::Min => f32::min(accuracy, running_num),
+                        Mode::Max => f32::max(accuracy, running_num)
                     };
-   
+                    
                 }
+                if i == epochs{
+                    layer_loss = self.back_propegate(outputs, targets[j].clone(), mode, true);
+                    for layer in 1..layer_loss.len()-1{
+                        layer_loss_avg[layer] = match mode{
+                            Mode::Avg => {
+                                if j == 0 {
+                                    layer_loss[layer]
+                                }else{
+                                    ((layer_loss_avg[layer] * (j as f32)) + layer_loss[layer]) / j as f32 + 1.0
+                                }
+                            }
+                            Mode::Min => f32::min(layer_loss_avg[layer], layer_loss[layer]),
+                            Mode::Max => f32::max(layer_loss_avg[layer], layer_loss[layer])
+                        };
+                    }
+                } else{
+                    self.back_propegate(outputs, targets[j].clone(), mode, false);
+                }
+
             }
         }
         /*let val:f32 = match mode {
