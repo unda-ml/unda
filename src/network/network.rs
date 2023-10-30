@@ -293,7 +293,7 @@ impl<'a> Network{
                                 if i == 0 {
                                     accuracy_at_node
                                 }else{
-                                    ((running_num * (i as f32)) + accuracy_at_node) / i as f32 +1.0
+                                    ((running_num * (i as f32)) + accuracy_at_node) / i as f32
                                 }
 
                             },
@@ -306,7 +306,7 @@ impl<'a> Network{
                             if j == 0 {
                                 running_num
                             }else{
-                                ((accuracy * (j as f32)) + running_num) / j as f32 +1.0
+                                ((accuracy * (j as f32)) + running_num) / j as f32
                             }
                         },
                         Mode::Min => f32::min(accuracy, running_num),
