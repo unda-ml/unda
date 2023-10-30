@@ -279,7 +279,6 @@ impl<'a> Network{
         };
 
         for i in 1..=epochs{
-            println!("Epoch {} of {}", i, epochs);
             let mut inner_accuracy: Vec<f32> = vec![];
             for j in 0..inputs.len(){
                 let outputs = self.feed_forward(&inputs[j]);
@@ -377,7 +376,6 @@ impl<'a> Network{
         let mut layer_loss: Vec<f32>;
         let mut total_steps_taken: usize = 0;
         while loss > desired_loss {
-            println!("Enter train");
 
             //Train model for [steps_per] steps, then analyze accuracy
             (loss, layer_loss) = self.train(&inputs, &targets, steps_per, &accuracy_mode);
@@ -392,7 +390,6 @@ impl<'a> Network{
                 layer_loss.push(input_accuracy);
             }*/
             //let max_std_dev = std_dev_per_layer.iter().enumerate().fold(f64::MIN, |prev, (_, &post)| prev.max(post));
-            println!("{:?}", loss);
             
             if loss > desired_loss && (loss - loss_cache[loss_cache.len()-1]).abs() >= loss_threshold {
                 /*std_dev_per_layer.clear();
