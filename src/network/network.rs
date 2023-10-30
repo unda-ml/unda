@@ -162,13 +162,13 @@ impl<'a> Network{
         current.transpose().data[0].to_owned()
     }
 
-    pub fn back_propegate(&mut self, outputs: Vec<f32>, targets: Vec<f32>) -> Option<Vec<f32>> {
+    pub fn back_propegate(&mut self, outputs: Vec<f32>, targets: Vec<f32>) -> Vec<f32>{
         if targets.len() != self.layers[self.layers.len()-1] {
             panic!("Invalid number of targets found :(");
         }
         let mut parsed = Matrix::from(vec![outputs]).transpose();
-        //println!("{} {}",parsed.rows, parsed.columns);
-        
+
+        let mut layer_loss: Vec<f32> = vec![]; 
         let mut errors = Matrix::from(vec![targets]).transpose() - &parsed;
 
         let mut gradients = parsed.map(self.activation.get_function().derivative);
@@ -181,7 +181,7 @@ impl<'a> Network{
 
             gradients = self.data[i].map(self.activation.get_function().derivative);
         }
-        None
+        layer_loss
     }
     ///Does back propegation at every layer and caches the net loss found at each layer
     pub fn get_layer_loss(&mut self, outputs: Vec<f32>, targets: Vec<f32>, mode: &Mode) -> Vec<f32> {
@@ -246,22 +246,32 @@ impl<'a> Network{
             gradients = self.data[i].map(self.activation.get_function().derivative);
         }
     }
-    pub fn train(&mut self, inputs: Vec<Vec<f32>>, targets: Vec<Vec<f32>>, epochs: usize) {
+    pub fn train(&mut self, inputs: Vec<Vec<f32>>, targets: Vec<Vec<f32>>, epochs: usize, mode: &Mode) -> (f32, Vec<Vec<f32>>) {
+        let mut accuracies: Vec<f32> = vec![];
+        let mut layer_loss_avg: Vec<Vec<f32>> = vec![];
         for i in 1..=epochs{
-            if epochs < 1000 || i % (epochs/1000) == 0 {
-                //println!("Epoch {} of {}", i, epochs);
-            }
+            let mut inner_accuracy: Vec<f32> = vec![];
             for j in 0..inputs.len(){
                 let outputs = self.feed_forward(&inputs[j]);
-                self.back_propegate(outputs, targets[j].clone());
+                let mut running_num:f32 = 0.0;
+                for i in 0..outputs.len() {
+                    let accuracy_at_node:f32 = (targets[j][i] - outputs[i]).abs();//(1.0 + (&targets[place][i] - resp[i])).abs() / (1.0 + targets[place][i]).abs(); 
+                    inner_accuracy.push(accuracy_at_node);
+                    running_num = ((running_num * (i as f32 + 1.0)) + accuracy_at_node) / i as f32 +1.0;
+                    accuracies.push(running_num);
+                }
+                layer_loss_avg.push(self.back_propegate(outputs, targets[j].clone()));
             }
         }
+        let val:f32 = match mode {
+            Mode::Min => accuracies.iter().fold(f32::MAX, |prev, &post| prev.min(post)),
+            Mode::Max => accuracies.iter().fold(f32::MIN, |prev, &post| prev.max(post)),
+            Mode::Avg => accuracies.iter().sum::<f32>() / accuracies.len() as f32
+        };
+        (val, layer_loss_avg)
     }
     pub fn train_one_layer(&mut self, inputs: Vec<Vec<f32>>, targets: Vec<Vec<f32>>, epochs: usize, layer: usize) {
         for i in 1..=epochs{
-            if epochs < 1000 || i % (epochs/1000) == 0 {
-                //println!("Epoch {} of {}", i, epochs);
-            }
             for j in 0..inputs.len(){
                 let outputs = self.feed_forward(&inputs[j]);
                 self.back_propegate_one_layer(outputs, targets[j].clone(), layer);
@@ -289,37 +299,40 @@ impl<'a> Network{
 
     pub fn train_to_loss(mut self, inputs: Vec<Vec<f32>>, targets: Vec<Vec<f32>>, desired_loss: f32, steps_per: usize, accuracy_mode: Mode, loss_threshold: f32, min: usize, max: usize) -> Network{
         let mut rng = rand::thread_rng();
-        let mut accuracy_cache: Vec<f32> = vec![1.0];
-        let mut network_cache: Vec<Network> = vec![self.clone()];
+        let mut loss: f32 = 1.0;
+        let mut loss_cache: Vec<f32> = vec![];
+        let mut layer_loss: Vec<Vec<f32>>;
         let mut total_steps_taken: usize = 0;
-        while accuracy_cache[accuracy_cache.len()-1] > desired_loss {
+        let mut std_dev_per_layer: Vec<f32> = vec![];
+        while loss > desired_loss {
             //Train model for [steps_per] steps, then analyze accuracy
-            self.train(inputs.clone(), targets.clone(), steps_per);
+            (loss, layer_loss) = self.train(inputs.clone(), targets.clone(), steps_per, &accuracy_mode);
             total_steps_taken += steps_per;
-            let new_accuracy = self.get_loss(inputs.clone(), targets.clone(), &accuracy_mode);
-            let mut layer_loss: Vec<Vec<f32>> = vec![];
+            //let new_accuracy = self.get_loss(inputs.clone(), targets.clone(), &accuracy_mode);
+
+            /*let mut layer_loss: Vec<Vec<f32>> = vec![];
             for i in 0..inputs.len(){
                 let resp = self.feed_forward(&inputs[i]);
                 let targ = targets[i].clone();
                 let input_accuracy = self.get_layer_loss(resp, targ, &accuracy_mode);
                 layer_loss.push(input_accuracy);
-            }
-            let mut std_dev_per_layer: Vec<f32> = vec![];
-            for x in 0..layer_loss[0].len(){
-                let mut total: f32 = 0.0;
-                let mut all_vals: Vec<f32> = vec![];
-                for y in 0..layer_loss.len(){
-                    total += layer_loss[y][x];
-                    all_vals.push(layer_loss[y][x]);
-                }
-                let avg = total / layer_loss.len() as f32;
-                all_vals = all_vals.into_iter().map(|v| (avg - v).powf(2.0)).collect::<Vec<f32>>();
-                let std_dev = (all_vals.iter().sum::<f32>()).sqrt() / (all_vals.len()-1) as f32;
-                std_dev_per_layer.push(std_dev);
-            }
+            }*/
             //let max_std_dev = std_dev_per_layer.iter().enumerate().fold(f64::MIN, |prev, (_, &post)| prev.max(post));
-            println!("{:?}", new_accuracy);
-            if new_accuracy.1 > desired_loss {
+            
+            if loss > desired_loss && (loss - loss_cache[loss_cache.len()-1]).abs() >= loss_threshold {
+                std_dev_per_layer.clear();
+                for x in 0..layer_loss[0].len(){
+                    let mut total: f32 = 0.0;
+                    let mut all_vals: Vec<f32> = vec![];
+                    for y in 0..layer_loss.len(){
+                        total += layer_loss[y][x];
+                        all_vals.push(layer_loss[y][x]);
+                    }
+                    let avg = total / layer_loss.len() as f32;
+                    all_vals = all_vals.into_iter().map(|v| (avg - v).powf(2.0)).collect::<Vec<f32>>();
+                    let std_dev = (all_vals.iter().sum::<f32>()).sqrt() / (all_vals.len()-1) as f32;
+                    std_dev_per_layer.push(std_dev);
+                }
                 let max_std_dev = std_dev_per_layer.iter()
                     .enumerate()
                     .fold((0, f32::MIN), |(max_index, max_val), (i, &post)| {
@@ -339,12 +352,11 @@ impl<'a> Network{
                     self = new_net;
                 }
             }
-            accuracy_cache.push(new_accuracy.1);
-            self.loss = new_accuracy.1;
-            network_cache.push(self.clone());
+            //accuracy_cache.push(new_accuracy.1);
+            loss_cache.push(loss);
         }
         println!("Done in {} epochs", total_steps_taken);
-        network_cache[network_cache.len()-1].clone()
+        self
     }
     
     //Save and Load functions
