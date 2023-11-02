@@ -372,7 +372,7 @@ impl<'a> Network{
     pub fn train_to_loss(mut self, inputs: Vec<Vec<f32>>, targets: Vec<Vec<f32>>, desired_loss: f32, steps_per: usize, accuracy_mode: Mode, loss_threshold: f32, min: usize, max: usize) -> Network{
         let mut rng = rand::thread_rng();
         let mut loss: f32 = 1.0;
-        let mut loss_cache: Vec<f32> = vec![1.0];
+        let mut loss_cache: f32 = 1.0;
         let mut layer_loss: Vec<f32>;
         let mut total_steps_taken: usize = 0;
         while loss > desired_loss {
@@ -391,7 +391,7 @@ impl<'a> Network{
             }*/
             //let max_std_dev = std_dev_per_layer.iter().enumerate().fold(f64::MIN, |prev, (_, &post)| prev.max(post));
             
-            if loss > desired_loss && (loss - loss_cache[loss_cache.len()-1]).abs() >= loss_threshold {
+            if loss > desired_loss && (loss - loss_cache).abs() >= loss_threshold {
                 /*std_dev_per_layer.clear();
                 for x in 0..layer_loss[0].len(){
                     let mut total: f32 = 0.0;
@@ -414,6 +414,9 @@ impl<'a> Network{
                             (max_index, max_val)
                         }
                     });*/
+                if loss > loss_cache {
+
+                }
                 let max_loss = layer_loss.iter()
                     .enumerate()
                     .fold((0, f32::MIN), |(max_index, max_val), (i, &post)| {
@@ -433,7 +436,7 @@ impl<'a> Network{
                 }
             }
             //accuracy_cache.push(new_accuracy.1);
-            loss_cache.push(loss);
+            loss_cache = loss;
         }
         println!("Done in {} epochs", total_steps_taken);
         self

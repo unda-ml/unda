@@ -68,7 +68,7 @@ Upon testing Triton's self growth method against a traditional preconfigured net
 | ------------- | ------------- | ------------- |
 | Minimum  | 2 - { *3* } - 1  |  7,880,000 |
 | Well Fit  | 2 - { *3 - 4 - 3* } - 1 | 2,790,000  |
-| Triton  | 2 - { *self growing* } - 1 | 150,000  |
+| Triton  | 2 - { *self growing* } - 1 | 100,000  |
 
 Triton was 98.09% more efficient than the minimum fit model, and 94.62% more than even the well fit model.
 
@@ -79,7 +79,7 @@ Currently, triton is in a very beta stage, the following features are still in d
 
  - [ ]  Mutating a neural network (1/2)
     - [X]  Adding a new layer with ```n``` neurons into any point of an existent network
-    - [ ]  Removing a layer from an existent network
+    - [ ]  Removing a layer from an existent network **!!IN PROGRESS!!**
 - [X]  Back propegation only affecting a single column (allows for a newly added layer to 'catch up')
 - [X]  *Analysis* mode during back propegation allowing for all individual errors to be recorded
 - [X]  Updated training function
