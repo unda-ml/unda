@@ -369,10 +369,11 @@ impl<'a> Network{
         (accuracies, val)
     }
 
-    pub fn train_to_loss(mut self, inputs: Vec<Vec<f32>>, targets: Vec<Vec<f32>>, desired_loss: f32, steps_per: usize, accuracy_mode: Mode, loss_threshold: f32, min: usize, max: usize) -> Network{
+    pub fn train_to_loss(mut self, inputs: Vec<Vec<f32>>, targets: Vec<Vec<f32>>, desired_loss: f32, steps_per: usize, accuracy_mode: Mode, loss_threshold: f32, kill_thresh: f32, min: usize, max: usize) -> Network{
         let mut rng = rand::thread_rng();
         let mut loss: f32 = 1.0;
         let mut loss_cache: f32 = 1.0;
+        let mut most_recent_pos: usize = 0;
         let mut layer_loss: Vec<f32>;
         let mut total_steps_taken: usize = 0;
         while loss > desired_loss {
@@ -380,6 +381,7 @@ impl<'a> Network{
             //Train model for [steps_per] steps, then analyze accuracy
             (loss, layer_loss) = self.train(&inputs, &targets, steps_per, &accuracy_mode);
             total_steps_taken += steps_per;
+            println!("{}", loss);
             //let new_accuracy = self.get_loss(inputs.clone(), targets.clone(), &accuracy_mode);
 
             /*let mut layer_loss: Vec<Vec<f32>> = vec![];
@@ -390,33 +392,13 @@ impl<'a> Network{
                 layer_loss.push(input_accuracy);
             }*/
             //let max_std_dev = std_dev_per_layer.iter().enumerate().fold(f64::MIN, |prev, (_, &post)| prev.max(post));
-            
+            if (loss > loss_cache || loss_cache - loss >= kill_thresh) && most_recent_pos != 0{
+                println!("Removing layer at {}", most_recent_pos);
+                //TODO: Pop added layer by removing layer and padding layer on one side, shouldn't
+                //need to change anything with the one padding layer we keep because that's why
+                //padding exists!
+            }
             if loss > desired_loss && (loss - loss_cache).abs() >= loss_threshold {
-                /*std_dev_per_layer.clear();
-                for x in 0..layer_loss[0].len(){
-                    let mut total: f32 = 0.0;
-                    let mut all_vals: Vec<f32> = vec![];
-                    for y in 0..layer_loss.len(){
-                        total += layer_loss[y][x];
-                        all_vals.push(layer_loss[y][x]);
-                    }
-                    let avg = total / layer_loss.len() as f32;
-                    all_vals = all_vals.into_iter().map(|v| (avg - v).powf(2.0)).collect::<Vec<f32>>();
-                    let std_dev = (all_vals.iter().sum::<f32>()).sqrt() / (all_vals.len()-1) as f32;
-                    std_dev_per_layer.push(std_dev);
-                }
-                let max_std_dev = std_dev_per_layer.iter()
-                    .enumerate()
-                    .fold((0, f32::MIN), |(max_index, max_val), (i, &post)| {
-                        if post > max_val {
-                            (i, post)
-                        } else {
-                            (max_index, max_val)
-                        }
-                    });*/
-                if loss > loss_cache {
-
-                }
                 let max_loss = layer_loss.iter()
                     .enumerate()
                     .fold((0, f32::MIN), |(max_index, max_val), (i, &post)| {
@@ -429,11 +411,13 @@ impl<'a> Network{
                 if max_loss.1 > loss_threshold {
                     //Mutate self
                     let pos = max_loss.0;
+                    most_recent_pos = pos;
                     println!("Add a new layer at index {}", pos);
                     let mut new_net = Network::from(self.clone(), pos, rng.gen_range(min..=max));
                     new_net.train_one_layer(inputs.clone(), targets.clone(),total_steps_taken, pos+1);
                     self = new_net;
                 }
+
             }
             //accuracy_cache.push(new_accuracy.1);
             loss_cache = loss;
