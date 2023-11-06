@@ -16,8 +16,6 @@ or add the dependency directly in your **cargo.toml** file
 ```toml
 [dependencies]
 triton_grow = "{version}"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
 ```
 ## Usage
 
@@ -26,21 +24,23 @@ Triton acts as a typical neural network implementation, but allows for a more dy
 Triton will train and grow a desirable neural network until a specific accuracy is matched, returning the finished model
 
 ```rust
-use triton_grow::network::{network::Network, activations, modes::Mode};
+use triton_grow::network::{network::Network, activations::Activations, modes::Mode};
 
 fn main() {
-    let mut inputs = vec![vec![0.0,0.0],vec![1.0,0.0],vec![0.0,1.0],vec![1.0,1.0]];
-    let mut outputs = vec![vec![0.0],vec![1.0],vec![1.0],vec![0.0]];
-    let mut new_net: Network = Network::new(vec![2,3,1], activations::SIGMOID, 0.1);
+    let inputs = vec![vec![0.0,0.0],vec![1.0,0.0],vec![0.0,1.0],vec![1.0,1.0]];
+    let outputs: Vec<Vec<f32>> = vec![vec![0.0],vec![1.0],vec![1.0],vec![0.0]];
+    let mut new_net: Network = Network::new(vec![2,3,1], Activations::SIGMOID, 0.1);
+    //let mut new_net: Network = Network::load("/root/source/rust/triton/save/net.json");
     
-    new_net = new_net.train_to_loss(inputs, outputs, 0.001, 100000, Mode::Avg, 0.001, 3, 10);
-    println!("1 and 0: {:?}", new_net.feed_forward(&vec![1.0,0.0])[0].round());
-    println!("0 and 1: {:?}", new_net.feed_forward(&vec![0.0,1.0])[0].round());
-    println!("1 and 1: {:?}", new_net.feed_forward(&vec![1.0,1.0])[0].round());
-    println!("0 and 0: {:?}", new_net.feed_forward(&vec![0.0,0.0])[0].round());
-    println!("Net network made: {:?}", new_net.layers);
-
+    new_net = new_net.train_to_loss(inputs, outputs, 0.00005, 50000, Mode::Avg, 0.1, 0.0001, 3, 10);
+    println!("1 and 0: {:?}", new_net.feed_forward(&vec![1.0,0.0])[0]);
+    println!("0 and 1: {:?}", new_net.feed_forward(&vec![0.0,1.0])[0]);
+    println!("1 and 1: {:?}", new_net.feed_forward(&vec![1.0,1.0])[0]);
+    println!("0 and 0: {:?}", new_net.feed_forward(&vec![0.0,0.0])[0]);
+    println!("New network made: {:?}", new_net.layers);
+    new_net.save("/home/braden/source/rust/triton/save/net.json");
 }
+
 ```
 ## Proven Results
 
@@ -87,6 +87,7 @@ Currently, triton is in a very beta stage, the following features are still in d
     - [X]  Dynamic error analysis to allow for choosing if the network should grow or shrink
     - [X]  Acceptable threshold of +/- in the errors to allow for a less punishing learning process especially when a new neuron layer has been added
 - [X]  Model serialization (serde)
+- [ ] Accelerated matrix multiplication (Rayon or Cuda, or BOTH)
 
 ## License
 

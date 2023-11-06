@@ -369,7 +369,40 @@ impl<'a> Network{
         };
         (accuracies, val)
     }
-
+    ///Takes a current model and repeatedly trains and mutates upon a dataset until a certain loss
+    ///threshold has been met. Layers will be added and removed very conservatively as to prevent
+    ///overfitting
+    ///
+    ///# Arguments
+    ///
+    ///* `inputs` - A vector of all inputs
+    ///* `outputs` - A vector of the matching outputs
+    ///* `desired_loss` - The loss desired for the model to reach
+    ///* `steps_per` - How many epochs the model trains for between evaluating loss
+    ///* `accuracy mode` - Whether you want the Avg, Min, or Max error derived during analysis to
+    ///be used as loss model
+    ///* `loss_threshold` - The offness of loss between current and needed loss to actually develop
+    ///a new layer
+    ///* `kill_thresh` - The threshold between the current and previous loss needed to determine
+    ///that the last layer was blighted and needs to be removed
+    ///* `min` - The minimum amount of neurons added to a layer
+    ///* `max` - The maximum amount of neurons added to a layer
+    ///# Example
+    ///
+    ///```
+    ///fn main() {
+    ///    let inputs = vec![vec![0.0,0.0],vec![1.0,0.0],vec![0.0,1.0],vec![1.0,1.0]];
+    ///    let outputs: Vec<Vec<f32>> = vec![vec![0.0],vec![1.0],vec![1.0],vec![0.0]];
+    ///    let mut new_net: Network = Network::new(vec![2,3,1], Activations::SIGMOID, 0.1);
+    ///    let mut new_net: Network = Network::load("/root/source/rust/triton/save/net.json");
+    ///    new_net = new_net.train_to_loss(inputs, outputs, 0.00005, 50000, Mode::Avg, 0.1, 0.0001, 3, 10);
+    ///    println!("1 and 0: {:?}", new_net.feed_forward(&vec![1.0,0.0])[0]);
+    ///    println!("0 and 1: {:?}", new_net.feed_forward(&vec![0.0,1.0])[0]);
+    ///    println!("1 and 1: {:?}", new_net.feed_forward(&vec![1.0,1.0])[0]);
+    ///    println!("0 and 0: {:?}", new_net.feed_forward(&vec![0.0,0.0])[0]);
+    ///    println!("New network made: {:?}", new_net.layers);
+    ///}
+    ///```
     pub fn train_to_loss(mut self, inputs: Vec<Vec<f32>>, targets: Vec<Vec<f32>>, desired_loss: f32, steps_per: usize, accuracy_mode: Mode, loss_threshold: f32, kill_thresh: f32, min: usize, max: usize) -> Network{
         let mut rng = rand::thread_rng();
         let mut loss: f32 = 1.0;
