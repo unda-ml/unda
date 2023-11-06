@@ -393,11 +393,18 @@ impl<'a> Network{
                 layer_loss.push(input_accuracy);
             }*/
             //let max_std_dev = std_dev_per_layer.iter().enumerate().fold(f64::MIN, |prev, (_, &post)| prev.max(post));
-            if (loss > loss_cache || loss_cache - loss >= kill_thresh) && most_recent_pos != 0{
+            if (loss > loss_cache || loss_cache - loss <= kill_thresh) && most_recent_pos != 0{
                 println!("Removing layer at {}", most_recent_pos);
                 //TODO: Pop added layer by removing layer and padding layer on one side, shouldn't
                 //need to change anything with the one padding layer we keep because that's why
                 //padding exists!
+                self.data.remove(most_recent_pos); self.data.remove(most_recent_pos);
+
+                self.layers.remove(most_recent_pos); self.layers.remove(most_recent_pos);
+
+                self.weights.remove(most_recent_pos); self.biases.remove(most_recent_pos);
+
+                self.biases.remove(most_recent_pos); self.biases.remove(most_recent_pos);
             }
             if loss > desired_loss && (loss - loss_cache).abs() >= loss_threshold {
                 let max_loss = layer_loss.iter()
