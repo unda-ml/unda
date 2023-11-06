@@ -1,6 +1,9 @@
 use rand::{thread_rng, Rng};
 use serde::{Serialize, Deserialize};
 use std::ops;
+use ndarray::{Array2, Zip};
+use ndarray_rand::RandomExt;
+use rayon::prelude::*;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Matrix{
@@ -52,9 +55,30 @@ impl ops::Mul<&Matrix> for Matrix{
             panic!("Matrix multiplication is in invalid format");
         }
 
-        let mut res = Matrix::new_empty(self.rows, other.columns);                 
+        let self_arr: Array2<f32> = Array2::from_shape_fn((self.rows, self.columns), |(i, j)| self.data[i][j]);
+        let other_arr: Array2<f32> = Array2::from_shape_fn((other.rows, other.columns), |(i, j)| other.data[i][j]);
 
-        for i in 0..self.rows{
+        let result_arr = self_arr.dot(&other_arr);
+
+        let result_data: Vec<Vec<f32>> = result_arr.outer_iter().map(|row| row.to_vec()).collect();
+
+        Matrix {
+            rows: result_data.len(),
+            columns: result_data[0].len(),
+            data: result_data,
+        }
+
+        /*res.data.par_iter_mut().enumerate().for_each(|(i, row)| {
+            row.iter_mut().enumerate().for_each(|(j, cell)| {
+                *cell = self.data[i]
+                    .iter()
+                    .zip(other.data.iter().map(|r| &r[j]))
+                    .map(|(a, b)| a * b)
+                    .sum();
+            });
+        });
+        res*/
+        /*for i in 0..self.rows{
             for j in 0..other.columns{
                 let mut sum = 0.0;
                 for k in 0..self.columns{
@@ -63,7 +87,7 @@ impl ops::Mul<&Matrix> for Matrix{
                 res.data[i][j] = sum;
             }
         }
-        res
+        res*/
     }
 }
 

@@ -1,4 +1,5 @@
 use rand::Rng;
+use rayon::prelude::*;
 
 use super::{matrix::Matrix, activations::Activations, modes::Mode, helper::Serializer};
 use serde::{Serialize, Deserialize};
@@ -280,7 +281,7 @@ impl<'a> Network{
 
         for i in 1..=epochs{
             let mut inner_accuracy: Vec<f32> = vec![];
-            for j in 0..inputs.len(){
+            inputs.iter().enumerate().for_each(|(j, _)| {
                 let outputs = self.feed_forward(&inputs[j]);
                 let mut running_num:f32 = 0.0;
                 if i == epochs{
@@ -333,7 +334,7 @@ impl<'a> Network{
                     self.back_propegate(outputs, targets[j].clone(), mode, false);
                 }
 
-            }
+            });
         }
         /*let val:f32 = match mode {
             Mode::Min => accuracies.iter().fold(f32::MAX, |prev, &post| prev.min(post)),
