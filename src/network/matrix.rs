@@ -1,8 +1,7 @@
 use rand::{thread_rng, Rng};
+use ndarray::*;
 use serde::{Serialize, Deserialize};
 use std::ops;
-use ndarray::{Array2, Zip};
-use ndarray_rand::RandomExt;
 use rayon::prelude::*;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -13,10 +12,9 @@ pub struct Matrix{
 }
 
 impl ops::Add<&Matrix> for Matrix{
-    
     type Output = Matrix;
     fn add(self, other: &Matrix) -> Matrix {
-        if self.rows != other.rows || self.columns != other.columns{
+        /*if self.rows != other.rows || self.columns != other.columns{
             panic!("Error attempting to add two matrices with different dimensions");
         }
 
@@ -26,14 +24,15 @@ impl ops::Add<&Matrix> for Matrix{
                 res.data[i][j] = self.data[i][j] + other.data[i][j];
             }
         }
-        res
+        res*/
+        self.apply_elementwise(other, |a,b| a + b)
     }
 }
 impl ops::Sub<&Matrix> for Matrix{
     type Output = Matrix;
     
     fn sub(self, other: &Matrix) -> Matrix{
-        if self.rows != other.rows || self.columns != other.columns {
+        /*if self.rows != other.rows || self.columns != other.columns {
             panic!("Error attemtping to subtract two matrices with different dimesnsions");
         }
         let mut res = Matrix::new_empty(self.rows, self.columns);
@@ -43,7 +42,9 @@ impl ops::Sub<&Matrix> for Matrix{
                 res.data[i][j] = self.data[i][j] - other.data[i][j];
             }
         }
-        res
+        res*/
+
+        self.apply_elementwise(other, |a,b| a - b)
     }
 }
 
@@ -55,20 +56,8 @@ impl ops::Mul<&Matrix> for Matrix{
             panic!("Matrix multiplication is in invalid format");
         }
 
-        let self_arr: Array2<f32> = Array2::from_shape_fn((self.rows, self.columns), |(i, j)| self.data[i][j]);
-        let other_arr: Array2<f32> = Array2::from_shape_fn((other.rows, other.columns), |(i, j)| other.data[i][j]);
-
-        let result_arr = self_arr.dot(&other_arr);
-
-        let result_data: Vec<Vec<f32>> = result_arr.outer_iter().map(|row| row.to_vec()).collect();
-
-        Matrix {
-            rows: result_data.len(),
-            columns: result_data[0].len(),
-            data: result_data,
-        }
-
-        /*res.data.par_iter_mut().enumerate().for_each(|(i, row)| {
+        let mut res = Matrix::new_empty(self.rows, other.columns);
+        res.data.iter_mut().enumerate().for_each(|(i, row)| {
             row.iter_mut().enumerate().for_each(|(j, cell)| {
                 *cell = self.data[i]
                     .iter()
@@ -77,17 +66,7 @@ impl ops::Mul<&Matrix> for Matrix{
                     .sum();
             });
         });
-        res*/
-        /*for i in 0..self.rows{
-            for j in 0..other.columns{
-                let mut sum = 0.0;
-                for k in 0..self.columns{
-                    sum += self.data[i][k] * other.data[k][j];                    
-                }
-                res.data[i][j] = sum;
-            }
-        }
-        res*/
+        res
     }
 }
 
@@ -124,32 +103,42 @@ impl Matrix{
         }
         res
     }*/
-    pub fn dot_multiply(&mut self, other: &Matrix) -> Matrix {
-        if self.rows != other.rows || self.columns != self.columns{
-            panic!("Invalid matrix multiplaction, mismatched dimensions");
-        }
-        let mut res = Matrix::new_empty(self.rows, self.columns);
 
-        for i in 0..self.rows{
-            for j in 0..self.columns{
-                res.data[i][j] = self.data[i][j] * other.data[i][j];
-            }
-        }
-        res
+    fn as_ndarray(&self) -> Array2<f32> {
+        Array2::from_shape_fn((self.rows, self.columns), |(i, j)| self.data[i][j])
     }
-    /*pub fn subtract(&mut self, other: &Matrix) -> Matrix {
-        if self.rows != other.rows || self.columns != self.columns{
-            panic!("Invalid matrix subtraction, mismatched dimensions");
-        }
-        let mut res = Matrix::new_empty(self.rows, self.columns);
 
-        for i in 0..self.rows{
-            for j in 0..self.columns{
-                res.data[i][j] = self.data[i][j] - other.data[i][j];
-            }
+    fn apply_elementwise(&self, other: &Matrix, op: impl Fn(f32, f32) -> f32) -> Matrix {
+        if self.rows != other.rows || self.columns != other.columns {
+            panic!("Mismatched matrix dimensions");
         }
-        res
-    } */
+
+        let self_arr = self.as_ndarray();
+        let other_arr = other.as_ndarray();
+        let result_arr = Array2::from_shape_fn((self.rows, self.columns), |(i, j)| {
+            op(self_arr[[i, j]], other_arr[[i, j]])
+        });
+
+        Matrix::from_ndarray(&result_arr.view())
+    }
+
+    fn from_ndarray(arr: &ArrayView2<f32>) -> Matrix {
+        let rows = arr.shape()[0];
+        let columns = arr.shape()[1];
+        let data: Vec<Vec<f32>> = (0..rows)
+            .map(|i| (0..columns).map(|j| arr[[i, j]]).collect())
+            .collect();
+        Matrix {
+            rows,
+            columns,
+            data,
+        }
+    }
+
+    pub fn dot_multiply(&mut self, other: &Matrix) -> Matrix {
+        self.apply_elementwise(other, |a, b| a * b)
+    }
+    
     pub fn from(data: Vec<Vec<f32>>) -> Matrix {
         Matrix{
             rows: data.len(),
@@ -167,13 +156,9 @@ impl Matrix{
                      .collect())
     }
     pub fn transpose(&mut self) -> Matrix {
-        let mut res = Matrix::new_empty(self.columns, self.rows);
-        
-        for i in 0..self.rows{
-            for j in 0..self.columns{
-                res.data[j][i] = self.data[i][j];
-            }
-        }
-        res
+        let self_arr = self.as_ndarray();
+        let result_arr = self_arr.t();
+
+        Matrix::from_ndarray(&result_arr.view())
     }
 }
