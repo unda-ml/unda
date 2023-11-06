@@ -431,13 +431,13 @@ impl<'a> Network{
                 //TODO: Pop added layer by removing layer and padding layer on one side, shouldn't
                 //need to change anything with the one padding layer we keep because that's why
                 //padding exists!
-                self.data.remove(most_recent_pos); self.data.remove(most_recent_pos);
+                /*self.data.remove(most_recent_pos); self.data.remove(most_recent_pos);
 
                 self.layers.remove(most_recent_pos); self.layers.remove(most_recent_pos);
 
                 self.weights.remove(most_recent_pos); self.biases.remove(most_recent_pos);
 
-                self.biases.remove(most_recent_pos); self.biases.remove(most_recent_pos);
+                self.biases.remove(most_recent_pos); self.biases.remove(most_recent_pos);*/
             }
             if loss > desired_loss && (loss - loss_cache).abs() >= loss_threshold {
                 let max_loss = layer_loss.iter()
