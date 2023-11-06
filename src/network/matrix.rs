@@ -14,37 +14,14 @@ pub struct Matrix{
 impl ops::Add<&Matrix> for Matrix{
     type Output = Matrix;
     fn add(self, other: &Matrix) -> Matrix {
-        /*if self.rows != other.rows || self.columns != other.columns{
-            panic!("Error attempting to add two matrices with different dimensions");
-        }
-
-        let mut res = Matrix::new_empty(self.rows, self.columns);
-        for i in 0..res.rows{
-            for j in 0..res.columns{
-                res.data[i][j] = self.data[i][j] + other.data[i][j];
-            }
-        }
-        res*/
-        self.apply_elementwise(other, |a,b| a + b)
+       self.apply_elementwise(other, |a,b| a + b)
     }
 }
 impl ops::Sub<&Matrix> for Matrix{
     type Output = Matrix;
     
     fn sub(self, other: &Matrix) -> Matrix{
-        /*if self.rows != other.rows || self.columns != other.columns {
-            panic!("Error attemtping to subtract two matrices with different dimesnsions");
-        }
-        let mut res = Matrix::new_empty(self.rows, self.columns);
-    
-        for i in 0..self.rows{
-            for j in 0..self.columns{
-                res.data[i][j] = self.data[i][j] - other.data[i][j];
-            }
-        }
-        res*/
-
-        self.apply_elementwise(other, |a,b| a - b)
+       self.apply_elementwise(other, |a,b| a - b)
     }
 }
 
@@ -55,12 +32,15 @@ impl ops::Mul<&Matrix> for Matrix{
         if self.columns != other.rows{
             panic!("Matrix multiplication is in invalid format");
         }
+        //Do parallel matrix multiplication as to the Strassen algorithm
         self.par_multiply(other)
     }
 }
 
 impl Matrix{
-
+    ///Parralelized matrix multiplication with the Strassen algorithm.
+    ///Splits matrix into 4 chunks that are then subdivided even further recursively until each
+    ///beginning matrix is less than 64 in length or width
     fn par_multiply(&self, other: &Matrix) -> Matrix {
         assert_eq!(self.columns, other.rows);
 
@@ -119,7 +99,7 @@ impl Matrix{
 
         result
     }
-
+    ///Unparrallel Strassen implementation for matrix multipication
     fn multiply(&self, other: &Matrix) -> Matrix {
         assert_eq!(self.columns, other.rows);
 
@@ -216,19 +196,6 @@ impl Matrix{
         }
         res
     }
-
-    /*pub fn add(&mut self, other: &Matrix) -> Matrix {
-        if self.rows != other.rows || self.columns != other.columns {
-            panic!("Invalid matrix addition");
-        }
-        let mut res = Matrix::new_empty(self.rows, self.columns);
-        for i in 0..self.rows{
-            for j in 0..self.columns{
-                res.data[i][j] = self.data[i][j] + other.data[i][j];
-            }
-        }
-        res
-    }*/
 
     fn as_ndarray(&self) -> Array2<f32> {
         Array2::from_shape_fn((self.rows, self.columns), |(i, j)| self.data[i][j])
