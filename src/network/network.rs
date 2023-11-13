@@ -131,7 +131,7 @@ impl<'a> Network{
          self.data = vec![current.clone()];
 
          for i in 0..layer_to{
-             current = ((self.weights[i].clone()
+             current = (&(&self.weights[i]
                         * &current)
                         + &self.biases[i])
                         .map(self.activation.get_function().function);
@@ -147,7 +147,7 @@ impl<'a> Network{
         self.data = vec![current.clone()];
         
         for i in 0..self.layers.len()-1{
-            current = ((self.weights[i].clone()
+            current = (&(&self.weights[i]
                         * &current)
                         + &self.biases[i])
                         .map(self.activation.get_function().function);
@@ -165,7 +165,7 @@ impl<'a> Network{
         self.data = vec![current.clone()];
         
         for i in 0..self.layers.len()-1{
-            current = ((self.weights[i].clone()
+            current = (&(&self.weights[i]
                  * &current)
                  + &self.biases[i]) 
                 .map(self.activation.get_function().function);
@@ -188,15 +188,15 @@ impl<'a> Network{
                 Mode::Avg => vec![0.0; self.data.len()],
             };
         }
-        let mut errors = Matrix::from(vec![targets]).transpose() - &parsed;
+        let mut errors = &Matrix::from(vec![targets]).transpose() - &parsed;
 
         let mut gradients = parsed.map(self.activation.get_function().derivative);
         for i in (0..self.layers.len() - 1).rev() {
             gradients = gradients.dot_multiply(&errors).map(&|x| x * self.learning_rate);
-            self.weights[i] = self.weights[i].clone() + &(gradients.clone() * (&self.data[i].transpose()));
+            self.weights[i] = &self.weights[i] + &(&gradients * (&self.data[i].transpose()));
 
-            self.biases[i] = self.biases[i].clone() + &gradients;
-            errors = self.weights[i].transpose() * (&errors);
+            self.biases[i] = &self.biases[i] + &gradients;
+            errors = &self.weights[i].transpose() * (&errors);
 
             gradients = self.data[i].map(self.activation.get_function().derivative);
             if get_loss {
@@ -218,7 +218,7 @@ impl<'a> Network{
             panic!("Invalid number of targets found :(");
         }
         let mut parsed = Matrix::from(vec![outputs]).transpose();
-        let mut errors = Matrix::from(vec![targets]).transpose() - &parsed;
+        let mut errors = &Matrix::from(vec![targets]).transpose() - &parsed;
 
         let mut gradients = parsed.map(self.activation.get_function().derivative);
 
@@ -229,9 +229,9 @@ impl<'a> Network{
         for i in (1..self.layers.len()-1).rev() {
             gradients = gradients.dot_multiply(&errors).map(&|x| x * self.learning_rate);
 
-            errors = weights[i].transpose() * (&errors);
-            weights[i] = weights[i].clone() + &(gradients.clone() * (&self.data[i].transpose()));
-            biases[i] = biases[i].clone() + &gradients;
+            errors = &weights[i].transpose() * (&errors);
+            weights[i] = &weights[i] + &(&gradients * (&self.data[i].transpose()));
+            biases[i] = &biases[i] + &gradients;
             gradients = data[i].map(self.activation.get_function().derivative);
 
             let loses = &errors.transpose().data[0];
@@ -256,17 +256,17 @@ impl<'a> Network{
             panic!("Target column out of bounds or illegal column choice (input row or output row)");
         }
         let mut parsed = Matrix::from(vec![outputs]).transpose();
-        let mut errors = Matrix::from(vec![targets]).transpose() - &parsed;
+        let mut errors = &Matrix::from(vec![targets]).transpose() - &parsed;
 
         let mut gradients = parsed.map(self.activation.get_function().derivative);
         for i in (0..self.layers.len()-1).rev() {
             gradients = gradients.dot_multiply(&errors).map(&|x| x * self.learning_rate);
 
-            errors = self.weights[i].transpose() * (&errors);
+            errors = &self.weights[i].transpose() * (&errors);
             if i == column_target || i == column_target-1 || i == column_target+1 {
-                self.weights[i] = self.weights[i].clone() + &(gradients.clone() * (&self.data[i].transpose()));
+                self.weights[i] = &self.weights[i] + &(&gradients * (&self.data[i].transpose()));
 
-                self.biases[i] = self.biases[i].clone() + &gradients;
+                self.biases[i] = &self.biases[i] + &gradients;
             }
             if i == column_target -1 {
                 return;
@@ -282,17 +282,17 @@ impl<'a> Network{
             panic!("Target column out of bounds or illegal column choice (input row or output row)");
         }
         let mut parsed = Matrix::from(vec![outputs]).transpose();
-        let mut errors = Matrix::from(vec![targets]).transpose() - &parsed;
+        let mut errors = &Matrix::from(vec![targets]).transpose() - &parsed;
 
         let mut gradients = parsed.map(self.activation.get_function().derivative);
         for i in (0..self.layers.len()-1).rev() {
             gradients = gradients.dot_multiply(&errors).map(&|x| x * self.learning_rate);
 
-            errors = self.weights[i].transpose() * (&errors);
+            errors = &self.weights[i].transpose() * (&errors);
             if i == column_target {
-                self.weights[i] = self.weights[i].clone() + &(gradients.clone() * (&self.data[i].transpose()));
+                self.weights[i] = &self.weights[i] + &(&gradients * (&self.data[i].transpose()));
 
-                self.biases[i] = self.biases[i].clone() + &gradients;
+                self.biases[i] = &self.biases[i] + &gradients;
                 return; 
             }
             gradients = self.data[i].map(self.activation.get_function().derivative);
@@ -379,7 +379,7 @@ impl<'a> Network{
         };*/
         (accuracy, layer_loss_avg)
     }
-    pub fn train_one_layer_removal(&mut self, inputs: Vec<Vec<f32>>, targets: Vec<Vec<f32>>, epochs: usize, layer: usize) {
+    pub fn train_one_layer_removal(&mut self, inputs: &Vec<Vec<f32>>, targets: &Vec<Vec<f32>>, epochs: usize, layer: usize) {
         for i in 1..=epochs{
             for j in 0..inputs.len(){
                 let outputs = self.feed_forward(&inputs[j]);
@@ -387,7 +387,7 @@ impl<'a> Network{
             }
         }
     }
-    pub fn train_one_layer(&mut self, inputs: Vec<Vec<f32>>, targets: Vec<Vec<f32>>, epochs: usize, layer: usize) {
+    pub fn train_one_layer(&mut self, inputs: &Vec<Vec<f32>>, targets: &Vec<Vec<f32>>, epochs: usize, layer: usize) {
         for i in 1..=epochs{
             for j in 0..inputs.len(){
                 let outputs = self.feed_forward(&inputs[j]);
@@ -395,7 +395,7 @@ impl<'a> Network{
             }
         }
     }
-    pub fn get_loss(&mut self, inputs: Vec<Vec<f32>>, targets: Vec<Vec<f32>>, mode: &Mode) -> (Vec<f32>, f32){
+    pub fn get_loss(&mut self, inputs: &Vec<Vec<f32>>, targets: &Vec<Vec<f32>>, mode: &Mode) -> (Vec<f32>, f32){
         let mut accuracies: Vec<f32> = vec![];
         inputs.iter().enumerate().for_each(|(place, input)| {
             let mut inner_accuracy: Vec<f32> = vec![];
@@ -492,7 +492,7 @@ impl<'a> Network{
 
                 self.insert_at(most_recent_pos, layer_len);
 
-                self.train_one_layer_removal(inputs.clone(), targets.clone(), total_steps_taken, most_recent_pos);
+                self.train_one_layer_removal(&inputs, &targets, total_steps_taken, most_recent_pos);
                 most_recent_pos = 0;
             }
             if loss > desired_loss && (loss - loss_cache).abs() >= loss_threshold {
@@ -511,7 +511,7 @@ impl<'a> Network{
                     most_recent_pos = pos;
                     println!("Add a new layer at index {}", pos);
                     let mut new_net = Network::from(self.clone(), pos, rng.gen_range(min..=max));
-                    new_net.train_one_layer(inputs.clone(), targets.clone(),total_steps_taken, pos+1);
+                    new_net.train_one_layer(&inputs, &targets,total_steps_taken, pos+1);
                     self = new_net;
                 }
 
@@ -520,6 +520,7 @@ impl<'a> Network{
             loss_cache = loss;
         }
         println!("Done in {} epochs", total_steps_taken);
+        self.loss = loss_cache;
         self
     }
     
