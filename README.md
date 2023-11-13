@@ -77,7 +77,7 @@ Triton was 98.09% more efficient than the minimum fit model, and 94.62% more tha
 
 Currently, triton is in a very beta stage, the following features are still in development:
 
- - [X]  Mutating a neural network (1/2)
+ - [X]  Mutating a neural network (2/2)
     - [X]  Adding a new layer with ```n``` neurons into any point of an existent network
     - [X]  Removing a layer from an existent network **!!IN PROGRESS!!**
 - [X]  Back propegation only affecting a single column (allows for a newly added layer to 'catch up')

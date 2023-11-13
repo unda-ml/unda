@@ -300,7 +300,7 @@ dependencies = [
 
 [[package]]
 name = "triton_grow"
-version = "1.4.0"
+version = "1.4.1"
 dependencies = [
  "ndarray",
  "ndarray-rand",
