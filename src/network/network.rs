@@ -1,6 +1,6 @@
 use rand::Rng;
 
-use super::{matrix::Matrix, activations::Activations, modes::Mode};
+use super::{matrix_flat::Matrix, activations::Activations, modes::Mode};
 use serde::{Serialize, Deserialize};
 use serde_json::{to_string, from_str};
 use std::{
@@ -136,7 +136,7 @@ impl<'a> Network{
                         .map(self.activation.get_function().function);
              self.data.push(current.clone());
          }
-         current.transpose().data[0].to_owned()
+         current.transpose()[0].to_owned()
     }
     pub fn point_to_feed(&mut self, inputs_at_point: &Vec<f32>, layer_at: usize) -> Vec<f32> {
         if inputs_at_point.len() != self.layers[layer_at]{
@@ -152,7 +152,7 @@ impl<'a> Network{
                         .map(self.activation.get_function().function);
             self.data.push(current.clone());
         }
-        current.transpose().data[0].to_owned()
+        current.transpose()[0].to_owned()
     }
 
     pub fn feed_forward(&mut self, inputs: &Vec<f32>) -> Vec<f32> {
@@ -170,7 +170,7 @@ impl<'a> Network{
                 .map(self.activation.get_function().function);
             self.data.push(current.clone());
         }
-        current.transpose().data[0].to_owned()
+        current.transpose()[0].to_owned()
     }
 
     pub fn back_propegate(&mut self, outputs: Vec<f32>, targets: Vec<f32>, mode: &Mode, get_loss: bool) -> Vec<f32>{
@@ -199,7 +199,7 @@ impl<'a> Network{
 
             gradients = self.data[i].map(self.activation.get_function().derivative);
             if get_loss {
-                let loses = &errors.transpose().data[0];
+                let loses = &errors.transpose()[0];
                 layer_loss[i] = match mode{
                     Mode::Min => loses.iter().fold(f32::INFINITY, |prev, &post| prev.min(post)),
                     Mode::Max => loses.iter().fold(f32::MIN, |prev, &post| prev.max(post)),
@@ -233,7 +233,7 @@ impl<'a> Network{
             biases[i] = &biases[i] + &gradients;
             gradients = data[i].map(self.activation.get_function().derivative);
 
-            let loses = &errors.transpose().data[0];
+            let loses = &errors.transpose()[0];
             let val = match mode{
                 Mode::Min => loses.iter().fold(f32::INFINITY, |prev, &post| prev.min(post)),
                 Mode::Max => loses.iter().fold(f32::MIN, |prev, &post| prev.max(post)),
