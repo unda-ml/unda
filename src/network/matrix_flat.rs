@@ -12,6 +12,20 @@ pub struct Matrix{
     pub data: Vec<f32>
 }
 
+#[derive(Debug)]
+pub struct CMatrix{
+    pub rows: i32,
+    pub col: i32,
+    pub data: * const f32,
+    pub len: i32
+}
+
+impl CMatrix{
+    pub fn new(rows: usize, cols: usize, data: &Vec<f32>) -> CMatrix{
+        CMatrix { rows: rows as i32, col: cols as i32, data: data.as_ptr(), len: data.len() as i32 }
+    }
+}
+
 impl Index<usize> for Matrix {
     type Output = [f32];
 
@@ -32,7 +46,7 @@ impl IndexMut<usize> for Matrix {
 impl ops::Add<&Matrix> for &Matrix{
     type Output = Matrix;
     fn add(self, other: &Matrix) -> Matrix {
-       self.apply_elementwise(other, |a,b| a + b)
+        self.apply_elementwise(other, |a,b| a + b)
     }
 }
 impl ops::Sub<&Matrix> for &Matrix{
@@ -56,6 +70,9 @@ impl ops::Mul<&Matrix> for &Matrix{
 }
 
 impl Matrix{
+    fn to_cmatrix(&self) -> CMatrix {
+        CMatrix::new(self.rows, self.columns, &self.data)
+    }
     ///Parralelized matrix multiplication with the Strassen algorithm.
     ///Splits matrix into 4 chunks that are then subdivided even further recursively until each
     ///beginning matrix is less than 64 in length or width
