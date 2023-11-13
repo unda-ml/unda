@@ -51,6 +51,17 @@ impl<'a> Network{
         }
         net
     }
+    pub fn insert_at(&mut self, newlayer_pos: usize, newlayer_len: usize){
+        if !(newlayer_pos > 0 && newlayer_pos < self.layers.len()){
+            panic!("Attempting to add a new layer in an invalid slot [out of bounds, input layer, output layer]");
+        }
+        self.layers.insert(newlayer_pos,newlayer_len);
+        
+
+        self.weights.insert(newlayer_pos ,Matrix::new_random(self.layers[newlayer_pos+1], self.layers[newlayer_pos]));
+        self.biases.insert(newlayer_pos, Matrix::new_random(self.layers[newlayer_pos+1], 1));
+
+    }
     ///Creates a neural network from one network, but splices in a new column for dynamic growth
     ///At column {newlayer_pos}, insert a new layer. The layer initially at that spot is randomized
     ///for its matrices and spliced in two, acting as a wrapper around the new layer
@@ -256,8 +267,33 @@ impl<'a> Network{
                 self.weights[i] = self.weights[i].clone() + &(gradients.clone() * (&self.data[i].transpose()));
 
                 self.biases[i] = self.biases[i].clone() + &gradients;
-                break;
- 
+            }
+            if i == column_target -1 {
+                return;
+            }
+            gradients = self.data[i].map(self.activation.get_function().derivative);
+        }
+    }
+    pub fn back_propegate_one_layer_removal(&mut self, outputs: Vec<f32>, targets: Vec<f32>, column_target: usize){
+        if targets.len() != self.layers[self.layers.len()-1] {
+            panic!("Invalid number of targets found :(");
+        }
+        if column_target < 1 && self.layers.len() >= column_target{
+            panic!("Target column out of bounds or illegal column choice (input row or output row)");
+        }
+        let mut parsed = Matrix::from(vec![outputs]).transpose();
+        let mut errors = Matrix::from(vec![targets]).transpose() - &parsed;
+
+        let mut gradients = parsed.map(self.activation.get_function().derivative);
+        for i in (0..self.layers.len()-1).rev() {
+            gradients = gradients.dot_multiply(&errors).map(&|x| x * self.learning_rate);
+
+            errors = self.weights[i].transpose() * (&errors);
+            if i == column_target {
+                self.weights[i] = self.weights[i].clone() + &(gradients.clone() * (&self.data[i].transpose()));
+
+                self.biases[i] = self.biases[i].clone() + &gradients;
+                return; 
             }
             gradients = self.data[i].map(self.activation.get_function().derivative);
         }
@@ -343,6 +379,14 @@ impl<'a> Network{
         };*/
         (accuracy, layer_loss_avg)
     }
+    pub fn train_one_layer_removal(&mut self, inputs: Vec<Vec<f32>>, targets: Vec<Vec<f32>>, epochs: usize, layer: usize) {
+        for i in 1..=epochs{
+            for j in 0..inputs.len(){
+                let outputs = self.feed_forward(&inputs[j]);
+                self.back_propegate_one_layer_removal(outputs, targets[j].clone(), layer);
+            }
+        }
+    }
     pub fn train_one_layer(&mut self, inputs: Vec<Vec<f32>>, targets: Vec<Vec<f32>>, epochs: usize, layer: usize) {
         for i in 1..=epochs{
             for j in 0..inputs.len(){
@@ -426,18 +470,30 @@ impl<'a> Network{
                 layer_loss.push(input_accuracy);
             }*/
             //let max_std_dev = std_dev_per_layer.iter().enumerate().fold(f64::MIN, |prev, (_, &post)| prev.max(post));
-            if (loss > loss_cache || loss_cache - loss <= kill_thresh) && most_recent_pos != 0{
+            if (loss > loss_cache || loss_cache - loss <= kill_thresh) && most_recent_pos != 0 && self.layers.len() > 5 {
                 println!("Removing layer at {}", most_recent_pos);
-                //TODO: Pop added layer by removing layer and padding layer on one side, shouldn't
-                //need to change anything with the one padding layer we keep because that's why
-                //padding exists!
-                /*self.data.remove(most_recent_pos); self.data.remove(most_recent_pos);
+                let layer_len = self.layers[most_recent_pos];
+                
+                self.data.remove(most_recent_pos);
+                self.data.remove(most_recent_pos);
+                self.data.remove(most_recent_pos);
 
-                self.layers.remove(most_recent_pos); self.layers.remove(most_recent_pos);
+                self.layers.remove(most_recent_pos);
+                self.layers.remove(most_recent_pos);
+                self.layers.remove(most_recent_pos);
 
-                self.weights.remove(most_recent_pos); self.biases.remove(most_recent_pos);
+                self.weights.remove(most_recent_pos);
+                self.weights.remove(most_recent_pos);
+                self.weights.remove(most_recent_pos);
 
-                self.biases.remove(most_recent_pos); self.biases.remove(most_recent_pos);*/
+                self.biases.remove(most_recent_pos);
+                self.biases.remove(most_recent_pos);
+                self.biases.remove(most_recent_pos);
+
+                self.insert_at(most_recent_pos, layer_len);
+
+                self.train_one_layer_removal(inputs.clone(), targets.clone(), total_steps_taken, most_recent_pos);
+                most_recent_pos = 0;
             }
             if loss > desired_loss && (loss - loss_cache).abs() >= loss_threshold {
                 let max_loss = layer_loss.iter()
