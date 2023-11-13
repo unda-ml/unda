@@ -1,6 +1,6 @@
 [package]
 name = "triton_grow"
-version = "1.4.2"
+version = "1.4.3"
 authors = ["BradenEverson"]
 description = "A self sustaining growing neural net that can repair itself until reaching a desired accuracy"
 edition = "2021"

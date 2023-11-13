@@ -1,9 +1,8 @@
 use rand::Rng;
-use rayon::prelude::*;
 
-use super::{matrix::Matrix, activations::Activations, modes::Mode, helper::Serializer};
+use super::{matrix::Matrix, activations::Activations, modes::Mode};
 use serde::{Serialize, Deserialize};
-use serde_json::{to_string, json, from_str};
+use serde_json::{to_string, from_str};
 use std::{
     fs::File,
     io::{Read,Write},
@@ -450,7 +449,7 @@ impl<'a> Network{
     pub fn train_to_loss(mut self, inputs: Vec<Vec<f32>>, targets: Vec<Vec<f32>>, desired_loss: f32, steps_per: usize, accuracy_mode: Mode, loss_threshold: f32, kill_thresh: f32, min: usize, max: usize) -> Network{
         let mut rng = rand::thread_rng();
         let mut loss: f32 = 1.0;
-        let mut loss_cache: f32 = 1.0;
+        let mut loss_cache: f32 = f32::MAX;
         let mut most_recent_pos: usize = 0;
         let mut layer_loss: Vec<f32>;
         let mut total_steps_taken: usize = 0;
@@ -495,6 +494,7 @@ impl<'a> Network{
                 self.train_one_layer_removal(&inputs, &targets, total_steps_taken, most_recent_pos);
                 most_recent_pos = 0;
             }
+
             if loss > desired_loss && (loss - loss_cache).abs() >= loss_threshold {
                 let max_loss = layer_loss.iter()
                     .enumerate()
@@ -514,7 +514,6 @@ impl<'a> Network{
                     new_net.train_one_layer(&inputs, &targets,total_steps_taken, pos+1);
                     self = new_net;
                 }
-
             }
             //accuracy_cache.push(new_accuracy.1);
             loss_cache = loss;
