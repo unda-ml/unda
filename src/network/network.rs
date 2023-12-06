@@ -1,6 +1,7 @@
 use rand::Rng;
 
 use super::{matrix_flat::Matrix, activations::Activations, modes::Mode};
+use super::input::Input;
 use serde::{Serialize, Deserialize};
 use serde_json::{to_string, from_str};
 use std::{
@@ -55,7 +56,7 @@ impl<'a> Network{
             panic!("Attempting to add a new layer in an invalid slot [out of bounds, input layer, output layer]");
         }
         self.layers.insert(newlayer_pos,newlayer_len);
-        
+
 
         self.weights.insert(newlayer_pos ,Matrix::new_random(self.layers[newlayer_pos+1], self.layers[newlayer_pos]));
         self.biases.insert(newlayer_pos, Matrix::new_random(self.layers[newlayer_pos+1], 1));
@@ -96,7 +97,7 @@ impl<'a> Network{
                 new_net.layers.push(network_from.layers[i]);
             }
         }
-        
+
         for i in 0..network_from.layers.len() - 1 {
 
             if i == newlayer_pos {
@@ -119,24 +120,25 @@ impl<'a> Network{
         }
         new_net
     }
-    pub fn feed_to_point(&mut self, inputs: &Vec<f32>, layer_to: usize) -> Vec<f32>{
-         if inputs.len() != self.layers[0]{
-             panic!("Invalid numer of inputs");
-         }
-         if layer_to >= self.layers.len(){
-             panic!("To destination is larger than network size");
-         }
-         let mut current = Matrix::from(vec![inputs.clone()]).transpose();
-         self.data = vec![current.clone()];
+    pub fn feed_to_point<Param: Input>(&mut self, input_obj: &Param, layer_to: usize) -> Vec<f32>{
+        let inputs: Vec<f32> = input_obj.to_param();
+        if inputs.len() != self.layers[0]{
+            panic!("Invalid numer of inputs");
+        }
+        if layer_to >= self.layers.len(){
+            panic!("To destination is larger than network size");
+        }
+        let mut current = Matrix::from(vec![inputs.clone()]).transpose();
+        self.data = vec![current.clone()];
 
-         for i in 0..layer_to{
-             current = (&(&self.weights[i]
-                        * &current)
-                        + &self.biases[i])
-                        .map(self.activation.get_function().function);
-             self.data.push(current.clone());
-         }
-         current.transpose()[0].to_owned()
+        for i in 0..layer_to{
+            current = (&(&self.weights[i]
+                         * &current)
+                       + &self.biases[i])
+                .map(self.activation.get_function().function);
+            self.data.push(current.clone());
+        }
+        current.transpose()[0].to_owned()
     }
     pub fn point_to_feed(&mut self, inputs_at_point: &Vec<f32>, layer_at: usize) -> Vec<f32> {
         if inputs_at_point.len() != self.layers[layer_at]{
@@ -144,36 +146,38 @@ impl<'a> Network{
         }
         let mut current = Matrix::from(vec![inputs_at_point.clone()]).transpose();
         self.data = vec![current.clone()];
-        
-        for i in 0..self.layers.len()-1{
-            current = (&(&self.weights[i]
-                        * &current)
-                        + &self.biases[i])
-                        .map(self.activation.get_function().function);
-            self.data.push(current.clone());
-        }
-        current.transpose()[0].to_owned()
-    }
 
-    pub fn feed_forward(&mut self, inputs: &Vec<f32>) -> Vec<f32> {
-        if inputs.len() != self.layers[0] {
-            panic!("Invalid number of inputs");
-        }
-         
-        let mut current = Matrix::from(vec![inputs.clone()]).transpose();
-        self.data = vec![current.clone()];
-        
         for i in 0..self.layers.len()-1{
             current = (&(&self.weights[i]
-                 * &current)
-                 + &self.biases[i]) 
+                         * &current)
+                       + &self.biases[i])
                 .map(self.activation.get_function().function);
             self.data.push(current.clone());
         }
         current.transpose()[0].to_owned()
     }
 
-    pub fn back_propegate(&mut self, outputs: Vec<f32>, targets: Vec<f32>, mode: &Mode, get_loss: bool) -> Vec<f32>{
+    pub fn feed_forward<Param: Input>(&mut self, input_obj: &Param) -> Vec<f32> {
+        let inputs = input_obj.to_param();
+        if inputs.len() != self.layers[0] {
+            panic!("Invalid number of inputs");
+        }
+
+        let mut current = Matrix::from(vec![inputs.clone()]).transpose();
+        self.data = vec![current.clone()];
+
+        for i in 0..self.layers.len()-1{
+            current = (&(&self.weights[i]
+                         * &current)
+                       + &self.biases[i]) 
+                .map(self.activation.get_function().function);
+            self.data.push(current.clone());
+        }
+        current.transpose()[0].to_owned()
+    }
+
+    pub fn back_propegate<Param: Input>(&mut self, outputs: Vec<f32>, target_obj: &Param, mode: &Mode, get_loss: bool) -> Vec<f32>{
+        let targets = target_obj.to_param();
         if targets.len() != self.layers[self.layers.len()-1] {
             panic!("Invalid number of targets found :(");
         }
@@ -210,9 +214,10 @@ impl<'a> Network{
         layer_loss
     }
     ///Does back propegation at every layer and caches the net loss found at each layer
-    pub fn get_layer_loss(&mut self, outputs: Vec<f32>, targets: Vec<f32>, mode: &Mode) -> Vec<f32> {
+    pub fn get_layer_loss<Param: Input>(&mut self, outputs: Vec<f32>, target_obj: &Param, mode: &Mode) -> Vec<f32> {
+        let targets = target_obj.to_param();
         let mut response: Vec<f32> = vec![0.0; self.layers.len()-2];
-        
+
         if targets.len() != self.layers[self.layers.len()-1] {
             panic!("Invalid number of targets found :(");
         }
@@ -247,7 +252,8 @@ impl<'a> Network{
     }
     ///Performs back propegation only on a specified layer and the layers around it. This is
     ///especially important for 'catching up' when a new layer is dynamically added.
-    pub fn back_propegate_one_layer(&mut self, outputs: Vec<f32>, targets: Vec<f32>, column_target: usize){
+    pub fn back_propegate_one_layer<Param: Input>(&mut self, outputs: Vec<f32>, target_obj: &Param, column_target: usize){
+        let targets = target_obj.to_param();
         if targets.len() != self.layers[self.layers.len()-1] {
             panic!("Invalid number of targets found :(");
         }
@@ -273,7 +279,8 @@ impl<'a> Network{
             gradients = self.data[i].map(self.activation.get_function().derivative);
         }
     }
-    pub fn back_propegate_one_layer_removal(&mut self, outputs: Vec<f32>, targets: Vec<f32>, column_target: usize){
+    pub fn back_propegate_one_layer_removal<Param: Input>(&mut self, outputs: Vec<f32>, target_obj: &Param, column_target: usize){
+        let targets = target_obj.to_param();
         if targets.len() != self.layers[self.layers.len()-1] {
             panic!("Invalid number of targets found :(");
         }
@@ -297,7 +304,7 @@ impl<'a> Network{
             gradients = self.data[i].map(self.activation.get_function().derivative);
         }
     }
-    pub fn train(&mut self, inputs: &Vec<Vec<f32>>, targets: &Vec<Vec<f32>>, epochs: usize, mode: &Mode) -> (f32, Vec<f32>) {
+    pub fn train<Param: Input + Clone>(&mut self, inputs: &Vec<Param>, targets: &Vec<Vec<f32>>, epochs: usize, mode: &Mode) -> (f32, Vec<f32>) {
         let mut accuracy: f32 = match mode {
             Mode::Min => f32::MAX,
             Mode::Max => f32::MIN,
@@ -321,7 +328,7 @@ impl<'a> Network{
                 let mut running_num:f32 = 0.0;
                 if i == epochs{
                     for i in 0..outputs.len() {
-                        let accuracy_at_node:f32 = (targets[j][i] - outputs[i]).abs();//(1.0 + (&targets[place][i] - resp[i])).abs() / (1.0 + targets[place][i]).abs(); 
+                        let accuracy_at_node:f32 = (targets[j].to_param()[i] - outputs[i]).abs();//(1.0 + (&targets[place][i] - resp[i])).abs() / (1.0 + targets[place][i]).abs(); 
 
                         inner_accuracy.push(accuracy_at_node);
                         running_num = match mode{
@@ -348,10 +355,10 @@ impl<'a> Network{
                         Mode::Min => f32::min(accuracy, running_num),
                         Mode::Max => f32::max(accuracy, running_num)
                     };
-                    
+
                 }
                 if i == epochs{
-                    layer_loss = self.back_propegate(outputs, targets[j].clone(), mode, true);
+                    layer_loss = self.back_propegate(outputs, &targets[j].clone(), mode, true);
                     for layer in 1..layer_loss.len()-1{
                         layer_loss_avg[layer] = match mode{
                             Mode::Avg => {
@@ -366,31 +373,31 @@ impl<'a> Network{
                         };
                     }
                 } else{
-                    self.back_propegate(outputs, targets[j].clone(), mode, false);
+                    self.back_propegate(outputs, &targets[j].clone(), mode, false);
                 }
 
             });
         }
         /*let val:f32 = match mode {
-            Mode::Min => accuracies.iter().fold(f32::MAX, |prev, &post| prev.min(post)),
-            Mode::Max => accuracies.iter().fold(f32::MIN, |prev, &post| prev.max(post)),
-            Mode::Avg => accuracies.iter().sum::<f32>() / accuracies.len() as f32
-        };*/
+          Mode::Min => accuracies.iter().fold(f32::MAX, |prev, &post| prev.min(post)),
+          Mode::Max => accuracies.iter().fold(f32::MIN, |prev, &post| prev.max(post)),
+          Mode::Avg => accuracies.iter().sum::<f32>() / accuracies.len() as f32
+          };*/
         (accuracy, layer_loss_avg)
     }
-    pub fn train_one_layer_removal(&mut self, inputs: &Vec<Vec<f32>>, targets: &Vec<Vec<f32>>, epochs: usize, layer: usize) {
+    pub fn train_one_layer_removal<Param: Input + Clone>(&mut self, inputs: &Vec<Param>, targets: &Vec<Vec<f32>>, epochs: usize, layer: usize) {
         for i in 1..=epochs{
             for j in 0..inputs.len(){
                 let outputs = self.feed_forward(&inputs[j]);
-                self.back_propegate_one_layer_removal(outputs, targets[j].clone(), layer);
+                self.back_propegate_one_layer_removal(outputs, &targets[j].clone(), layer);
             }
         }
     }
-    pub fn train_one_layer(&mut self, inputs: &Vec<Vec<f32>>, targets: &Vec<Vec<f32>>, epochs: usize, layer: usize) {
+    pub fn train_one_layer<Param: Input + Clone>(&mut self, inputs: &Vec<Param>, targets: &Vec<Vec<f32>>, epochs: usize, layer: usize) {
         for i in 1..=epochs{
             for j in 0..inputs.len(){
                 let outputs = self.feed_forward(&inputs[j]);
-                self.back_propegate_one_layer(outputs, targets[j].clone(), layer);
+                self.back_propegate_one_layer(outputs, &targets[j].clone(), layer);
             }
         }
     }
@@ -446,7 +453,7 @@ impl<'a> Network{
     ///    println!("New network made: {:?}", new_net.layers);
     ///}
     ///```
-    pub fn train_to_loss(mut self, inputs: Vec<Vec<f32>>, targets: Vec<Vec<f32>>, desired_loss: f32, steps_per: usize, accuracy_mode: Mode, loss_threshold: f32, kill_thresh: f32, min: usize, max: usize) -> Network{
+    pub fn train_to_loss<Param: Input + Clone>(mut self, inputs: Vec<Param>, targets: Vec<Vec<f32>>, desired_loss: f32, steps_per: usize, accuracy_mode: Mode, loss_threshold: f32, kill_thresh: f32, min: usize, max: usize) -> Network{
         let mut rng = rand::thread_rng();
         let mut loss: f32 = 1.0;
         let mut loss_cache: f32 = f32::MAX;
@@ -462,17 +469,17 @@ impl<'a> Network{
             //let new_accuracy = self.get_loss(inputs.clone(), targets.clone(), &accuracy_mode);
 
             /*let mut layer_loss: Vec<Vec<f32>> = vec![];
-            for i in 0..inputs.len(){
-                let resp = self.feed_forward(&inputs[i]);
-                let targ = targets[i].clone();
-                let input_accuracy = self.get_layer_loss(resp, targ, &accuracy_mode);
-                layer_loss.push(input_accuracy);
-            }*/
+              for i in 0..inputs.len(){
+              let resp = self.feed_forward(&inputs[i]);
+              let targ = targets[i].clone();
+              let input_accuracy = self.get_layer_loss(resp, targ, &accuracy_mode);
+              layer_loss.push(input_accuracy);
+              }*/
             //let max_std_dev = std_dev_per_layer.iter().enumerate().fold(f64::MIN, |prev, (_, &post)| prev.max(post));
             if (loss > loss_cache || loss_cache - loss <= kill_thresh) && most_recent_pos != 0 && self.layers.len() > 5 {
                 println!("Removing layer at {}", most_recent_pos);
                 let layer_len = self.layers[most_recent_pos];
-                
+
                 self.data.remove(most_recent_pos);
                 self.data.remove(most_recent_pos);
                 self.data.remove(most_recent_pos);
@@ -522,7 +529,7 @@ impl<'a> Network{
         self.loss = loss_cache;
         self
     }
-    
+
     //Save and Load functions
     pub fn save(&self, path: &'a str) {
         let mut file = File::create(path).expect("Unable to hit save file :(");
