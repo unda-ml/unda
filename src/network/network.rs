@@ -401,7 +401,7 @@ impl<'a> Network{
             }
         }
     }
-    pub fn get_loss(&mut self, inputs: &Vec<Vec<f32>>, targets: &Vec<Vec<f32>>, mode: &Mode) -> (Vec<f32>, f32){
+    pub fn get_loss<Param: Input + Clone>(&mut self, inputs: &Vec<Param>, targets: &Vec<Vec<f32>>, mode: &Mode) -> (Vec<f32>, f32){
         let mut accuracies: Vec<f32> = vec![];
         inputs.iter().enumerate().for_each(|(place, input)| {
             let mut inner_accuracy: Vec<f32> = vec![];
@@ -427,6 +427,8 @@ impl<'a> Network{
     ///
     ///* `inputs` - A vector of all inputs
     ///* `outputs` - A vector of the matching outputs
+    ///* `test` - An optional tuple containing a param vector and a result vector for if error
+    ///analysis should be done with an additional testing clause to prevent overfitting
     ///* `desired_loss` - The loss desired for the model to reach
     ///* `steps_per` - How many epochs the model trains for between evaluating loss
     ///* `accuracy mode` - Whether you want the Avg, Min, or Max error derived during analysis to
@@ -445,7 +447,7 @@ impl<'a> Network{
     ///    let outputs: Vec<Vec<f32>> = vec![vec![0.0],vec![1.0],vec![1.0],vec![0.0]];
     ///    let mut new_net: Network = Network::new(vec![2,3,1], Activations::SIGMOID, 0.1);
     ///    let mut new_net: Network = Network::load("/root/source/rust/triton/save/net.json");
-    ///    new_net = new_net.train_to_loss(inputs, outputs, 0.00005, 50000, Mode::Avg, 0.1, 0.0001, 3, 10);
+    ///    new_net = new_net.train_to_loss(inputs, outputs, None, 0.00005, 50000, Mode::Avg, 0.1, 0.0001, 3, 10);
     ///    println!("1 and 0: {:?}", new_net.feed_forward(&vec![1.0,0.0])[0]);
     ///    println!("0 and 1: {:?}", new_net.feed_forward(&vec![0.0,1.0])[0]);
     ///    println!("1 and 1: {:?}", new_net.feed_forward(&vec![1.0,1.0])[0]);
@@ -453,17 +455,31 @@ impl<'a> Network{
     ///    println!("New network made: {:?}", new_net.layers);
     ///}
     ///```
-    pub fn train_to_loss<Param: Input + Clone>(mut self, inputs: Vec<Param>, targets: Vec<Vec<f32>>, desired_loss: f32, steps_per: usize, accuracy_mode: Mode, loss_threshold: f32, kill_thresh: f32, min: usize, max: usize) -> Network{
+    pub fn train_to_loss<Param: Input + Clone>(mut self, inputs: Vec<Param>, targets: Vec<Vec<f32>>, test: Option<(Vec<Param>, Vec<Vec<f32>>)>, desired_loss: f32, steps_per: usize, accuracy_mode: Mode, loss_threshold: f32, kill_thresh: f32, min: usize, max: usize) -> Network{
         let mut rng = rand::thread_rng();
         let mut loss: f32 = 1.0;
         let mut loss_cache: f32 = f32::MAX;
         let mut most_recent_pos: usize = 0;
         let mut layer_loss: Vec<f32>;
         let mut total_steps_taken: usize = 0;
+        let mut input_test: Vec<Param>;
+        let mut output_test: Vec<Vec<f32>>;
+
+        if let Some(test_items) = &test{
+            input_test = test_items.0.clone();
+            output_test = test_items.1.clone();
+        }else{
+            input_test = inputs.clone();
+            output_test = targets.clone();
+        }
+
         while loss > desired_loss {
 
             //Train model for [steps_per] steps, then analyze accuracy
             (loss, layer_loss) = self.train(&inputs, &targets, steps_per, &accuracy_mode);
+            if let Some(_) = &test{
+                (_, loss) = self.get_loss(&input_test, &output_test, &accuracy_mode);
+            }
             total_steps_taken += steps_per;
             println!("{}", loss);
             //let new_accuracy = self.get_loss(inputs.clone(), targets.clone(), &accuracy_mode);
@@ -503,11 +519,12 @@ impl<'a> Network{
             }
 
             if loss > desired_loss && (loss - loss_cache).abs() >= loss_threshold {
+                layer_loss.remove(0);
                 let max_loss = layer_loss.iter()
                     .enumerate()
                     .fold((0, f32::MIN), |(max_index, max_val), (i, &post)| {
                         if post > max_val {
-                            (i, post)
+                            (i + 1, post)
                         } else {
                             (max_index, max_val)
                         }
