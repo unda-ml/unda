@@ -1,6 +1,6 @@
 use super::layer::layers::{Layer, LayerTypes};
 use super::{matrix::Matrix, activations::Activations, modes::Mode};
-use super::input::{Input};
+use super::input::Input;
 
 pub struct Network {
     pub layer_sizes: Vec<usize>,
@@ -84,7 +84,8 @@ impl Network{
         
         let mut data_at: Matrix = Matrix::from(vec![inputs.clone()]).transpose();
         for i in 0..self.layers.len(){
-            data_at = self.layers[i].forward(&data_at);
+            let data_in: Box<dyn Input> = Box::new(data_at);
+            data_at = Matrix::from(self.layers[i].forward(&data_in).to_param_2d());
         }
         data_at.transpose().data[0].to_owned()
     }
