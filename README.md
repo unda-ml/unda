@@ -27,8 +27,8 @@ Triton will train and grow a desirable neural network until a specific accuracy 
 use triton_grow::network::{network::Network, activations::Activations, modes::Mode, layer::layers::LayerTypes};
 
 fn main() {
-    let inputs = vec![vec![0.0,0.0],vec![1.0,0.0],vec![0.0,1.0], vec![1.0,1.0]];
-    let outputs: Vec<Vec<f32>> = vec![vec![0.0],vec![1.0],vec![1.0], vec![0.0]];
+    let inputs: Vec<Box<dyn Input>> = vec![vec![0.0,0.0].into(),vec![1.0,0.0].into(),vec![0.0,1.0].into(), vec![1.0,1.0].into()];
+    let outputs: Vec<Box<dyn Input>> = vec![vec![0.0].into(),vec![1.0].into(),vec![1.0].into(), vec![0.0].into()];
 
     let mut new_net = Network::new();
 

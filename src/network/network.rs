@@ -131,7 +131,7 @@ impl Network{
             self.layers[i+1].set_bias(new_bias);
         }
     }
-    fn implicit_back_propegation(&mut self, mut target_matrix: Matrix, mut gradients: Matrix, mut errors: Matrix) -> (Matrix, Matrix, Matrix, Matrix){
+    fn implicit_back_propegation(&mut self, target_matrix: Matrix, mut gradients: Matrix, mut errors: Matrix) -> (Matrix, Matrix, Matrix, Matrix){
         let mut new_weights: Matrix = Matrix::new_random(0, 0);
         let mut new_bias: Matrix = Matrix::new_random(0, 0);
         for i in (0..self.layers.len() - 1).rev() {
@@ -202,7 +202,6 @@ impl Layer for Network{
         self.implicit_back_propegation(inputs.clone(), gradients.clone(), errors.clone())
     }
 
-
     fn shape(&self) -> (usize,usize,usize) {
         self.layers[0].shape()
     }
@@ -213,10 +212,10 @@ impl Layer for Network{
         self.layers[0].set_bias(new_bias)
     }
     fn get_cols(&self) -> usize {
-        self.layers[0].get_cols()
+        self.layers[self.layers.len() - 1].get_cols()
     }
     fn get_rows(&self) -> usize {
-        self.layers[0].get_rows()
+        self.layers[self.layers.len() - 1].get_rows()
     }
     fn get_bias(&self) -> Matrix {
         self.layers[0].get_bias()

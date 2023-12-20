@@ -7,7 +7,7 @@ pub struct Activation<'a>{
     pub derivative: &'a dyn Fn(f32) -> f32
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Copy, Serialize, Deserialize)]
 pub enum Activations{
     SIGMOID,
     TANH,
