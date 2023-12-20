@@ -1,7 +1,9 @@
 use crate::network::{input::Input, matrix::Matrix, activations::Activations};
+use serde::{Serialize, Deserialize};
 
 use super::dense::Dense;
 
+#[typetag::serde]
 pub trait Layer{
     fn forward(&mut self, inputs: &Box<dyn Input>) -> Box<dyn Input> {
         Box::new(Matrix::new_random(0,0))
@@ -19,6 +21,7 @@ pub trait Layer{
     fn shape(&self) -> (usize,usize,usize);
 }
 
+#[derive(Serialize, Deserialize)]
 pub enum LayerTypes{
     //DENSE: Nodes, Activation Function, Learning Rate
     DENSE(usize, Activations, f32),

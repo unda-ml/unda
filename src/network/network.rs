@@ -1,7 +1,15 @@
 use super::layer::layers::{Layer, LayerTypes};
-use super::{matrix::Matrix, activations::Activations, modes::Mode};
+use super::{matrix::Matrix, modes::Mode};
 use super::input::Input;
+use serde::{Serialize, Deserialize};
 
+use serde_json::{to_string, from_str};
+use std::{
+    fs::File,
+    io::{Read,Write},
+};
+
+#[derive(Serialize, Deserialize)]
 pub struct Network {
     pub layer_sizes: Vec<usize>,
     pub loss: f32,
@@ -99,9 +107,9 @@ impl Network{
         if targets.len() != self.layer_sizes[self.layer_sizes.len()-1]{
             panic!("Output size does not match network output size");
         }
-        let mut parsed = Matrix::from(vec![outputs]).transpose();
+        let mut parsed = Matrix::from(outputs.to_param_2d()).transpose();
         
-        let mut errors = Matrix::from(vec![targets.clone()]) - &parsed; 
+        let mut errors = Matrix::from(targets.to_param_2d()) - &parsed; 
         
         if let None = self.layers[self.layers.len()-1].get_activation() {
             panic!("Output layer is not a dense layer");
@@ -109,8 +117,8 @@ impl Network{
 
         let mut gradients = parsed.map(self.layers[self.layers.len()-1].get_activation().unwrap().get_function().derivative);
         let target_matrix = Matrix::from(vec![targets.clone()]);
-        let mut new_weights = Matrix::new_random(0,0);
-        let mut new_bias = Matrix::new_random(0,0);
+        let mut new_weights: Matrix;
+        let mut new_bias: Matrix;
         for i in (0..self.layers.len() - 1).rev() {
             let layers_prev = self.layers[i+1].get_weights();
             let bias_prev = self.layers[i+1].get_bias();
@@ -139,5 +147,19 @@ impl Network{
             }
         }
         println!("Trained");
+    }
+    pub fn save(&self, path: &str) {
+        let mut file = File::create(path).expect("Unable to hit save file :(");
+        let file_ser = to_string(self).expect("Unable to serialize network :(((");
+        file.write_all(file_ser.to_string().as_bytes()).expect("Write failed :(");
+    }
+    pub fn load(path: &str) -> Network{
+        let mut buffer = String::new();
+        let mut file = File::open(path).expect("Unable to read file :(");
+
+        file.read_to_string(&mut buffer).expect("Unable to read file but even sadder :(");
+
+        let net: Network = from_str(&buffer).expect("Json was not formatted well >:(");
+        net
     }
 }

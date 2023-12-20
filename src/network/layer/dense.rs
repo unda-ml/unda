@@ -1,10 +1,12 @@
 use crate::network::{matrix::Matrix, activations::{Activation, Activations}, input::Input};
 
 use super::layers::Layer;
+use serde::{Deserialize, Serialize};
 
 ///A Dense Neural Network Layer of a model, containing just nodes, weights, biases and an
 ///activation function
 ///Implements the Layer trait
+#[derive(Serialize, Deserialize)]
 pub struct Dense{
     pub weights: Matrix,   
     pub biases: Matrix,
@@ -20,6 +22,7 @@ impl Dense{
     }
 }
 
+#[typetag::serde]
 impl Layer for Dense{
     ///Moves the DNN forward through the weights and biases of this current layer
     ///Maps an activation function and then returns the resultant Matrix

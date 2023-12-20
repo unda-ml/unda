@@ -1,7 +1,8 @@
 use rand::{thread_rng, Rng};
 use std::ops;
+use serde::{Serialize, Deserialize};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Matrix{
     pub rows: usize,
     pub columns: usize,

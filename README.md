@@ -24,23 +24,32 @@ Triton acts as a typical neural network implementation, but allows for a more dy
 Triton will train and grow a desirable neural network until a specific accuracy is matched, returning the finished model
 
 ```rust
-use triton_grow::network::{network::Network, activations::Activations, modes::Mode};
+use triton_grow::network::{network::Network, activations::Activations, modes::Mode, layer::layers::LayerTypes};
 
 fn main() {
-    let inputs = vec![vec![0.0,0.0],vec![1.0,0.0],vec![0.0,1.0],vec![1.0,1.0]];
-    let outputs: Vec<Vec<f32>> = vec![vec![0.0],vec![1.0],vec![1.0],vec![0.0]];
-    let mut new_net: Network = Network::new(vec![2,3,1], Activations::SIGMOID, 0.1);
-    //let mut new_net: Network = Network::load("/root/source/rust/triton/save/net.json");
+    let inputs = vec![vec![0.0,0.0],vec![1.0,0.0],vec![0.0,1.0], vec![1.0,1.0]];
+    let outputs: Vec<Vec<f32>> = vec![vec![0.0],vec![1.0],vec![1.0], vec![0.0]];
+
+    let mut new_net = Network::new();
+
+    new_net.add_layer(LayerTypes::DENSE(2, Activations::SIGMOID, 0.01));
+    new_net.add_layer(LayerTypes::DENSE(3, Activations::SIGMOID, 0.01));
+    new_net.add_layer(LayerTypes::DENSE(2, Activations::SIGMOID, 0.01));
+    new_net.add_layer(LayerTypes::DENSE(3, Activations::SIGMOID, 0.01));
+    new_net.add_layer(LayerTypes::DENSE(1, Activations::SIGMOID, 0.01));
+
+    new_net.compile();
+
+    new_net.fit(inputs, outputs, 100);
+
+    //let mut new_net = Network::load("best_network.json");
     
-    new_net = new_net.train_to_loss(inputs, outputs, 0.00005, 50000, Mode::Avg, 0.1, 0.0001, 3, 10);
     println!("1 and 0: {:?}", new_net.feed_forward(&vec![1.0,0.0])[0]);
     println!("0 and 1: {:?}", new_net.feed_forward(&vec![0.0,1.0])[0]);
     println!("1 and 1: {:?}", new_net.feed_forward(&vec![1.0,1.0])[0]);
     println!("0 and 0: {:?}", new_net.feed_forward(&vec![0.0,0.0])[0]);
-    println!("New network made: {:?}", new_net.layers);
-    new_net.save("/home/braden/source/rust/triton/save/net.json");
+    new_net.save("best_network.json");
 }
-
 ```
 ## Proven Results
 

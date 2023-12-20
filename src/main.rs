@@ -15,9 +15,12 @@ fn main() {
     new_net.compile();
 
     new_net.fit(inputs, outputs, 100);
+
+    //let mut new_net = Network::load("best_network.json");
     
     println!("1 and 0: {:?}", new_net.feed_forward(&vec![1.0,0.0])[0]);
     println!("0 and 1: {:?}", new_net.feed_forward(&vec![0.0,1.0])[0]);
     println!("1 and 1: {:?}", new_net.feed_forward(&vec![1.0,1.0])[0]);
     println!("0 and 0: {:?}", new_net.feed_forward(&vec![0.0,0.0])[0]);
+    new_net.save("best_network.json");
 }
