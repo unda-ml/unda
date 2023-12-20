@@ -44,3 +44,10 @@ impl Input for Matrix {
         (self.rows, self.columns, 0)
     }
 }
+
+
+impl Into<Box<dyn Input>> for Vec<f32> {
+    fn into(self) -> Box<dyn Input> {
+        Box::new(self)
+    }
+}

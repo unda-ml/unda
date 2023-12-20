@@ -62,6 +62,10 @@ impl Network{
         //println!("{:?}", self.layer_sizes);
 
     }
+    pub fn predict(&mut self, input: Vec<f32>) -> Vec<f32>{
+        let in_box: Box<dyn Input> = Box::new(input);
+        self.feed_forward(&in_box)
+    }
     ///Travels through a neural network's abstracted Layers and returns the resultant vector at the
     ///end
     ///
@@ -84,7 +88,7 @@ impl Network{
     ///
     ///let res = new_net.feed_forward(vec![1.0, 0.54]);
     ///```
-    pub fn feed_forward<Param: Input>(&mut self, input_obj: &Param) -> Vec<f32> {
+    fn feed_forward(&mut self, input_obj: &Box<dyn Input>) -> Vec<f32> {
 
         if input_obj.shape().0 != self.layers[0].shape().1{
             panic!("Input shape does not match input layer shape \nInput: {:?}\nInput Layer:{:?}", input_obj.shape(), self.layers[0].shape());
@@ -102,7 +106,7 @@ impl Network{
     ///bias updating is different as well
     ///
     ///When constructing a neural network, be cautious that your layers behave well with each other
-    fn back_propegate<Param: Input>(&mut self, outputs: Vec<f32>, target_obj: &Param) {
+    fn back_propegate(&mut self, outputs: Vec<f32>, target_obj: &Box<dyn Input>) {
         let targets = target_obj.to_param();
         if targets.len() != self.layer_sizes[self.layer_sizes.len()-1]{
             panic!("Output size does not match network output size");
@@ -127,6 +131,19 @@ impl Network{
             self.layers[i+1].set_bias(new_bias);
         }
     }
+    fn implicit_back_propegation(&mut self, mut target_matrix: Matrix, mut gradients: Matrix, mut errors: Matrix) -> (Matrix, Matrix, Matrix, Matrix){
+        let mut new_weights: Matrix = Matrix::new_random(0, 0);
+        let mut new_bias: Matrix = Matrix::new_random(0, 0);
+        for i in (0..self.layers.len() - 1).rev() {
+            let layers_prev = self.layers[i+1].get_weights();
+            let bias_prev = self.layers[i+1].get_bias();
+            (new_bias, new_weights, gradients, errors) = self.layers[i].backward(&target_matrix, &gradients, &errors, &layers_prev, &bias_prev);
+            self.layers[i+1].set_weights(new_weights.clone());
+            self.layers[i+1].set_bias(new_bias.clone());
+        }
+
+        (new_bias, new_weights, gradients, errors)
+    }
     ///Trains a neural network by iteratively feeding forward a series of inputs and then doing
     ///back propegation based on the outputs supplied
     ///
@@ -137,7 +154,7 @@ impl Network{
     ///compared to what is actually derived during back propegation
     ///* `epochs` - How many epochs you want your model training for
     ///
-    pub fn fit<Param: Input>(&mut self, train_in: Vec<Param>, train_out: Vec<Param>, epochs: usize){
+    pub fn fit(&mut self, train_in: Vec<Box<dyn Input>>, train_out: Vec<Box<dyn Input>>, epochs: usize){
         let mut loss: f32 = 0.0;
         for _ in 0..epochs {
             for _ in 0..ITERATIONS_PER_EPOCH{
@@ -171,5 +188,46 @@ impl Network{
 
         let net: Network = from_str(&buffer).expect("Json was not formatted well >:(");
         net
+    }
+}
+
+#[typetag::serde]
+impl Layer for Network{
+
+    fn forward(&mut self,inputs: &Box<dyn Input>) -> Box<dyn Input> {
+        Box::new(self.feed_forward(inputs))
+    }
+
+    fn backward(&mut self,inputs: &Matrix,gradients: &Matrix,errors: &Matrix,layer_prev: &Matrix,layer_prev_bias: &Matrix) -> (Matrix,Matrix,Matrix,Matrix) {
+        self.implicit_back_propegation(inputs.clone(), gradients.clone(), errors.clone())
+    }
+
+
+    fn shape(&self) -> (usize,usize,usize) {
+        self.layers[0].shape()
+    }
+    fn set_weights(&mut self,new_weights:Matrix) {
+        self.layers[0].set_weights(new_weights)
+    }
+    fn set_bias(&mut self,new_bias:Matrix) {
+        self.layers[0].set_bias(new_bias)
+    }
+    fn get_cols(&self) -> usize {
+        self.layers[0].get_cols()
+    }
+    fn get_rows(&self) -> usize {
+        self.layers[0].get_rows()
+    }
+    fn get_bias(&self) -> Matrix {
+        self.layers[0].get_bias()
+    }
+    fn get_loss(&self) -> f32 {
+        self.loss
+    }
+    fn get_weights(&self) -> Matrix {
+        self.layers[0].get_weights()
+    }
+    fn get_activation(&self) -> Option<super::activations::Activations> {
+        self.layers[0].get_activation()
     }
 }
