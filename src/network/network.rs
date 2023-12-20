@@ -77,17 +77,16 @@ impl Network{
     ///let res = new_net.feed_forward(vec![1.0, 0.54]);
     ///```
     pub fn feed_forward<Param: Input>(&mut self, input_obj: &Param) -> Vec<f32> {
-        let inputs = input_obj.to_param();
-        if inputs.len() != self.layer_sizes[0] {
-            panic!("Invalid number of inputs");
+
+        if input_obj.shape().0 != self.layers[0].shape().1{
+            panic!("Input shape does not match input layer shape \nInput: {:?}\nInput Layer:{:?}", input_obj.shape(), self.layers[0].shape());
         }
-        
-        let mut data_at: Matrix = Matrix::from(vec![inputs.clone()]).transpose();
+
+        let mut data_at: Box<dyn Input> = Box::new(input_obj.to_param());
         for i in 0..self.layers.len(){
-            let data_in: Box<dyn Input> = Box::new(data_at);
-            data_at = Matrix::from(self.layers[i].forward(&data_in).to_param_2d());
+            data_at = self.layers[i].forward(&data_at);
         }
-        data_at.transpose().data[0].to_owned()
+        data_at.to_param().to_owned()
     }
     ///Travels backwards through a neural network and updates weights and biases accordingly
     ///

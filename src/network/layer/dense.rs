@@ -24,10 +24,10 @@ impl Layer for Dense{
     ///Moves the DNN forward through the weights and biases of this current layer
     ///Maps an activation function and then returns the resultant Matrix
     fn forward(&mut self, inputs: &Box<dyn Input>) -> Box<dyn Input> {
-        self.data = (self.weights.clone() * &Matrix::from(inputs.to_param_2d()) + &self.biases)
+        self.data = (self.weights.clone() * &Matrix::from(inputs.to_param_2d()).transpose() + &self.biases)
             .map(self.activation_fn.get_function().function);
 
-        Box::new(self.data.clone())
+        Box::new(self.data.clone().transpose())
     }
     ///Does Back Propegation according to simple Dense network rules
     ///Finds the error of the previous layer and returns what the updated weights and biases should
@@ -61,5 +61,8 @@ impl Layer for Dense{
     }
     fn get_activation(&self) -> Option<Activations> {
         Some(self.activation_fn.clone())
+    }
+    fn shape(&self) -> (usize, usize, usize){
+        (self.get_rows(), self.get_cols(), 0)
     }
 }

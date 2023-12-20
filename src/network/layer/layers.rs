@@ -16,6 +16,7 @@ pub trait Layer{
     fn get_activation(&self) -> Option<Activations> {
         None
     }
+    fn shape(&self) -> (usize,usize,usize);
 }
 
 pub enum LayerTypes{
