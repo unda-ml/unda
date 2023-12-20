@@ -14,7 +14,7 @@ pub struct Network {
     pub layer_sizes: Vec<usize>,
     pub loss: f32,
     pub layers: Vec<Box<dyn Layer>>,
-    uncompiled_layers: Vec<LayerTypes>
+    uncompiled_layers: Vec<LayerTypes>,
 }
 
 const ITERATIONS_PER_EPOCH: usize = 10000;
@@ -138,15 +138,25 @@ impl Network{
     ///* `epochs` - How many epochs you want your model training for
     ///
     pub fn fit<Param: Input>(&mut self, train_in: Vec<Param>, train_out: Vec<Param>, epochs: usize){
+        let mut loss: f32 = 0.0;
         for _ in 0..epochs {
             for _ in 0..ITERATIONS_PER_EPOCH{
                 for input in 0..train_in.len(){
-                 let outputs = self.feed_forward(&train_in[input]);
-                 self.back_propegate(outputs, &train_out[input])
+                    let mut loss_on_input: f32 = 0.0;
+                    let outputs = self.feed_forward(&train_in[input]);
+                    self.back_propegate(outputs.clone(), &train_out[input]);
+                    for i in 0..outputs.len(){
+                        loss_on_input += (outputs[i] - train_out[input].to_param()[i]).powi(2);
+                    }
+                    loss += loss_on_input / outputs.len() as f32;
                 }
             }
         }
-        println!("Trained");
+        self.loss = loss / (epochs * ITERATIONS_PER_EPOCH * train_out.len()) as f32;
+        println!("Trained to a loss of {:.2}%", self.loss * 100.0);
+        for i in 0..self.layers.len()-1{
+            println!("Error on layer {}: +/- {:.2}", i+1, self.layers[i].get_loss());
+        }
     }
     pub fn save(&self, path: &str) {
         let mut file = File::create(path).expect("Unable to hit save file :(");

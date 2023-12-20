@@ -19,6 +19,7 @@ pub trait Layer{
         None
     }
     fn shape(&self) -> (usize,usize,usize);
+    fn get_loss(&self) -> f32;
 }
 
 #[derive(Serialize, Deserialize)]
