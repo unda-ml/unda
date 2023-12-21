@@ -13,6 +13,7 @@ use std::{
 pub struct Network {
     pub layer_sizes: Vec<usize>,
     pub loss: f32,
+    loss_train: Vec<f32>,
     pub layers: Vec<Box<dyn Layer>>,
     uncompiled_layers: Vec<LayerTypes>,
 }
@@ -31,9 +32,20 @@ impl Network{
             layer_sizes: vec![],
             loss: 1.0,
             layers: vec![],
-            uncompiled_layers: vec![]
+            uncompiled_layers: vec![],
+            loss_train: vec![]
         }
     } 
+    pub fn get_layer_loss(&self) -> Vec<(f32, f32)> {
+        let mut res: Vec<(f32, f32)> = vec![];
+        for i in 0..self.layers.len() - 1{
+            res.push(((i) as f32, self.layers[i].get_loss()));
+        }
+        res
+    }
+    pub fn get_loss_history(&self) -> Vec<f32> {
+        self.loss_train.clone()
+    }
     ///Adds a new Layer to the queue of a neural network
     ///
     ///# Arguments
@@ -155,8 +167,10 @@ impl Network{
     ///* `epochs` - How many epochs you want your model training for
     ///
     pub fn fit(&mut self, train_in: Vec<Box<dyn Input>>, train_out: Vec<Box<dyn Input>>, epochs: usize){
+        self.loss_train = vec![];
         let mut loss: f32 = 0.0;
         for _ in 0..epochs {
+            loss = 0.0;
             for _ in 0..ITERATIONS_PER_EPOCH{
                 for input in 0..train_in.len(){
                     let mut loss_on_input: f32 = 0.0;
@@ -168,8 +182,10 @@ impl Network{
                     loss += loss_on_input / outputs.len() as f32;
                 }
             }
+            self.loss_train.push(loss / (ITERATIONS_PER_EPOCH * train_out.len()) as f32);
+            
         }
-        self.loss = loss / (epochs * ITERATIONS_PER_EPOCH * train_out.len()) as f32;
+        self.loss = self.loss_train[self.loss_train.len()-1];
         println!("Trained to a loss of {:.2}%", self.loss * 100.0);
         for i in 0..self.layers.len()-1{
             println!("Error on layer {}: +/- {:.2}", i+1, self.layers[i].get_loss());
