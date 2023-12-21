@@ -13,6 +13,7 @@ pub trait Input{
     fn shape(&self) -> (usize, usize, usize){
         (0,0,0)
     }
+    fn to_box(&self) -> Box<dyn Input>;
 }
 
 impl Input for Vec<f32>{
@@ -28,6 +29,27 @@ impl Input for Vec<f32>{
     fn shape(&self) -> (usize, usize, usize) {
         (self.len(), 1, 0)
     }
+    fn to_box(&self) -> Box<dyn Input> {
+        Box::new(self.to_param())
+    }
+}
+
+impl Input for Vec<Vec<f32>> {
+    fn to_param(&self) -> Vec<f32> {
+        self.clone().into_iter().flatten().collect::<Vec<f32>>()
+    }
+    fn to_param_2d(&self) -> Vec<Vec<f32>> {
+        self.clone()
+    }
+    fn to_param_3d(&self) -> Vec<Vec<Vec<f32>>> {
+        vec![self.clone()]
+    }
+    fn shape(&self) -> (usize, usize, usize) {
+        (self.len(), self[0].len(), 0)
+    }
+    fn to_box(&self) -> Box<dyn Input> {
+        Box::new(self.to_param_2d())
+    }
 }
 
 impl Input for Matrix {
@@ -42,6 +64,9 @@ impl Input for Matrix {
     }
     fn shape(&self) -> (usize, usize, usize) {
         (self.rows, self.columns, 0)
+    }
+    fn to_box(&self) -> Box<dyn Input> {
+        Box::new(self.to_param_2d())
     }
 }
 
