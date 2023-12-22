@@ -169,23 +169,21 @@ impl Network{
     ///* `epochs` - How many epochs you want your model training for
     ///
     pub fn fit(&mut self, train_in: Vec<Vec<f32>>, train_out: Vec<Vec<f32>>, epochs: usize){
-        //Use batch size to split up data into sub-batches :)
-
         let mut input_batch: Box<dyn Input>;
         let mut output_batch: Box<dyn Input>;
 
-
         self.loss_train = vec![];
-        let mut loss: f32 = 0.0;
+        let mut loss: f32;
         for _ in 0..epochs {
             loss = 0.0;
-            for _ in 0..ITERATIONS_PER_EPOCH{
-                for i in 0..(train_in.len() / self.batch_size) + 1{
+            for i in 0..(train_in.len() / self.batch_size) + 1{
 
-                    input_batch = self.get_batch(&train_in, i);
-                    let inputs = input_batch.to_param_2d();
-                    output_batch = self.get_batch(&train_out, i);
-                    let outputs = output_batch.to_param_2d();
+                input_batch = self.get_batch(&train_in, i);
+                let inputs = input_batch.to_param_2d();
+                output_batch = self.get_batch(&train_out, i);
+                let outputs = output_batch.to_param_2d();
+
+                for _ in 0..ITERATIONS_PER_EPOCH{
                     for input in 0..inputs.len(){
                         let mut loss_on_input: f32 = 0.0;
                         let inp: Box<dyn Input> = Box::new(inputs[input].clone());
