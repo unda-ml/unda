@@ -11,6 +11,7 @@ use std::{
 
 #[derive(Serialize, Deserialize)]
 pub struct Network {
+    batch_size: usize,
     pub layer_sizes: Vec<usize>,
     pub loss: f32,
     loss_train: Vec<f32>,
@@ -27,8 +28,9 @@ impl Network{
     ///```
     ///let mut new_net = Network::new();
     ///```
-    pub fn new() -> Network{
+    pub fn new(batch_size: usize) -> Network{
         Network{
+            batch_size,
             layer_sizes: vec![],
             loss: 1.0,
             layers: vec![],
@@ -166,20 +168,35 @@ impl Network{
     ///compared to what is actually derived during back propegation
     ///* `epochs` - How many epochs you want your model training for
     ///
-    pub fn fit(&mut self, train_in: Vec<Box<dyn Input>>, train_out: Vec<Box<dyn Input>>, epochs: usize){
+    pub fn fit(&mut self, train_in: Vec<Vec<f32>>, train_out: Vec<Vec<f32>>, epochs: usize){
+        //Use batch size to split up data into sub-batches :)
+
+        let mut input_batch: Box<dyn Input>;
+        let mut output_batch: Box<dyn Input>;
+
+
         self.loss_train = vec![];
         let mut loss: f32 = 0.0;
         for _ in 0..epochs {
             loss = 0.0;
             for _ in 0..ITERATIONS_PER_EPOCH{
-                for input in 0..train_in.len(){
-                    let mut loss_on_input: f32 = 0.0;
-                    let outputs = self.feed_forward(&train_in[input]);
-                    self.back_propegate(outputs.clone(), &train_out[input]);
-                    for i in 0..outputs.len(){
-                        loss_on_input += (outputs[i] - train_out[input].to_param()[i]).powi(2);
+                for i in 0..(train_in.len() / self.batch_size) + 1{
+
+                    input_batch = self.get_batch(&train_in, i);
+                    let inputs = input_batch.to_param_2d();
+                    output_batch = self.get_batch(&train_out, i);
+                    let outputs = output_batch.to_param_2d();
+                    for input in 0..inputs.len(){
+                        let mut loss_on_input: f32 = 0.0;
+                        let inp: Box<dyn Input> = Box::new(inputs[input].clone());
+                        let out: Box<dyn Input> = Box::new(outputs[input].clone());
+                        let outputs = self.feed_forward(&inp);
+                        self.back_propegate(outputs.clone(), &out);
+                        for i in 0..outputs.len(){
+                            loss_on_input += (outputs[i] - out.to_param()[i]).powi(2);
+                        }
+                        loss += loss_on_input / outputs.len() as f32;
                     }
-                    loss += loss_on_input / outputs.len() as f32;
                 }
             }
             self.loss_train.push(loss / (ITERATIONS_PER_EPOCH * train_out.len()) as f32);
@@ -191,6 +208,20 @@ impl Network{
             println!("Error on layer {}: +/- {:.2}", i+1, self.layers[i].get_loss());
         }
     }
+
+    fn get_batch(&self, inputs: &Vec<Vec<f32>>, idx: usize) -> Box<dyn Input> {
+        let mut res: Vec<Vec<f32>> = vec![];
+        let get_range = (idx * self.batch_size)..(idx * self.batch_size + self.batch_size);
+        for i in get_range{
+            if i < inputs.len(){
+                res.push(inputs[i].clone());
+            } else{
+                break;
+            }
+        }
+        Box::new(res)
+    }
+
     pub fn save(&self, path: &str) {
         let mut file = File::create(path).expect("Unable to hit save file :(");
         let file_ser = to_string(self).expect("Unable to serialize network :(((");

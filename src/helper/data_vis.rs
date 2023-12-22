@@ -36,7 +36,7 @@ impl Network {
         let root = BitMapBackend::new(path, (1280, 960)).into_drawing_area();
         root.fill(&WHITE)?;
         let mut chart = ChartBuilder::on(&root)
-            .caption("Layer Loss on Neural Network", ("Arial", 50).into_font())
+            .caption("Loss History on Neural Network", ("Arial", 50).into_font())
             .margin(5)
             .x_label_area_size(30)
             .y_label_area_size(30)
