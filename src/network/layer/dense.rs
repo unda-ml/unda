@@ -36,6 +36,8 @@ impl Layer for Dense{
     ///Does Back Propegation according to simple Dense network rules
     ///Finds the error of the previous layer and returns what the updated weights and biases should
     ///be in that layer, updates the gradients and errors to move backwards once
+    ///
+    ///Uses Adam optimization algorithm!
     fn backward(&mut self, inputs: &Matrix, gradients: &Matrix, errors: &Matrix, layer_prev: &Matrix, layer_prev_bias: &Matrix) -> (Matrix, Matrix, Matrix, Matrix){
         let mut gradients_mat = gradients.clone().dot_multiply(&errors).map(&|x| x * self.learning_rate);
         let new_layer_prev = layer_prev.clone() + &(gradients_mat.clone() * &self.data.clone().transpose());

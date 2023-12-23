@@ -176,7 +176,7 @@ impl Network{
         let mut loss: f32;
         for _ in 0..epochs {
             loss = 0.0;
-            for i in 0..(train_in.len() / self.batch_size) + 1{
+            for i in 0..(train_in.len() / self.batch_size){
 
                 input_batch = self.get_batch(&train_in, i);
                 let inputs = input_batch.to_param_2d();
@@ -198,7 +198,6 @@ impl Network{
                 }
             }
             self.loss_train.push(loss / (ITERATIONS_PER_EPOCH * train_out.len()) as f32);
-            
         }
         self.loss = self.loss_train[self.loss_train.len()-1];
         println!("Trained to a loss of {:.2}%", self.loss * 100.0);
@@ -217,6 +216,7 @@ impl Network{
                 break;
             }
         }
+        //println!("{:?}", res);
         Box::new(res)
     }
 
