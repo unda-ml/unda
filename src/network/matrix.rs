@@ -67,9 +67,56 @@ impl ops::Mul<&Matrix> for Matrix{
     }
 }
 
-impl Matrix{
+impl ops::Mul<f32> for Matrix {
+    type Output = Matrix;
+    fn mul(self, rhs: f32) -> Self::Output {
+        let mut res: Matrix = Matrix::new_empty(self.rows, self.columns);
+        for i in 0..self.rows{
+            for j in 0..self.columns{
+                res.data[i][j] = self.data[i][j] * rhs;
+            }
+        }
+        res
+    }
+}
 
-    fn new_empty(rows: usize, cols: usize) -> Matrix{
+impl ops::Div<f32> for Matrix {
+    type Output = Matrix;
+    fn div(self, rhs: f32) -> Self::Output {
+        let mut res: Matrix = Matrix::new_empty(self.rows, self.columns);
+        for i in 0..self.rows{
+            for j in 0..self.columns{
+                res.data[i][j] = self.data[i][j] / rhs;
+            }
+        }
+        res
+    }
+}
+
+impl ops::Div<Matrix> for &Matrix{
+    type Output = Matrix;
+    fn div(self, rhs: Matrix) -> Self::Output {
+        let mut res: Matrix = Matrix::new_empty(self.rows, self.columns);
+        for i in 0..self.rows{
+            for j in 0..self.columns{
+                res.data[i][j] = self.data[i][j] / rhs.data[i][j];
+            }
+        }
+        res
+    }
+}
+
+impl Matrix{
+    pub fn sqrt(&self) -> Matrix{
+        let mut res: Matrix = Matrix::new_empty(self.rows, self.columns);
+        for i in 0..self.rows{
+            for j in 0..self.columns{
+                res.data[i][j] = self.data[i][j].sqrt();
+            }
+        }
+        res
+    }
+    pub fn new_empty(rows: usize, cols: usize) -> Matrix{
         Matrix{
             rows: rows,
             columns: cols,

@@ -14,12 +14,37 @@ pub struct Dense{
     loss: f32,
 
     pub activation_fn: Activations,
-    learning_rate: f32
+    learning_rate: f32,
+
+    beta1: f32,
+    beta2: f32,
+    epsilon: f32,
+    time: usize
 }
 
 impl Dense{
     pub fn new(layers: usize, layer_cols_before: usize, activation: Activations, learning_rate: f32) -> Dense{
-        Dense { loss: 1.0, weights: Matrix::new_random(layer_cols_before, layers), biases: Matrix::new_random(layer_cols_before, 1), data: Matrix::new_random(0, 0) , activation_fn: activation, learning_rate }
+        let mut res = Dense { 
+            loss: 1.0,
+            weights: Matrix::new_random(layer_cols_before, layers),
+            biases: Matrix::new_random(layer_cols_before, 1),
+            data: Matrix::new_random(0, 0),
+            activation_fn: activation,
+            learning_rate,
+            beta1: 0.0,
+            beta2: 0.0,
+            epsilon: 0.0,
+            time: 0
+        };
+        (res.beta1, res.beta2) = res.get_betas();
+        res.epsilon = res.get_epsilon();
+        res
+    }
+    fn get_betas(&self) -> (f32, f32){
+        (0.9, 0.999)
+    }
+    fn get_epsilon(&self) -> f32{
+        1e-10
     }
 }
 
@@ -43,7 +68,7 @@ impl Layer for Dense{
         let new_layer_prev = layer_prev.clone() + &(gradients_mat.clone() * &self.data.clone().transpose());
         let new_biases = layer_prev_bias.clone() + &gradients_mat.clone();
         
-        let errors_mat = layer_prev.clone().transpose() * &errors;
+        let errors_mat = layer_prev.clone().transpose() * errors;
 
         //set error of layer, should have something to do with possibly the MSE of errors_mat,
         //which we could call .to_param() on and iterate through like we do in the network accuracy

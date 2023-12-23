@@ -1,24 +1,24 @@
 use std::error::Error;
 
-use triton_grow::network::{network::Network, activations::Activations, modes::Mode, layer::layers::LayerTypes, input::Input};
+use triton_grow::network::{network::Network, activations::Activations, layer::layers::LayerTypes, input::Input};
 use triton_grow::helper::data_vis;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let inputs: Vec<Vec<f32>> = vec![vec![0.0,0.0],vec![1.0,0.0],vec![0.0,1.0], vec![1.0,1.0]];
     let outputs: Vec<Vec<f32>> = vec![vec![0.0],vec![1.0],vec![1.0], vec![0.0]];
 
-    let mut new_net = Network::new(2);
+    let mut new_net = Network::new(4);
 
-    new_net.add_layer(LayerTypes::DENSE(2, Activations::SIGMOID, 0.01));
-    new_net.add_layer(LayerTypes::DENSE(3, Activations::SIGMOID, 0.01));
-    new_net.add_layer(LayerTypes::DENSE(4, Activations::SIGMOID, 0.01));
-    new_net.add_layer(LayerTypes::DENSE(2, Activations::SIGMOID, 0.01));
-    new_net.add_layer(LayerTypes::DENSE(3, Activations::TANH, 0.01));
-    new_net.add_layer(LayerTypes::DENSE(1, Activations::SIGMOID, 0.01));
+    new_net.add_layer(LayerTypes::DENSE(2, Activations::SIGMOID, 0.1));
+    new_net.add_layer(LayerTypes::DENSE(3, Activations::SIGMOID, 0.1));
+    new_net.add_layer(LayerTypes::DENSE(4, Activations::SIGMOID, 0.1));
+    new_net.add_layer(LayerTypes::DENSE(2, Activations::SIGMOID, 0.1));
+    new_net.add_layer(LayerTypes::DENSE(3, Activations::TANH, 0.1));
+    new_net.add_layer(LayerTypes::DENSE(1, Activations::SIGMOID, 0.1));
 
     new_net.compile();
 
-    new_net.fit(inputs, outputs, 1000);
+    new_net.fit(inputs, outputs, 50);
 
     //let mut new_net = Network::load("best_network.json");
     

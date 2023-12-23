@@ -1,5 +1,5 @@
 use super::layer::layers::{Layer, LayerTypes};
-use super::{matrix::Matrix, modes::Mode};
+use super::matrix::Matrix;
 use super::input::Input;
 use serde::{Serialize, Deserialize};
 
@@ -107,7 +107,7 @@ impl Network{
         if input_obj.shape().0 != self.layers[0].shape().1{
             panic!("Input shape does not match input layer shape \nInput: {:?}\nInput Layer:{:?}", input_obj.shape(), self.layers[0].shape());
         }
-
+        
         let mut data_at: Box<dyn Input> = Box::new(input_obj.to_param());
         for i in 0..self.layers.len(){
             data_at = self.layers[i].forward(&data_at);
@@ -198,6 +198,7 @@ impl Network{
                 }
             }
             self.loss_train.push(loss / (ITERATIONS_PER_EPOCH * train_out.len()) as f32);
+            
         }
         self.loss = self.loss_train[self.loss_train.len()-1];
         println!("Trained to a loss of {:.2}%", self.loss * 100.0);
