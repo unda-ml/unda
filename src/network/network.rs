@@ -132,7 +132,8 @@ impl Network{
 
         for i in (0..self.layers.len() - 1).rev() {
             let data_box: Box<dyn Input> = self.layers[i].get_data();
-            (gradients, errors) = self.layers[i+1].backward(gradients, errors, data_box);
+            errors = self.layers[i+1].backward(gradients, errors, data_box);
+            gradients = self.layers[i].update_gradient()
         }
     }
     ///Trains a neural network by iteratively feeding forward a series of inputs and then doing

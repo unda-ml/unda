@@ -11,7 +11,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     new_net.add_layer(LayerTypes::DENSE(2, Activations::SIGMOID, 0.1));
     new_net.add_layer(LayerTypes::DENSE(3, Activations::SIGMOID, 0.1));
-    new_net.add_layer(LayerTypes::DENSE(4, Activations::SIGMOID, 0.1));
+    new_net.add_layer(LayerTypes::DENSE(4, Activations::TANH, 0.1));
     new_net.add_layer(LayerTypes::DENSE(2, Activations::SIGMOID, 0.1));
     new_net.add_layer(LayerTypes::DENSE(3, Activations::SIGMOID, 0.1));
     new_net.add_layer(LayerTypes::DENSE(1, Activations::SIGMOID, 0.1));

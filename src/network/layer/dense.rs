@@ -64,7 +64,7 @@ impl Layer for Dense{
     ///Does Back Propegation according to simple Dense network rules
     ///Finds the error of the previous layer and returns what the updated weights and biases should
     ///be in that layer, updates the gradients and errors to move backwards once
-    fn backward(&mut self, gradients: Box<dyn Input>, errors: Box<dyn Input>, data: Box<dyn Input>) -> (Box<dyn Input>, Box<dyn Input>) {
+    fn backward(&mut self, gradients: Box<dyn Input>, errors: Box<dyn Input>, data: Box<dyn Input>) -> Box<dyn Input> {
         let mut gradients_mat = Matrix::from(gradients.to_param_2d());
         let mut errors_mat = Matrix::from(errors.to_param_2d());
         let mut data_mat = Matrix::from(data.to_param_2d());
@@ -81,9 +81,13 @@ impl Layer for Dense{
 
         //println!("{}x{} {}x{}", self.weights.rows, self.weights.columns, data.to_param_2d()[0].len(), data.to_param_2d().len());
         self.biases = self.biases.clone() + &gradients_mat.clone();
-        self.weights = self.weights.clone() + &(gradients_mat.clone() * (&data_mat.clone().transpose()));
+        self.weights = self.weights.clone() + &(gradients_mat.clone() * (&data_mat.transpose()));
 
-        (Box::new(data_mat.map(self.activation_fn.get_function().derivative)), Box::new(errors_mat))
+        Box::new(errors_mat)
+    }
+
+    fn update_gradient(&self) -> Box<dyn Input> {
+        Box::new(self.data.clone().map(self.activation_fn.get_function().derivative))
     }
 
     /*fn backward(&mut self, inputs: &Matrix, gradients: &Matrix, errors: &Matrix, layer_prev: &Matrix, layer_prev_bias: &Matrix) -> (Matrix, Matrix, Matrix, Matrix){

@@ -8,7 +8,7 @@ pub trait Layer{
     fn forward(&mut self, inputs: &Box<dyn Input>) -> Box<dyn Input> {
         Box::new(Matrix::new_random(0,0))
     }
-    fn backward(&mut self, parsed: Box<dyn Input>, errors: Box<dyn Input>, data: Box<dyn Input>) -> (Box<dyn Input>, Box<dyn Input>); 
+    fn backward(&mut self, parsed: Box<dyn Input>, errors: Box<dyn Input>, data: Box<dyn Input>) -> Box<dyn Input>; 
     fn get_cols(&self) -> usize {0}
     fn get_rows(&self) -> usize {0}
     fn get_weights(&self) -> Matrix;
@@ -21,6 +21,7 @@ pub trait Layer{
     }
     fn shape(&self) -> (usize,usize,usize);
     fn get_loss(&self) -> f32;
+    fn update_gradient(&self) -> Box<dyn Input>;
 }
 
 #[derive(Serialize, Deserialize, Clone)]
