@@ -121,42 +121,19 @@ impl Network{
     ///
     ///When constructing a neural network, be cautious that your layers behave well with each other
     fn back_propegate(&mut self, outputs: Vec<f32>, target_obj: &Box<dyn Input>) {
-        let targets = target_obj.to_param();
-        if targets.len() != self.layer_sizes[self.layer_sizes.len()-1]{
-            panic!("Output size does not match network output size");
-        }
         let mut parsed = Matrix::from(outputs.to_param_2d()).transpose();
-        
-        let mut errors = Matrix::from(targets.to_param_2d()) - &parsed; 
         
         if let None = self.layers[self.layers.len()-1].get_activation() {
             panic!("Output layer is not a dense layer");
         }
+        
+        let mut gradients: Box<dyn Input> = Box::new(parsed.map(self.layers[self.layers.len()-1].get_activation().unwrap().get_function().derivative));
+        let mut errors: Box<dyn Input> = Box::new(Matrix::from(target_obj.to_param_2d()) - &parsed);
 
-        let mut gradients = parsed.map(self.layers[self.layers.len()-1].get_activation().unwrap().get_function().derivative);
-        let target_matrix = Matrix::from(vec![targets.clone()]);
-        let mut new_weights: Matrix;
-        let mut new_bias: Matrix;
         for i in (0..self.layers.len() - 1).rev() {
-            let layers_prev = self.layers[i+1].get_weights();
-            let bias_prev = self.layers[i+1].get_bias();
-            (new_bias, new_weights, gradients, errors) = self.layers[i].backward(&target_matrix, &gradients, &errors, &layers_prev, &bias_prev);
-            self.layers[i+1].set_weights(new_weights);
-            self.layers[i+1].set_bias(new_bias);
+            let data_box: Box<dyn Input> = self.layers[i].get_data();
+            (gradients, errors) = self.layers[i+1].backward(gradients, errors, data_box);
         }
-    }
-    fn implicit_back_propegation(&mut self, target_matrix: Matrix, mut gradients: Matrix, mut errors: Matrix) -> (Matrix, Matrix, Matrix, Matrix){
-        let mut new_weights: Matrix = Matrix::new_random(0, 0);
-        let mut new_bias: Matrix = Matrix::new_random(0, 0);
-        for i in (0..self.layers.len() - 1).rev() {
-            let layers_prev = self.layers[i+1].get_weights();
-            let bias_prev = self.layers[i+1].get_bias();
-            (new_bias, new_weights, gradients, errors) = self.layers[i].backward(&target_matrix, &gradients, &errors, &layers_prev, &bias_prev);
-            self.layers[i+1].set_weights(new_weights.clone());
-            self.layers[i+1].set_bias(new_bias.clone());
-        }
-
-        (new_bias, new_weights, gradients, errors)
     }
     ///Trains a neural network by iteratively feeding forward a series of inputs and then doing
     ///back propegation based on the outputs supplied
@@ -237,7 +214,7 @@ impl Network{
     }
 }
 
-#[typetag::serde]
+/*#[typetag::serde]
 impl Layer for Network{
 
     fn forward(&mut self,inputs: &Box<dyn Input>) -> Box<dyn Input> {
@@ -275,4 +252,4 @@ impl Layer for Network{
     fn get_activation(&self) -> Option<super::activations::Activations> {
         self.layers[0].get_activation()
     }
-}
+}*/
