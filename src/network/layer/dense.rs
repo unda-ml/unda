@@ -141,29 +141,11 @@ impl Layer for Dense{
         gradients_mat = self.data.map(self.activation_fn.get_function().derivative);
         (new_biases.clone(), new_layer_prev.clone(), gradients_mat, errors_mat)
     }*/
-    fn get_cols(&self) -> usize {
-        self.weights.columns
-    }
-    fn get_rows(&self) -> usize {
-        self.weights.rows
-    }
-    fn get_weights(&self) -> Matrix {
-        self.weights.clone()
-    }
-    fn set_weights(&mut self, new_weight: Matrix) {
-        self.weights = new_weight;
-    }
-    fn get_bias(&self) -> Matrix {
-        self.biases.clone()
-    }
-    fn set_bias(&mut self, new_bias: Matrix){
-        self.biases = new_bias;
-    }
     fn get_activation(&self) -> Option<Activations> {
         Some(self.activation_fn.clone())
     }
     fn shape(&self) -> (usize, usize, usize){
-        (self.get_rows(), self.get_cols(), 0)
+        (self.weights.rows, self.weights.columns, 0)
     }
     fn get_loss(&self) -> f32{
         self.loss

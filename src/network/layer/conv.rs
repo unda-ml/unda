@@ -36,7 +36,7 @@ impl Convolutional{
     }
 }
 
-#[typetag::serde]
+/*#[typetag::serde]
 impl Layer for Convolutional{
     fn forward(&mut self,inputs: &Box<dyn Input>) -> Box<dyn Input> {
 
@@ -77,4 +77,4 @@ impl Layer for Convolutional{
     fn update_gradient(&self) -> Box<dyn Input> {
         Box::new(self.data[0])
     }
-}
+}*/

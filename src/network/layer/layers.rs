@@ -9,13 +9,7 @@ pub trait Layer{
         Box::new(Matrix::new_random(0,0))
     }
     fn backward(&mut self, parsed: Box<dyn Input>, errors: Box<dyn Input>, data: Box<dyn Input>) -> Box<dyn Input>; 
-    fn get_cols(&self) -> usize {0}
-    fn get_rows(&self) -> usize {0}
-    fn get_weights(&self) -> Matrix;
     fn get_data(&self) -> Box<dyn Input>;
-    fn set_weights(&mut self, new_weights: Matrix);
-    fn get_bias(&self) -> Matrix;
-    fn set_bias(&mut self, new_bias: Matrix);
     fn get_activation(&self) -> Option<Activations> {
         None
     }
