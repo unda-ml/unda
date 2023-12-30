@@ -15,7 +15,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     new_net.compile();
 
-    new_net.fit(&inputs, &outputs, 20);
+    new_net.fit(&inputs, &outputs, 40);
 
     //let mut new_net = Network::load("best_network.json");
     println!("1 and 0: {:?}", new_net.predict(vec![1.0,0.0])[0]);
@@ -24,7 +24,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("0 and 0: {:?}", new_net.predict(vec![0.0,0.0])[0]);
 
     new_net.save("best_network.json");
-    new_net.plot_layer_loss("loss_graph_per_layer.png")?;
-    new_net.plot_loss_history("loss_history.png")?;
+    new_net.plot_loss_history("loss_history_normal.png")?;
     Ok(())
 }
