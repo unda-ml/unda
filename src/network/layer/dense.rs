@@ -19,7 +19,12 @@ pub struct Dense{
     beta1: f32,
     beta2: f32,
     epsilon: f32,
-    time: usize
+    time: usize,
+
+    m_weights: Matrix,
+    v_weights: Matrix,
+    m_biases: Matrix,
+    v_biases: Matrix
 }
 
 impl Dense{
@@ -28,6 +33,13 @@ impl Dense{
             loss: 1.0,
             weights: Matrix::new_random(layer_cols_before, layers),
             biases: Matrix::new_random(layer_cols_before, 1),
+
+            m_weights: Matrix::new_empty(layer_cols_before, layers),
+            v_weights: Matrix::new_empty(layer_cols_before, layers),
+
+            m_biases: Matrix::new_empty(layer_cols_before, 1),
+            v_biases: Matrix::new_empty(layer_cols_before, 1),
+
             data: Matrix::new_random(0, 0),
             activation_fn: activation,
             learning_rate,
@@ -38,6 +50,7 @@ impl Dense{
         };
         (res.beta1, res.beta2) = res.get_betas();
         res.epsilon = res.get_epsilon();
+
         res
     }
     fn get_betas(&self) -> (f32, f32){
@@ -67,7 +80,7 @@ impl Layer for Dense{
     fn backward(&mut self, gradients: Box<dyn Input>, errors: Box<dyn Input>, data: Box<dyn Input>) -> Box<dyn Input> {
         let mut gradients_mat = Matrix::from(gradients.to_param_2d());
         let mut errors_mat = Matrix::from(errors.to_param_2d());
-        let mut data_mat = Matrix::from(data.to_param_2d());
+        let data_mat = Matrix::from(data.to_param_2d());
 
         gradients_mat = gradients_mat.dot_multiply(&errors_mat) * self.learning_rate;
         errors_mat = self.weights.clone().transpose() * &errors_mat;
@@ -79,9 +92,27 @@ impl Layer for Dense{
 
         self.loss = self.loss / errors_mat.to_param().len() as f32;
 
-        //println!("{}x{} {}x{}", self.weights.rows, self.weights.columns, data.to_param_2d()[0].len(), data.to_param_2d().len());
-        self.biases = self.biases.clone() + &gradients_mat.clone();
-        self.weights = self.weights.clone() + &(gradients_mat.clone() * (&data_mat.transpose()));
+        self.time += 1;
+
+        let weight_gradient = gradients_mat.clone() * &(data_mat.clone().transpose());
+
+        self.m_weights = self.m_weights.clone() * self.beta1 + &(weight_gradient.clone() * (1.0 - self.beta1));
+        self.v_weights = self.v_weights.clone() * self.beta2 + &((weight_gradient^2) * (1.0 - self.beta2));
+
+        self.m_biases = self.m_biases.clone() * self.beta1 + &(gradients_mat.clone() * (1.0 - self.beta1));
+        self.v_biases = self.v_biases.clone() * self.beta2 + &((gradients_mat.clone()^2) * (1.0 - self.beta2));
+
+        let m_weights_hat = self.m_weights.clone() / (1.0 - self.beta1.powi(self.time as i32));
+        let v_weights_hat = self.v_weights.clone() / (1.0 - self.beta2.powi(self.time as i32));
+
+        let m_bias_hat = self.m_biases.clone() / (1.0 - self.beta1.powi(self.time as i32));
+        let v_bias_hat = self.v_biases.clone() / (1.0 - self.beta2.powi(self.time as i32));
+
+        let weights_update = m_weights_hat.clone() / &(v_weights_hat.sqrt() + self.epsilon);
+        let bias_update = m_bias_hat.clone() / &(v_bias_hat.sqrt() + self.epsilon);
+
+        self.biases = self.biases.clone() + &bias_update;
+        self.weights = self.weights.clone() + &weights_update;
 
         Box::new(errors_mat)
     }

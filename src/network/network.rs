@@ -146,7 +146,7 @@ impl Network{
     ///compared to what is actually derived during back propegation
     ///* `epochs` - How many epochs you want your model training for
     ///
-    pub fn fit(&mut self, train_in: Vec<Vec<f32>>, train_out: Vec<Vec<f32>>, epochs: usize){
+    pub fn fit(&mut self, train_in: &Vec<Vec<f32>>, train_out: &Vec<Vec<f32>>, epochs: usize){
         let mut input_batch: Box<dyn Input>;
         let mut output_batch: Box<dyn Input>;
 
@@ -179,10 +179,7 @@ impl Network{
             
         }
         self.loss = self.loss_train[self.loss_train.len()-1];
-        println!("Trained to a loss of {:.2}%", self.loss * 100.0);
-        for i in 0..self.layers.len()-1{
-            println!("Error on layer {}: +/- {:.2}", i+1, self.layers[i].get_loss());
-        }
+        
     }
 
     fn get_batch(&self, inputs: &Vec<Vec<f32>>, idx: usize) -> Box<dyn Input> {
@@ -213,44 +210,18 @@ impl Network{
         let net: Network = from_str(&buffer).expect("Json was not formatted well >:(");
         net
     }
+
+    pub fn fit_to_loss(&mut self, train_in: Vec<Vec<f32>>, train_out: Vec<Vec<f32>>, desired_loss: f32, steps_per: usize) -> usize{
+        let mut epochs_total = 0;
+        while self.loss > desired_loss{
+            self.fit(&train_in, &train_out, steps_per);
+            epochs_total += steps_per;
+            
+        }
+        println!("Trained to a loss of {:.2}%", self.loss * 100.0);
+        for i in 0..self.layers.len()-1{
+            println!("Error on layer {}: +/- {:.2}", i+1, self.layers[i].get_loss());
+        }
+        epochs_total
+    }
 }
-
-/*#[typetag::serde]
-impl Layer for Network{
-
-    fn forward(&mut self,inputs: &Box<dyn Input>) -> Box<dyn Input> {
-        Box::new(self.feed_forward(inputs))
-    }
-
-    fn backward(&mut self,inputs: &Matrix,gradients: &Matrix,errors: &Matrix,layer_prev: &Matrix,layer_prev_bias: &Matrix) -> (Matrix,Matrix,Matrix,Matrix) {
-        self.implicit_back_propegation(inputs.clone(), gradients.clone(), errors.clone())
-    }
-
-    fn shape(&self) -> (usize,usize,usize) {
-        self.layers[0].shape()
-    }
-    fn set_weights(&mut self,new_weights:Matrix) {
-        self.layers[0].set_weights(new_weights)
-    }
-    fn set_bias(&mut self,new_bias:Matrix) {
-        self.layers[0].set_bias(new_bias)
-    }
-    fn get_cols(&self) -> usize {
-        self.layers[self.layers.len() - 1].get_cols()
-    }
-    fn get_rows(&self) -> usize {
-        self.layers[self.layers.len() - 1].get_rows()
-    }
-    fn get_bias(&self) -> Matrix {
-        self.layers[0].get_bias()
-    }
-    fn get_loss(&self) -> f32 {
-        self.loss
-    }
-    fn get_weights(&self) -> Matrix {
-        self.layers[0].get_weights()
-    }
-    fn get_activation(&self) -> Option<super::activations::Activations> {
-        self.layers[0].get_activation()
-    }
-}*/

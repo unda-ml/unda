@@ -80,6 +80,19 @@ impl ops::Mul<f32> for Matrix {
     }
 }
 
+impl ops::BitXor<i32> for Matrix{
+    type Output = Matrix;
+    fn bitxor(self, rhs: i32) -> Self::Output {
+        let mut res: Matrix = Matrix::new_empty(self.rows, self.columns);
+        for i in 0..self.rows{
+            for j in 0..self.columns{
+                res.data[i][j] = self.data[i][j].powi(rhs);
+            }
+        }
+        res
+    }
+}
+
 impl ops::Div<f32> for Matrix {
     type Output = Matrix;
     fn div(self, rhs: f32) -> Self::Output {
@@ -93,9 +106,22 @@ impl ops::Div<f32> for Matrix {
     }
 }
 
-impl ops::Div<Matrix> for &Matrix{
+impl ops::Add<f32> for Matrix {
     type Output = Matrix;
-    fn div(self, rhs: Matrix) -> Self::Output {
+    fn add(self, rhs: f32) -> Self::Output {
+        let mut res: Matrix = Matrix::new_empty(self.rows, self.columns);
+        for i in 0..self.rows{
+            for j in 0..self.columns{
+                res.data[i][j] = self.data[i][j] + rhs;
+            }
+        }
+        res
+    }
+}
+
+impl ops::Div<&Matrix> for Matrix{
+    type Output = Matrix;
+    fn div(self, rhs: &Matrix) -> Self::Output {
         let mut res: Matrix = Matrix::new_empty(self.rows, self.columns);
         for i in 0..self.rows{
             for j in 0..self.columns{
