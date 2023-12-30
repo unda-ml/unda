@@ -1,9 +1,6 @@
-use std::error::Error;
-
 use triton_grow::network::{network::Network, activations::Activations, layer::layers::LayerTypes, input::Input};
-use triton_grow::helper::data_vis;
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() {
     let inputs: Vec<Vec<f32>> = vec![vec![0.0,0.0],vec![1.0,0.0],vec![0.0,1.0], vec![1.0,1.0]];
     let outputs: Vec<Vec<f32>> = vec![vec![0.0],vec![1.0],vec![1.0], vec![0.0]];
 
@@ -22,8 +19,4 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("0 and 1: {:?}", new_net.predict(vec![0.0,1.0])[0]);
     println!("1 and 1: {:?}", new_net.predict(vec![1.0,1.0])[0]);
     println!("0 and 0: {:?}", new_net.predict(vec![0.0,0.0])[0]);
-
-    new_net.save("best_network.json");
-    new_net.plot_loss_history("loss_history_normal.png")?;
-    Ok(())
 }
