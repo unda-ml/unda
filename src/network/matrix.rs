@@ -9,6 +9,24 @@ pub struct Matrix{
     pub data: Vec<Vec<f32>>
 }
 
+impl std::fmt::Display for Matrix{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut resp: String = String::from("");
+        for i in 0..self.rows{
+            resp += "[";
+            for j in 0..self.columns{
+                if self.data[i][j] < 0.0 {
+                    resp += &format!(" {:<03.3} ", self.data[i][j]);
+                } else {
+                    resp += &format!("  {:<03.3} ", self.data[i][j]);
+                }
+            }
+            resp += "]\n";
+        }
+        write!(f, "{}", resp)
+    }
+}
+
 impl ops::Add<&Matrix> for Matrix{
 
     type Output = Matrix;

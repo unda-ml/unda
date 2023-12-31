@@ -1,4 +1,4 @@
-use triton_grow::network::{network::Network, activations::Activations, layer::layers::LayerTypes, input::Input};
+use triton_grow::network::{network::Network, activations::Activations, layer::{layers::LayerTypes, conv::Convolutional}, input::Input, matrix::Matrix};
 
 fn main() {
     let inputs: Vec<Vec<f32>> = vec![vec![0.0,0.0],vec![1.0,0.0],vec![0.0,1.0], vec![1.0,1.0]];
