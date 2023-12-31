@@ -19,7 +19,7 @@ pub struct Network {
     uncompiled_layers: Vec<LayerTypes>,
 }
 
-const ITERATIONS_PER_EPOCH: usize = 10000;
+const ITERATIONS_PER_EPOCH: usize = 1000;
 
 impl Network{
     ///Creates a new neural network that is completely empty
@@ -146,54 +146,48 @@ impl Network{
     ///compared to what is actually derived during back propegation
     ///* `epochs` - How many epochs you want your model training for
     ///
-    pub fn fit(&mut self, train_in: &Vec<Vec<f32>>, train_out: &Vec<Vec<f32>>, epochs: usize){
-        let mut input_batch: Box<dyn Input>;
-        let mut output_batch: Box<dyn Input>;
-
+    pub fn fit(&mut self, train_in: &Vec<Vec<f32>>, train_out: &Vec<Vec<f32>>, epochs: usize) {
         self.loss_train = vec![];
+
         let mut loss: f32;
+        let num_batches = train_in.len() / self.batch_size;
+
+        let iteration_scale_factor = ITERATIONS_PER_EPOCH / train_in.len();
+        let iterations_per_epoch: usize = (iteration_scale_factor as f32 * 25.0).ceil() as usize;
+        println!("{}", iterations_per_epoch);
+
         for _ in 0..epochs {
             loss = 0.0;
-            for i in 0..(train_in.len() / self.batch_size){
+            for _ in 0..iterations_per_epoch {
+                for batch_index in 0..num_batches {
+                    let start = batch_index * self.batch_size;
+                    let end = start + self.batch_size;
+                    let end = end.min(train_in.len()); // Ensure 'end' doesn't go out of bounds
 
-                input_batch = self.get_batch(&train_in, i);
-                let inputs = input_batch.to_param_2d();
-                output_batch = self.get_batch(&train_out, i);
-                let outputs = output_batch.to_param_2d();
-
-                for _ in 0..ITERATIONS_PER_EPOCH{
-                    for input in 0..inputs.len(){
+                    let mut batch_loss: f32 = 0.0;
+                    for input_index in start..end {
                         let mut loss_on_input: f32 = 0.0;
-                        let inp: Box<dyn Input> = Box::new(inputs[input].clone());
-                        let out: Box<dyn Input> = Box::new(outputs[input].clone());
-                        let outputs = self.feed_forward(&inp);
-                        self.back_propegate(outputs.clone(), &out);
-                        for i in 0..outputs.len(){
-                            loss_on_input += (outputs[i] - out.to_param()[i]).powi(2);
+                        let input: Box<dyn Input> = Box::new(train_in[input_index].clone());
+                        let output: Box<dyn Input> = Box::new(train_out[input_index].clone());
+                        let outputs = self.feed_forward(&input);
+                        self.back_propegate(outputs.clone(), &output);
+
+                        for i in 0..outputs.len() {
+                            loss_on_input += (outputs[i] - train_out[input_index].to_param()[i]).powi(2);
                         }
-                        loss += loss_on_input / outputs.len() as f32;
+                        batch_loss += loss_on_input / outputs.len() as f32;
                     }
+                    loss += batch_loss / self.batch_size as f32;
                 }
             }
-            self.loss_train.push(loss / (ITERATIONS_PER_EPOCH * train_out.len()) as f32);
-            
+            self.loss_train.push(loss / (ITERATIONS_PER_EPOCH * num_batches) as f32);
         }
-        self.loss = self.loss_train[self.loss_train.len()-1];
-        
-    }
 
-    fn get_batch(&self, inputs: &Vec<Vec<f32>>, idx: usize) -> Box<dyn Input> {
-        let mut res: Vec<Vec<f32>> = vec![];
-        let get_range = (idx * self.batch_size)..(idx * self.batch_size + self.batch_size);
-        for i in get_range{
-            if i < inputs.len(){
-                res.push(inputs[i].clone());
-            } else{
-                break;
-            }
+        self.loss = self.loss_train[self.loss_train.len() - 1];
+        println!("Trained to a loss of {:.2}%", self.loss * 100.0);
+        for i in 0..self.layers.len() - 1 {
+            println!("Error on layer {}: +/- {:.2}", i + 1, self.layers[i].get_loss());
         }
-        //println!("{:?}", res);
-        Box::new(res)
     }
 
     pub fn save(&self, path: &str) {

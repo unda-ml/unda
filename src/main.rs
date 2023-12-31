@@ -4,7 +4,7 @@ fn main() {
     let inputs: Vec<Vec<f32>> = vec![vec![0.0,0.0],vec![1.0,0.0],vec![0.0,1.0], vec![1.0,1.0]];
     let outputs: Vec<Vec<f32>> = vec![vec![0.0],vec![1.0],vec![1.0], vec![0.0]];
 
-    let mut new_net = Network::new(4);
+    let mut new_net = Network::new(2);
 
     new_net.add_layer(LayerTypes::DENSE(2, Activations::SIGMOID, 0.1));
     new_net.add_layer(LayerTypes::DENSE(3, Activations::SIGMOID, 0.1));
@@ -12,7 +12,7 @@ fn main() {
 
     new_net.compile();
 
-    new_net.fit(&inputs, &outputs, 40);
+    new_net.fit(&inputs, &outputs, 100);
 
     //let mut new_net = Network::load("best_network.json");
     println!("1 and 0: {:?}", new_net.predict(vec![1.0,0.0])[0]);
