@@ -903,7 +903,7 @@ dependencies = [
 
 [[package]]
 name = "triton_grow"
-version = "2.1.11"
+version = "2.1.2"
 dependencies = [
  "csv",
  "ndarray",
