@@ -121,7 +121,7 @@ impl Network{
     ///
     ///When constructing a neural network, be cautious that your layers behave well with each other
     fn back_propegate(&mut self, outputs: Vec<f32>, target_obj: &Box<dyn Input>) {
-        let mut parsed = Matrix::from(outputs.to_param_2d()).transpose();
+        let parsed = Matrix::from(outputs.to_param_2d()).transpose();
         
         if let None = self.layers[self.layers.len()-1].get_activation() {
             panic!("Output layer is not a dense layer");
