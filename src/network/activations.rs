@@ -11,14 +11,16 @@ pub struct Activation<'a>{
 pub enum Activations{
     SIGMOID,
     TANH,
-    RELU
+    RELU,
+    LEAKYRELU
 }
 impl Activations{
     pub fn get_function(&self) -> Activation{
         return match self{
             Activations::SIGMOID => SIGMOID,
             Activations::TANH => TANH,
-            Activations::RELU => RELU
+            Activations::RELU => RELU,
+            Activations::LEAKYRELU => LEAKY_RELU
         };
     }
 }
@@ -47,5 +49,20 @@ const RELU: Activation = Activation {
             return 1.0;
         }
         return 0.0;
+    }
+};
+
+const LEAKY_RELU: Activation = Activation{
+    function: &|x| {
+        if x.max(0.0) == x{
+            return x;
+        }
+        return 0.001 * x;
+    },
+    derivative: &|x| {
+        if x.max(0.0) == x{
+            return 1.0
+        }
+        return 0.001;
     }
 };

@@ -6,9 +6,9 @@ fn main() {
 
     let mut new_net = Network::new(2);
 
-    new_net.add_layer(LayerTypes::DENSE(2, Activations::SIGMOID, 0.1));
-    new_net.add_layer(LayerTypes::DENSE(3, Activations::SIGMOID, 0.1));
-    new_net.add_layer(LayerTypes::DENSE(1, Activations::SIGMOID, 0.1));
+    new_net.add_layer(LayerTypes::DENSE(2, Activations::RELU, 0.1));
+    new_net.add_layer(LayerTypes::DENSE(3, Activations::RELU, 0.1));
+    new_net.add_layer(LayerTypes::DENSE(1, Activations::RELU, 0.1));
 
     new_net.compile();
 

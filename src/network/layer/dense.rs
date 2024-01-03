@@ -46,7 +46,7 @@ impl Dense{
             beta1: 0.0,
             beta2: 0.0,
             epsilon: 0.0,
-            time: 0
+            time: 1
         };
         (res.beta1, res.beta2) = res.get_betas();
         res.epsilon = res.get_epsilon();

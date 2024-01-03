@@ -127,13 +127,13 @@ impl Network{
             panic!("Output layer is not a dense layer");
         }
         
-        let mut gradients: Box<dyn Input> = Box::new(parsed.map(self.layers[self.layers.len()-1].get_activation().unwrap().get_function().derivative));
+        let mut gradients: Box<dyn Input>;
         let mut errors: Box<dyn Input> = Box::new(Matrix::from(target_obj.to_param_2d()) - &parsed);
 
         for i in (0..self.layers.len() - 1).rev() {
+            gradients = self.layers[i + 1].update_gradient();
             let data_box: Box<dyn Input> = self.layers[i].get_data();
             errors = self.layers[i+1].backward(gradients, errors, data_box);
-            gradients = self.layers[i].update_gradient()
         }
     }
     ///Trains a neural network by iteratively feeding forward a series of inputs and then doing
