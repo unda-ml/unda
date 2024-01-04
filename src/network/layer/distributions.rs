@@ -29,5 +29,5 @@ pub fn get_xavier_range(inputs: usize, layer_len: usize) -> Range<f32> {
 }
 
 pub fn get_he_range(inputs: usize) -> Normal<f32> {
-    Normal::new(0.0, f32::sqrt(inputs as f32)).unwrap()
+    Normal::new(0.0, f32::sqrt(2.0 / inputs as f32)).unwrap()
 }
