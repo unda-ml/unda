@@ -17,6 +17,7 @@ pub struct Network {
     loss_train: Vec<f32>,
     pub layers: Vec<Box<dyn Layer>>,
     uncompiled_layers: Vec<LayerTypes>,
+    seed: Option<String>
 }
 
 const ITERATIONS_PER_EPOCH: usize = 1000;
@@ -35,7 +36,8 @@ impl Network{
             loss: 1.0,
             layers: vec![],
             uncompiled_layers: vec![],
-            loss_train: vec![]
+            loss_train: vec![],
+            seed: None
         }
     } 
     pub fn get_layer_loss(&self) -> Vec<(f32, f32)> {
@@ -69,8 +71,9 @@ impl Network{
     ///Must be done after all layers are added as the sizes of layer rows depends on the columns of
     ///the next layer
     pub fn compile(&mut self){
+        let input_size = self.uncompiled_layers[0].get_size();
         for i in 0..self.uncompiled_layers.len() - 1 {
-            let layer = self.uncompiled_layers[i].to_layer(self.layer_sizes[i+1]);
+            let layer = self.uncompiled_layers[i].to_layer(self.layer_sizes[i+1], &self.seed, input_size);
             self.layers.push(layer);
         }
         //println!("{:?}", self.layer_sizes);
@@ -79,6 +82,9 @@ impl Network{
     pub fn predict(&mut self, input: Vec<f32>) -> Vec<f32>{
         let in_box: Box<dyn Input> = Box::new(input);
         self.feed_forward(&in_box)
+    }
+    pub fn set_seed(&mut self, seed: &str){
+        self.seed = Some(String::from(seed));
     }
     ///Travels through a neural network's abstracted Layers and returns the resultant vector at the
     ///end

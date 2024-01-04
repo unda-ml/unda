@@ -1,6 +1,10 @@
-use rand::{thread_rng, Rng};
+use rand::{thread_rng, Rng, prelude::*};
 use std::ops;
+use rand_pcg::Pcg64;
 use serde::{Serialize, Deserialize};
+use rand_seeder::{Seeder};
+
+use super::layer::distributions::Distributions;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Matrix{
@@ -168,12 +172,17 @@ impl Matrix{
         }
     }
 
-    pub fn new_random(rows: usize, cols: usize) -> Matrix{
-        let mut rng = thread_rng();
+    pub fn new_random(rows: usize, cols: usize, seed: &Option<String>, distribution: &Distributions) -> Matrix{
+        let mut rng: Box<dyn RngCore>;
+        if let Some(seed_rng) = seed {
+            rng = Box::new(Seeder::from(seed_rng).make_rng::<Pcg64>());
+        } else{
+            rng = Box::new(thread_rng());
+        }
         let mut res = Matrix::new_empty(rows, cols); 
         for row in 0..rows{
             for col in 0..cols{
-                res.data[row][col] = rng.gen::<f32>() * 2.0 - 1.0;
+                res.data[row][col] = distribution.sample(&mut rng);
             }
         }
         res

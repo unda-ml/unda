@@ -1,6 +1,6 @@
 use crate::network::{matrix::Matrix, activations::{Activation, Activations}, input::Input};
 
-use super::layers::Layer;
+use super::{layers::Layer, distributions::Distributions};
 use serde::{Deserialize, Serialize};
 
 ///A Dense Neural Network Layer of a model, containing just nodes, weights, biases and an
@@ -28,11 +28,15 @@ pub struct Dense{
 }
 
 impl Dense{
-    pub fn new(layers: usize, layer_cols_before: usize, activation: Activations, learning_rate: f32) -> Dense{
+    pub fn new(layers: usize, layer_cols_before: usize, activation: Activations, learning_rate: f32, seed: &Option<String>, input_size: usize) -> Dense{
+        let distribution: Distributions = match activation{
+            Activations::RELU | Activations::LEAKYRELU => Distributions::He(input_size),
+            Activations::TANH | Activations::SIGMOID => Distributions::Xavier(input_size, layers),
+        };
         let mut res = Dense { 
             loss: 1.0,
-            weights: Matrix::new_random(layer_cols_before, layers),
-            biases: Matrix::new_random(layer_cols_before, 1),
+            weights: Matrix::new_random(layer_cols_before, layers, seed, &distribution),
+            biases: Matrix::new_random(layer_cols_before, 1, seed, &distribution),
 
             m_weights: Matrix::new_empty(layer_cols_before, layers),
             v_weights: Matrix::new_empty(layer_cols_before, layers),
@@ -40,7 +44,7 @@ impl Dense{
             m_biases: Matrix::new_empty(layer_cols_before, 1),
             v_biases: Matrix::new_empty(layer_cols_before, 1),
 
-            data: Matrix::new_random(0, 0),
+            data: Matrix::new_empty(0, 0),
             activation_fn: activation,
             learning_rate,
             beta1: 0.0,
