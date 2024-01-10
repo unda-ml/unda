@@ -55,4 +55,16 @@ impl Matrix3D{
 
         Matrix::from(self.data[idx].clone())
     }
+    pub fn from(data: Vec<Vec<Vec<f32>>>) -> Matrix3D {
+        Matrix3D { rows: data[0].len(), columns: data[0][0].len(), layers: data.len(), data }
+    }
+    pub fn set_slice(&mut self, idx: usize, slice: Matrix){
+        if slice.rows != self.rows && slice.columns != self.columns {
+            panic!("Slice you are trying to set is not size of the slice you are trying to input");
+        }
+        if idx >= self.layers {
+            panic!("layer index is outside of layers present");
+        }
+        self.data[idx] = slice.data;
+    }
 }

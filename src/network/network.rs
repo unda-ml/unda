@@ -164,8 +164,8 @@ impl Network{
 
         for _ in 0..epochs {
             loss = 0.0;
-            for _ in 0..iterations_per_epoch {
-                for batch_index in 0..num_batches {
+            for batch_index in 0..num_batches {
+                for _ in 0..iterations_per_epoch {
                     let start = batch_index * self.batch_size;
                     let end = start + self.batch_size;
                     let end = end.min(train_in.len()); // Ensure 'end' doesn't go out of bounds
@@ -186,7 +186,7 @@ impl Network{
                     loss += batch_loss / self.batch_size as f32;
                 }
             }
-            self.loss_train.push(loss / (ITERATIONS_PER_EPOCH * num_batches) as f32);
+            self.loss_train.push(loss / (iterations_per_epoch * num_batches) as f32);
         }
 
         self.loss = self.loss_train[self.loss_train.len() - 1];

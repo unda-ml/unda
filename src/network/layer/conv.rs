@@ -45,25 +45,48 @@ impl Convolutional{
 
         res
     }
-    pub fn convolute(&mut self, idx: usize, input: Matrix) -> Matrix{
+    pub fn convolute(&mut self, idx: usize, input: Matrix) {
         let kernel = self.filter_weights.get_slice(idx);
         let mut output = Matrix::new_empty(self.output_shape.0, self.output_shape.1);
         //slide kernel over input, summing kernel and returning resultant matrix
-        
-        output
+        //println!("convoluting over: \n{} \n\nwith kernel: \n{}\n", input, kernel);
+
+        let mut x: usize;
+        let mut y: usize = 0;
+
+        for output_x in 0..output.columns {
+            x = 0;
+            for output_y in 0..output.rows {
+                let sum = input.get_sub_matrix(x, y, kernel.rows, kernel.columns).dot_multiply(&kernel).sum();
+                output.data[output_y][output_x] = sum;
+
+                x += self.stride;
+            }
+            y += 1;
+        }
+
+        //println!("{}", output);
+        self.data.set_slice(idx, output);
     }
     fn get_res_size(w: usize, k: usize, p: usize, s:usize) -> usize {
         (w - k + 2*p) / s + 1
     }
 }
 
-/*#[typetag::serde]
+#[typetag::serde]
 impl Layer for Convolutional {
     fn forward(&mut self,inputs: &Box<dyn Input>) -> Box<dyn Input> {
-        
+        let input_mat = Matrix3D::from(inputs.to_param_3d());
+        for i in 0..input_mat.layers {
+            for j in 0..self.filters {
+                self.convolute(j, input_mat.get_slice(i));
+            }
+        }
+        //TODO add biases after multiplying
+        Box::new(self.data.clone())
     }
     fn backward(&mut self,parsed:Box<dyn Input> ,errors:Box<dyn Input> ,data:Box<dyn Input>) -> Box<dyn Input> {
-        
+        Box::new(vec![0.0,0.0])
     }
     fn get_data(&self) -> Box<dyn Input> {
         self.data.to_box()
@@ -78,4 +101,4 @@ impl Layer for Convolutional {
         //TODO
         self.data.to_box()
     }
-}*/
+}

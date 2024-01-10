@@ -921,7 +921,7 @@ dependencies = [
 
 [[package]]
 name = "triton_grow"
-version = "2.2.3"
+version = "2.2.4"
 dependencies = [
  "csv",
  "ndarray",

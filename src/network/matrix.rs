@@ -155,6 +155,27 @@ impl ops::Div<&Matrix> for Matrix{
 }
 
 impl Matrix{
+    pub fn sum(&self) -> f32 {
+        let mut res: f32 = 0.0;
+        for i in 0..self.rows{
+            for j in 0..self.columns{
+                res += self.data[i][j];
+            }
+        }
+        res
+    }
+    pub fn get_sub_matrix(&self, x: usize, y: usize, rows: usize, cols: usize) -> Matrix {
+        if x + cols > self.columns || y + rows > self.rows {
+            panic!("Sub matrix cannot fit within matrix");
+        }
+        let mut res: Matrix = Matrix::new_empty(rows, cols);
+        for i in 0..rows {
+            for j in 0..cols{
+                res.data[i][j] = self.data[i+y][j+x];
+            }
+        }
+        res
+    }
     pub fn sqrt(&self) -> Matrix{
         let mut res: Matrix = Matrix::new_empty(self.rows, self.columns);
         for i in 0..self.rows{
