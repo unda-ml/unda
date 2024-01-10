@@ -1,10 +1,6 @@
 use serde::{Serialize, Deserialize};
-
 use crate::network::{matrix::Matrix,activations::Activations, input::Input, matrix3d::Matrix3D};
-
 use super::layers::Layer;
-
-
 
 #[derive(Serialize, Deserialize)]
 pub struct Convolutional{
@@ -82,7 +78,7 @@ impl Layer for Convolutional {
                 self.convolute(j, input_mat.get_slice(i));
             }
         }
-        //TODO add biases after multiplying
+        self.data = self.data.clone() + &self.filter_biases;
         Box::new(self.data.clone())
     }
     fn backward(&mut self,parsed:Box<dyn Input> ,errors:Box<dyn Input> ,data:Box<dyn Input>) -> Box<dyn Input> {

@@ -2,6 +2,11 @@
 
 ### A self sustaining growing neural net that can repair itself until reaching a desired accuracy
 
+Triton aims to provide Keras level performance and ease of use to the world of Rust without being simply a wrapper library. Using Rust's unique traits system, Triton will enable more robust neural networks along with control over finer aspects that keras simply does not have. Using the build in Input trait, practically any data type can be mapped to an input for a neural network without the need for cutting corners, and the inner trait for layers allows for a plug and play style to neural network development. Currently, Triton has full support for Dense layers, Adam Optimization for Backprop, Activation functions (Sigmoid, TanH, ReLU and LeakyReLU), and even loss analysis per model and per layer.
+
+One feature in development is that of self growing systems, allowing the neural network to analyze the loss of every layer and algorithmically deduce where the best place to splice in a new layer of a certain length would be. This feature was finalized in an earlier version of Triton, but is currently unavailable with the new rewrite currently taking place. Self growing neural networks is the main goal of the Triton crate, and is currently one of the highest priorities in development.
+
+Currently, the other features in development for Triton are as follows: Convolutional layers(Forward is finished, working on backprop now), Flattening layers(goes hand in hand with convolutional backprop) and self growth systems. The future of Triton is unknown, but the goal would be to implement more layer types, with Recurrent layers likely being next and GAN support being a pipe dream for far into the future.
 
 ## Installation
 
@@ -19,10 +24,7 @@ triton_grow = "{version}"
 ```
 ## Usage
 
-Triton acts as a typical neural network implementation, but allows for a more dynamic way of solving problems you may not know how to solve. Acting as a 'brute force' approach to the world of deep learning, after ```n``` epochs in the training process triton will evaluate the specific error of each neuron and column, deciding whether to add a neuron to a column, add a new column entirely, remove a neuron or remove a column. 
-
-Triton will train and grow a desirable neural network until a specific accuracy is matched, returning the finished model
-
+### Dense Network
 ```rust
 use triton_grow::network::{network::Network, activations::Activations, layer::layers::LayerTypes, input::Input};
 
@@ -49,7 +51,7 @@ fn main() {
     new_net.save("best_network.json");
 }
 ```
-## Proven Results
+## Proven Results [Outdated as of Triton version 2.0, statistics will be updated upon completion of the new self growth algorithm]
 
 Upon testing Triton's self growth method against a traditional preconfigured network model. Three neural networks were all tasked with learning a simple **XOR predictor** with the following inputs and outputs:
 

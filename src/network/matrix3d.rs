@@ -13,9 +13,9 @@ pub struct Matrix3D {
     pub data: Vec<Vec<Vec<f32>>>
 }
 
-impl ops::Add<Vec<f32>> for Matrix3D {
+impl ops::Add<&Vec<f32>> for Matrix3D {
     type Output = Matrix3D;
-    fn add(self, rhs: Vec<f32>) -> Self::Output {
+    fn add(self, rhs: &Vec<f32>) -> Self::Output {
         if rhs.len() != self.layers {
             panic!("Vec of scalar values not same size as layers");
         }
