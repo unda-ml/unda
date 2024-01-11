@@ -79,8 +79,8 @@ impl Network{
         //println!("{:?}", self.layer_sizes);
 
     }
-    pub fn predict(&mut self, input: Vec<f32>) -> Vec<f32>{
-        let in_box: Box<dyn Input> = Box::new(input);
+    pub fn predict(&mut self, input: &dyn Input) -> Vec<f32>{
+        let in_box: Box<dyn Input> = input.to_box();
         self.feed_forward(&in_box)
     }
     pub fn set_seed(&mut self, seed: &str){
@@ -109,8 +109,7 @@ impl Network{
     ///let res = new_net.feed_forward(vec![1.0, 0.54]);
     ///```
     fn feed_forward(&mut self, input_obj: &Box<dyn Input>) -> Vec<f32> {
-
-        if input_obj.shape().0 != self.layers[0].shape().1{
+        if input_obj.shape() != self.layers[0].shape(){
             panic!("Input shape does not match input layer shape \nInput: {:?}\nInput Layer:{:?}", input_obj.shape(), self.layers[0].shape());
         }
         
@@ -152,7 +151,7 @@ impl Network{
     ///compared to what is actually derived during back propegation
     ///* `epochs` - How many epochs you want your model training for
     ///
-    pub fn fit(&mut self, train_in: &Vec<Vec<f32>>, train_out: &Vec<Vec<f32>>, epochs: usize) {
+    pub fn fit(&mut self, train_in: &Vec<&dyn Input>, train_out: &Vec<Vec<f32>>, epochs: usize) {
         self.loss_train = vec![];
 
         let mut loss: f32;
@@ -173,7 +172,7 @@ impl Network{
                     let mut batch_loss: f32 = 0.0;
                     for input_index in start..end {
                         let mut loss_on_input: f32 = 0.0;
-                        let input: Box<dyn Input> = Box::new(train_in[input_index].clone());
+                        let input: Box<dyn Input> = train_in[input_index].to_box();
                         let output: Box<dyn Input> = Box::new(train_out[input_index].clone());
                         let outputs = self.feed_forward(&input);
                         self.back_propegate(outputs.clone(), &output);
@@ -211,7 +210,7 @@ impl Network{
         net
     }
 
-    pub fn fit_to_loss(&mut self, train_in: Vec<Vec<f32>>, train_out: Vec<Vec<f32>>, desired_loss: f32, steps_per: usize) -> usize{
+    pub fn fit_to_loss(&mut self, train_in: Vec<&dyn Input>, train_out: Vec<Vec<f32>>, desired_loss: f32, steps_per: usize) -> usize{
         let mut epochs_total = 0;
         while self.loss > desired_loss{
             self.fit(&train_in, &train_out, steps_per);

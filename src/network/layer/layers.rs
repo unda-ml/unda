@@ -1,18 +1,19 @@
 use crate::network::{input::Input, matrix::Matrix, activations::Activations, network::Network};
 use serde::{Serialize, Deserialize};
 
-use super::dense::Dense;
+use super::{dense::Dense};
 
 #[typetag::serde]
 pub trait Layer{
     fn forward(&mut self, inputs: &Box<dyn Input>) -> Box<dyn Input> {
         Box::new(Matrix::new_empty(0,0))
     }
-    fn backward(&mut self, parsed: Box<dyn Input>, errors: Box<dyn Input>, data: Box<dyn Input>) -> Box<dyn Input>; 
+    fn backward(&mut self, gradients: Box<dyn Input>, errors: Box<dyn Input>, data: Box<dyn Input>) -> Box<dyn Input>; 
     fn get_data(&self) -> Box<dyn Input>;
     fn get_activation(&self) -> Option<Activations> {
         None
     }
+    ///Input shape the layer takes in
     fn shape(&self) -> (usize,usize,usize);
     fn get_loss(&self) -> f32;
     fn update_gradient(&self) -> Box<dyn Input>;
@@ -20,7 +21,7 @@ pub trait Layer{
 
 #[derive(Serialize, Deserialize, Clone)]
 pub enum LayerTypes{
-    //DENSE: Nodes, Activation Function, Learning Rate
+    ///DENSE: Nodes, Activation Function, Learning Rate
     DENSE(usize, Activations, f32),
     //NETWORK(Vec<LayerTypes>, usize),
     //CONV: Kernel Size, stride, Learning Rate

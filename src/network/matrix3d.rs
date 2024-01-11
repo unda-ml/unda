@@ -13,6 +13,148 @@ pub struct Matrix3D {
     pub data: Vec<Vec<Vec<f32>>>
 }
 
+impl ops::Mul<&Matrix3D> for Matrix3D {
+    type Output = Matrix3D;
+    fn mul(self, rhs: &Matrix3D) -> Self::Output {
+        if self.layers != rhs.layers || self.columns != rhs.rows{
+            panic!("Invalid 3D Matrix Dot Multiplication, mismatched dimensions:\nSelf:{}x{}x{}\nOther:{}x{}x{}",
+                   self.rows,
+                   self.columns,
+                   self.layers,
+                   rhs.rows,
+                   rhs.columns,
+                   rhs.layers)
+        }
+        let mut res = Matrix3D::new_empty(self.rows, rhs.columns, self.layers);
+
+        for idx in 0..self.layers{
+            for i in 0..self.rows {
+                for j in 0..rhs.columns {
+                    let mut sum: f32 = 0.0;
+                    for k in 0..self.columns {
+                        sum += self.data[idx][i][k] * rhs.data[idx][k][j];
+                    }
+                    res.data[idx][i][j] = sum;
+                }
+            }
+        }
+        res
+    }
+}
+
+impl ops::Add<&Matrix3D> for Matrix3D {
+    type Output = Matrix3D;
+    fn add(self, rhs: &Matrix3D) -> Self::Output {
+        self.compare(rhs);
+        let mut res = Matrix3D::new_empty(self.rows, self.columns, self.layers);
+        for i in 0..self.layers {
+            for j in 0..self.columns {
+                for k in 0..self.rows {
+                    res.data[i][j][k] = self.data[i][j][k] + rhs.data[i][j][k];
+                }
+            }
+        }
+        res
+    }
+}
+
+///Does a per-point subtraction to a 3D Matrix
+impl ops::Sub<&Matrix3D> for Matrix3D {
+    type Output = Matrix3D;
+    fn sub(self, rhs: &Matrix3D) -> Self::Output {
+        self.compare(rhs);
+        let mut res = Matrix3D::new_empty(self.rows, self.columns, self.layers);
+        for i in 0..self.layers {
+            for j in 0..self.columns {
+                for k in 0..self.rows {
+                    res.data[i][j][k] = self.data[i][j][k] - rhs.data[i][j][k];
+                }
+            }
+        }
+        res
+    }
+}
+///Does a scalar multiplication to all points of the 3D Matrix
+impl ops::Mul<f32> for Matrix3D {
+    type Output = Matrix3D;
+    fn mul(self, rhs: f32) -> Self::Output {
+        let mut res = Matrix3D::new_empty(self.rows, self.columns, self.layers);
+        for i in 0..self.layers {
+            for j in 0..self.columns {
+                for k in 0..self.rows {
+                    res.data[i][j][k] = self.data[i][j][k] * rhs;
+                }
+            }
+        }
+        res
+
+    }
+}
+
+///Does a scalar power to a 3D Matrix
+impl ops::BitXor<i32> for Matrix3D{
+    type Output = Matrix3D;
+    fn bitxor(self, rhs: i32) -> Self::Output {
+        let mut res = Matrix3D::new_empty(self.rows, self.columns, self.layers);
+        for i in 0..self.layers {
+            for j in 0..self.columns {
+                for k in 0..self.rows {
+                    res.data[i][j][k] = self.data[i][j][k].powi(rhs);
+                }
+            }
+        }
+        res
+    }
+}
+///Performs scalar division for a 3D Matrix
+impl ops::Div<f32> for Matrix3D {
+    type Output = Matrix3D;
+    fn div(self, rhs: f32) -> Self::Output {
+        let mut res = Matrix3D::new_empty(self.rows, self.columns, self.layers);
+        for i in 0..self.layers {
+            for j in 0..self.columns {
+                for k in 0..self.rows {
+                    res.data[i][j][k] = self.data[i][j][k] / rhs;
+                }
+            }
+        }
+        res
+    }
+}
+
+///Does a scalar addition to a 3D Matrix
+impl ops::Add<f32> for Matrix3D{
+    type Output = Matrix3D;
+    fn add(self, rhs: f32) -> Self::Output {
+        let mut res = Matrix3D::new_empty(self.rows, self.columns, self.layers);
+        for i in 0..self.layers {
+            for j in 0..self.columns {
+                for k in 0..self.rows {
+                    res.data[i][j][k] = self.data[i][j][k] + rhs;
+                }
+            }
+        }
+        res
+    }
+}
+
+///Performs a per-point division based on two 3D Matrices with the same sizes
+impl ops::Div<&Matrix3D> for Matrix3D {
+    type Output = Matrix3D;
+    fn div(self, rhs: &Matrix3D) -> Self::Output {
+        self.compare(rhs);
+        let mut res = Matrix3D::new_empty(self.rows, self.columns, self.layers);
+        for i in 0..self.layers{
+            for j in 0..self.columns{
+                for k in 0..self.rows{
+                    res.data[i][j][k] = self.data[i][j][k] / rhs.data[i][j][k];
+                }
+            }
+        }
+        res
+    }
+}
+
 impl ops::Add<&Vec<f32>> for Matrix3D {
     type Output = Matrix3D;
     fn add(self, rhs: &Vec<f32>) -> Self::Output {
@@ -32,6 +174,54 @@ impl ops::Add<&Vec<f32>> for Matrix3D {
 }
 
 impl Matrix3D{
+    fn compare(&self, other: &Matrix3D) {
+        if self.rows != other.rows || self.columns != other.columns || self.layers != other.layers {
+            panic!("Invalid 3D Matrix Dot Multiplication, mismatched dimensions:\nSelf:{}x{}x{}\nOther:{}x{}x{}",
+                   self.rows,
+                   self.columns,
+                   self.layers,
+                   other.rows,
+                   other.columns,
+                   other.layers)
+        }
+    }
+    pub fn dot_multiply(&mut self, other: &Matrix3D) -> Matrix3D{
+        self.compare(other);        
+        let mut res = Matrix3D::new_empty(self.rows, self.columns, self.layers);
+        
+        for i in 0..self.layers {
+            for j in 0..self.rows {
+                for k in 0..self.columns {
+                    res.data[i][j][k] = self.data[i][j][k] * other.data[i][j][k];
+                }
+            }
+        }
+
+        res
+    }
+    pub fn transpose(&mut self) -> Matrix3D {
+        let mut res = Matrix3D::new_empty(self.columns, self.rows, self.layers);
+        for i in 0..self.layers{
+            for j in 0..self.rows{
+                for k in 0..self.columns{
+                    res.data[i][k][j] = self.data[i][j][k];
+                }
+            }
+        }
+        res
+    }
+    pub fn map(&mut self, function: &dyn Fn(f32) -> f32) -> Matrix3D {
+        Matrix3D::from(self.data.clone()
+                       .into_iter()
+                       .map(|layer| layer
+                            .into_iter()
+                            .map(|row| row
+                                 .into_iter()
+                                 .map(|value| function(value))
+                                 .collect())
+                            .collect())
+                       .collect())
+    }
     pub fn new_empty(rows: usize, cols: usize, layers: usize) -> Matrix3D {
         Matrix3D { rows, columns: cols, layers, data: vec![vec![vec![0.0; cols]; rows]; layers] }
     }

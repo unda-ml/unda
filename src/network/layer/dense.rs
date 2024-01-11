@@ -73,7 +73,7 @@ impl Layer for Dense{
     ///Moves the DNN forward through the weights and biases of this current layer
     ///Maps an activation function and then returns the resultant Matrix
     fn forward(&mut self, inputs: &Box<dyn Input>) -> Box<dyn Input> {
-        self.data = (self.weights.clone() * &Matrix::from(inputs.to_param_2d()).transpose() + &self.biases)
+        self.data = (self.weights.clone() * &Matrix::from(inputs.to_param().to_param_2d()).transpose() + &self.biases)
             .map(self.activation_fn.get_function().function);
 
         Box::new(self.data.clone().transpose())
@@ -149,7 +149,7 @@ impl Layer for Dense{
         Some(self.activation_fn.clone())
     }
     fn shape(&self) -> (usize, usize, usize){
-        (self.weights.rows, self.weights.columns, 0)
+        (self.weights.columns, 1, 1)
     }
     fn get_loss(&self) -> f32{
         self.loss

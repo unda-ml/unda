@@ -81,8 +81,13 @@ impl Layer for Convolutional {
         self.data = self.data.clone() + &self.filter_biases;
         Box::new(self.data.clone())
     }
-    fn backward(&mut self,parsed:Box<dyn Input> ,errors:Box<dyn Input> ,data:Box<dyn Input>) -> Box<dyn Input> {
-        Box::new(vec![0.0,0.0])
+    fn backward(&mut self,gradients:Box<dyn Input> ,errors:Box<dyn Input> ,data:Box<dyn Input>) -> Box<dyn Input> {
+        let mut gradients_mat = Matrix3D::from(gradients.to_param_3d());
+        let mut errors_mat = Matrix3D::from(errors.to_param_3d());
+        let data_mat = Matrix3D::from(data.to_param_3d());
+
+        gradients_mat = gradients_mat.dot_multiply(&errors_mat) * self.learning_rate;
+        panic!("Unfinished backprop");
     }
     fn get_data(&self) -> Box<dyn Input> {
         self.data.to_box()
