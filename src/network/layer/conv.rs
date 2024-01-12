@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserialize};
 use crate::network::{matrix::Matrix,activations::Activations, input::Input, matrix3d::Matrix3D};
-use super::layers::Layer;
+use super::{layers::Layer, distributions::Distributions};
 
 #[derive(Serialize, Deserialize)]
 pub struct Convolutional{
@@ -19,9 +19,13 @@ pub struct Convolutional{
 }
 
 impl Convolutional{
-    pub fn new(filters: usize, kernel_size: (usize, usize), input_shape: (usize, usize, usize), stride: usize, activation_fn: Activations, learning_rate: f32) -> Convolutional {
+    pub fn new(filters: usize, kernel_size: (usize, usize), input_shape: (usize, usize, usize), stride: usize, activation_fn: Activations, learning_rate: f32, seed: &Option<String>, input_size: usize) -> Convolutional {
+        let distribution = match activation_fn {
+            Activations::TANH | Activations::SIGMOID => Distributions::Xavier(input_size, kernel_size.0 * kernel_size.1),
+            Activations::RELU | Activations::LEAKYRELU => Distributions::He(input_size)
+        };
         let mut res = Convolutional{
-            filter_weights: Matrix3D::new_random(kernel_size.0, kernel_size.1, filters),
+            filter_weights: Matrix3D::new_random(kernel_size.0, kernel_size.1, filters, seed, &distribution),
             filter_biases: vec![0.0; filters],
             data: Matrix3D::new_empty(0,0,0),
             stride,

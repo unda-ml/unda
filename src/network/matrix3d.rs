@@ -1,9 +1,11 @@
-use rand::{thread_rng, Rng};
+use rand::{thread_rng, Rng, RngCore};
+use rand_pcg::Pcg64;
+use rand_seeder::Seeder;
 use serde::{Serialize, Deserialize};
 
 use std::ops;
 
-use super::matrix::Matrix;
+use super::{matrix::Matrix, layer::distributions::Distributions};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Matrix3D {
@@ -225,14 +227,17 @@ impl Matrix3D{
     pub fn new_empty(rows: usize, cols: usize, layers: usize) -> Matrix3D {
         Matrix3D { rows, columns: cols, layers, data: vec![vec![vec![0.0; cols]; rows]; layers] }
     }
-    pub fn new_random(rows: usize, cols: usize, layers: usize) -> Matrix3D {
+    pub fn new_random(rows: usize, cols: usize, layers: usize, seed: &Option<String>, distribution: &Distributions) -> Matrix3D {
         let mut res = Matrix3D::new_empty(rows, cols, layers);
-        let mut rng = thread_rng();
-
+        let mut rng: Box<dyn RngCore> = match seed {
+            Some(seed_rng) => Box::new(Seeder::from(seed_rng).make_rng::<Pcg64>()),
+            None => Box::new(thread_rng())
+        };
+        
         for z in 0..layers {
             for y in 0..rows {
                 for x in 0..cols {
-                    res.data[z][y][x] = rng.gen::<f32>() * 2.0 - 1.0;
+                    res.data[z][y][x] = distribution.sample(&mut rng);
                 }
             }
         }
