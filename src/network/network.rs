@@ -20,7 +20,7 @@ pub struct Network {
     seed: Option<String>
 }
 
-const ITERATIONS_PER_EPOCH: usize = 1000;
+const ITERATIONS_PER_EPOCH: usize = 100000;
 
 impl Network{
     ///Creates a new neural network that is completely empty

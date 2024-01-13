@@ -4,7 +4,7 @@ use triton_grow::{network::{network::Network, activations::Activations, layer::{
 fn main() {
     //Convolutional Example
     //
-    /*let mut inputs: Vec<&dyn Input> = vec![];
+    let mut inputs: Vec<&dyn Input> = vec![];
     let outputs: Vec<Vec<f32>>;
 
     let inputs_undyn: Vec<Matrix>;
@@ -28,13 +28,13 @@ fn main() {
 
     network.compile();
 
-    network.fit(&inputs, &outputs, 10);
+    network.fit(&inputs, &outputs, 1);
 
     println!("{:?}", network.predict(inputs[0]));
-    */
+    
     //Dense Example
     //
-    let mut inputs: Vec<&dyn Input> = vec![];
+    /*let mut inputs: Vec<&dyn Input> = vec![];
     let input_1 = vec![1.0,1.0];
     let input_2 = vec![vec![0.0], vec![1.0]];
     let input_3 = Matrix::from(vec![vec![1.0],vec![0.0]]);
@@ -62,5 +62,5 @@ fn main() {
     println!("1 and 0: {:?}", new_net.predict(&vec![1.0,0.0])[0]);
     println!("0 and 1: {:?}", new_net.predict(&vec![0.0,1.0])[0]);
     println!("1 and 1: {:?}", new_net.predict(&vec![1.0,1.0])[0]);
-    println!("0 and 0: {:?}", new_net.predict(&vec![0.0,0.0])[0]);
+    println!("0 and 0: {:?}", new_net.predict(&vec![0.0,0.0])[0]);*/
 }
