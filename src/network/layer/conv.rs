@@ -13,6 +13,16 @@ pub struct Convolutional{
     input_shape: (usize, usize, usize),
     output_shape: (usize, usize, usize),
     loss: f32,
+    
+    beta1: f32,
+    beta2: f32,
+    epsilon: f32,
+    time: usize,
+
+    m_weights: Matrix3D,
+    v_weights: Matrix3D,
+    m_biases: Vec<f32>,
+    v_biases: Vec<f32>,
 
     activation_fn: Activations,
     learning_rate: f32
@@ -26,7 +36,13 @@ impl Convolutional{
         };
         let mut res = Convolutional{
             filter_weights: Matrix3D::new_random(kernel_size.0, kernel_size.1, filters, seed, &distribution),
-            filter_biases: vec![0.0; filters],
+            m_weights: Matrix3D::new_empty(kernel_size.0, kernel_size.1, filters),
+            v_weights: Matrix3D::new_empty(kernel_size.0, kernel_size.1, filters),
+
+            filter_biases: Matrix::new_random(1, filters, seed, &distribution).to_param(),
+            m_biases: vec![0.0; filters],
+            v_biases: vec![0.0; filters],
+
             data: Matrix3D::new_empty(0,0,0),
             stride,
             filters,
@@ -35,21 +51,34 @@ impl Convolutional{
             activation_fn,
             learning_rate,
             output_shape: (0,0,0),
-            loss: 1.0
+            loss: 1.0,
+
+            beta1: 0.0,
+            beta2: 0.0,
+            epsilon: 0.0,
+            time: 1
         };
+
         let res_len = Convolutional::get_res_size(input_shape.0, kernel_size.0, 0, stride);
         let res_width = Convolutional::get_res_size(input_shape.1, kernel_size.1, 0, stride);
-
+        
         res.data = Matrix3D::new_empty(res_len, res_width, filters);
         res.output_shape = (res_len, res_width, 1);
 
+        (res.beta1, res.beta2) = res.get_betas();
+        res.epsilon = res.get_epsilon();
+
         res
+    }
+    fn get_betas(&self) -> (f32, f32) {
+        (0.9, 0.999)
+    }
+    fn get_epsilon(&self) -> f32{
+        1e-10
     }
     pub fn convolute(&mut self, idx: usize, input: Matrix) {
         let kernel = self.filter_weights.get_slice(idx);
         let mut output = Matrix::new_empty(self.output_shape.0, self.output_shape.1);
-        //slide kernel over input, summing kernel and returning resultant matrix
-        //println!("convoluting over: \n{} \n\nwith kernel: \n{}\n", input, kernel);
 
         let mut x: usize;
         let mut y: usize = 0;
@@ -91,7 +120,15 @@ impl Layer for Convolutional {
         let data_mat = Matrix3D::from(data.to_param_3d());
 
         gradients_mat = gradients_mat.dot_multiply(&errors_mat) * self.learning_rate;
-        panic!("Unfinished backprop");
+        errors_mat = self.filter_weights.clone().transpose() * &errors_mat;
+
+        self.loss = 0.0;
+        errors_mat.to_param().iter().for_each(|error| {
+            self.loss += error.powi(2);
+        });
+        self.loss = self.loss / errors_mat.to_param().len() as f32;
+
+        panic!();
     }
     fn get_data(&self) -> Box<dyn Input> {
         self.data.to_box()

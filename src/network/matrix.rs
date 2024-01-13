@@ -32,7 +32,6 @@ impl std::fmt::Display for Matrix{
 }
 
 impl ops::Add<&Matrix> for Matrix{
-
     type Output = Matrix;
     fn add(self, other: &Matrix) -> Matrix {
         if self.rows != other.rows || self.columns != other.columns{
@@ -155,6 +154,20 @@ impl ops::Div<&Matrix> for Matrix{
 }
 
 impl Matrix{
+    pub fn from_sized(data: Vec<f32>, rows: usize, cols: usize) -> Matrix {
+        if rows * cols != data.len() {
+            panic!("Size incompatible between data inputted and desired matrix size");
+        }
+        let mut res = Matrix::new_empty(rows, cols);
+        let mut idx = 0;
+        for i in 0..res.rows {
+            for j in 0..res.columns {
+                res.data[i][j] = data[idx];
+                idx += 1;
+            }
+        }
+        res
+    }
     pub fn sum(&self) -> f32 {
         let mut res: f32 = 0.0;
         for i in 0..self.rows{
@@ -223,7 +236,11 @@ impl Matrix{
     }*/
     pub fn dot_multiply(&mut self, other: &Matrix) -> Matrix {
         if self.rows != other.rows || self.columns != self.columns{
-            panic!("Invalid matrix multiplaction, mismatched dimensions");
+            panic!("Invalid matrix multiplaction, mismatched dimensions:\n{}x{}\n{}x{}", 
+                   self.rows, 
+                   self.columns,
+                   other.rows,
+                   other.columns);
         }
         let mut res = Matrix::new_empty(self.rows, self.columns);
 

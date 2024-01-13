@@ -140,9 +140,11 @@ Currently, triton is in a very beta stage, the following features are still in d
     - [X] Dense
     - [ ] Convolutional
     - [ ] Recurrent
-    - [ ] Flatten
 - [X] Allow for different activation functions and learning rates on each layer
 - [X] Adam Optimization in backprop
+- [X] Helper Function for parsing CSV data
+- [X] Helper Function for generating the MNIST dataset
+- [X] Helper Functions for generating and deriving categorical data
 
 ## License
 

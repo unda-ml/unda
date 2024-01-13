@@ -1,7 +1,39 @@
 use rand_distr::Distribution;
-use triton_grow::network::{network::Network, activations::Activations, layer::{layers::LayerTypes, conv::Convolutional, distributions::Distributions}, input::*, matrix::Matrix, matrix3d::Matrix3D};
+use triton_grow::{network::{network::Network, activations::Activations, layer::{layers::LayerTypes, conv::Convolutional, distributions::Distributions}, input::*, matrix::Matrix, matrix3d::Matrix3D}, helper::{mnist::MnistEntry, categorical::to_categorical}};
 
 fn main() {
+    //Convolutional Example
+    //
+    /*let mut inputs: Vec<&dyn Input> = vec![];
+    let outputs: Vec<Vec<f32>>;
+
+    let inputs_undyn: Vec<Matrix>;
+    let outputs_uncat: Vec<usize>;
+
+    println!("Generating MNIST....");
+    (inputs_undyn, outputs_uncat) = MnistEntry::generate_mnist();
+    println!("Done Generating MNIST");
+
+    outputs = to_categorical(outputs_uncat);
+    for i in 0..inputs_undyn.len(){
+        inputs.push(&inputs_undyn[i]);
+    }
+
+    let mut network = Network::new(128);
+
+    network.add_layer(LayerTypes::DENSE(784, Activations::RELU, 0.1));
+    network.add_layer(LayerTypes::DENSE(64, Activations::RELU, 0.1));
+    network.add_layer(LayerTypes::DENSE(32, Activations::RELU, 0.1));
+    network.add_layer(LayerTypes::DENSE(10, Activations::RELU, 0.1));
+
+    network.compile();
+
+    network.fit(&inputs, &outputs, 10);
+
+    println!("{:?}", network.predict(inputs[0]));
+    */
+    //Dense Example
+    //
     let mut inputs: Vec<&dyn Input> = vec![];
     let input_1 = vec![1.0,1.0];
     let input_2 = vec![vec![0.0], vec![1.0]];

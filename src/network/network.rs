@@ -109,7 +109,7 @@ impl Network{
     ///let res = new_net.feed_forward(vec![1.0, 0.54]);
     ///```
     fn feed_forward(&mut self, input_obj: &Box<dyn Input>) -> Vec<f32> {
-        if input_obj.shape() != self.layers[0].shape(){
+        if input_obj.to_param().shape() != self.layers[0].shape(){
             panic!("Input shape does not match input layer shape \nInput: {:?}\nInput Layer:{:?}", input_obj.shape(), self.layers[0].shape());
         }
         
@@ -126,14 +126,14 @@ impl Network{
     ///
     ///When constructing a neural network, be cautious that your layers behave well with each other
     fn back_propegate(&mut self, outputs: Vec<f32>, target_obj: &Box<dyn Input>) {
-        let parsed = Matrix::from(outputs.to_param_2d()).transpose();
+        let parsed = Matrix::from(outputs.to_param_2d());
         
         if let None = self.layers[self.layers.len()-1].get_activation() {
             panic!("Output layer is not a dense layer");
         }
         
         let mut gradients: Box<dyn Input>;
-        let mut errors: Box<dyn Input> = Box::new(Matrix::from(target_obj.to_param_2d()) - &parsed);
+        let mut errors: Box<dyn Input> = Box::new((Matrix::from(target_obj.to_param_2d()) - &parsed).transpose());
 
         for i in (0..self.layers.len() - 1).rev() {
             gradients = self.layers[i + 1].update_gradient();
