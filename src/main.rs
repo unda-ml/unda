@@ -28,9 +28,11 @@ fn main() {
 
     network.compile();
 
-    network.fit(&inputs, &outputs, 1);
+    network.fit(&inputs, &outputs, 10);
 
     println!("{:?}", network.predict(inputs[0]));
+
+    network.plot_loss_history("mnist_loss.png");
     
     //Dense Example
     //

@@ -4,6 +4,7 @@ use super::input::Input;
 use serde::{Serialize, Deserialize};
 
 use serde_json::{to_string, from_str};
+use std::io;
 use std::{
     fs::File,
     io::{Read,Write},
@@ -20,7 +21,7 @@ pub struct Network {
     seed: Option<String>
 }
 
-const ITERATIONS_PER_EPOCH: usize = 100000;
+const ITERATIONS_PER_EPOCH: usize = 1000;
 
 impl Network{
     ///Creates a new neural network that is completely empty
@@ -157,14 +158,25 @@ impl Network{
         let mut loss: f32;
         let num_batches = train_in.len() / self.batch_size;
 
-        let iteration_scale_factor = ITERATIONS_PER_EPOCH / train_in.len();
-        let iterations_per_epoch: usize = (iteration_scale_factor as f32 * 25.0).ceil() as usize;
-        println!("{}", iterations_per_epoch);
+        let mut iterations_per_epoch: usize = 20;
 
-        for _ in 0..epochs {
+        if train_in.len() < ITERATIONS_PER_EPOCH {
+            let iteration_scale_factor = ITERATIONS_PER_EPOCH / train_in.len();
+            iterations_per_epoch = (iteration_scale_factor as f32 * 25.0).ceil() as usize;
+        }
+        //println!("{}", iterations_per_epoch);
+        let iterations_divided_even = iterations_per_epoch / 20;
+
+        for epoch in 0..epochs {
+            io::stdout().flush();
+            print!("Epoch {}: [", epoch+1);
             loss = 0.0;
-            for batch_index in 0..num_batches {
-                for _ in 0..iterations_per_epoch {
+            for iteration in 0..iterations_per_epoch {
+                if iteration % iterations_divided_even == 0 {
+                    io::stdout().flush();
+                    print!("#");
+                }
+                for batch_index in 0..num_batches {
                     let start = batch_index * self.batch_size;
                     let end = start + self.batch_size;
                     let end = end.min(train_in.len()); // Ensure 'end' doesn't go out of bounds
@@ -186,6 +198,7 @@ impl Network{
                 }
             }
             self.loss_train.push(loss / (iterations_per_epoch * num_batches) as f32);
+            println!("] Loss: {}", self.loss_train[self.loss_train.len()-1]);
         }
 
         self.loss = self.loss_train[self.loss_train.len() - 1];
