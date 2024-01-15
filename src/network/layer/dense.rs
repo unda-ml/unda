@@ -31,7 +31,7 @@ pub struct Dense{
 impl Dense{
     pub fn new(layers: usize, layer_cols_before: usize, activation: Activations, learning_rate: f32, seed: &Option<String>, input_size: usize) -> Dense{
         let distribution: Distributions = match activation{
-            Activations::RELU | Activations::LEAKYRELU => Distributions::He(input_size),
+            Activations::RELU | Activations::LEAKYRELU | Activations::SOFTMAX => Distributions::He(input_size),
             Activations::TANH | Activations::SIGMOID => Distributions::Xavier(input_size, layers),
         };
         let mut res = Dense { 
@@ -75,8 +75,7 @@ impl Layer for Dense{
     ///Moves the DNN forward through the weights and biases of this current layer
     ///Maps an activation function and then returns the resultant Matrix
     fn forward(&mut self, inputs: &Box<dyn Input>) -> Box<dyn Input> {
-        self.data = (self.weights.clone() * &Matrix::from(inputs.to_param().to_param_2d()).transpose() + &self.biases)
-            .map(self.activation_fn.get_function().function);
+        self.data = self.activation_fn.apply_fn(self.weights.clone() * &Matrix::from(inputs.to_param().to_param_2d()).transpose() + &self.biases);
 
         Box::new(self.data.clone().transpose())
     }
@@ -124,7 +123,7 @@ impl Layer for Dense{
     }
 
     fn update_gradient(&self) -> Box<dyn Input> {
-        Box::new(self.data.clone().map(self.activation_fn.get_function().derivative))
+        Box::new(self.activation_fn.apply_fn(self.data.clone()))
     }
 
     /*fn backward(&mut self, inputs: &Matrix, gradients: &Matrix, errors: &Matrix, layer_prev: &Matrix, layer_prev_bias: &Matrix) -> (Matrix, Matrix, Matrix, Matrix){

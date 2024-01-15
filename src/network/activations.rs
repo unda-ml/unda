@@ -1,6 +1,8 @@
 use std::f32::consts::E;
 use serde::{Deserialize, Serialize};
 
+use super::{matrix::Matrix, input::Input};
+
 #[derive(Clone)]
 pub struct Activation<'a>{
     pub function: &'a dyn Fn(f32) -> f32,
@@ -12,15 +14,46 @@ pub enum Activations{
     SIGMOID,
     TANH,
     RELU,
-    LEAKYRELU
+    LEAKYRELU,
+    SOFTMAX
 }
 impl Activations{
-    pub fn get_function(&self) -> Activation{
+    fn get_function(&self) -> Option<Activation>{
         return match self{
-            Activations::SIGMOID => SIGMOID,
-            Activations::TANH => TANH,
-            Activations::RELU => RELU,
-            Activations::LEAKYRELU => LEAKY_RELU
+            Activations::SIGMOID => Some(SIGMOID),
+            Activations::TANH => Some(TANH),
+            Activations::RELU => Some(RELU),
+            Activations::LEAKYRELU => Some(LEAKY_RELU),
+            _ => None
+        };
+    }
+    pub fn apply_fn(&self, mut data: Matrix) -> Matrix {
+        match self{
+            Activations::SIGMOID | Activations::TANH | Activations::RELU | Activations::LEAKYRELU => {
+                return data.map(self.get_function().unwrap().function);
+            },
+            Activations::SOFTMAX => { 
+                let exp_logits: Vec<f32> = data.to_param()
+                    .iter()
+                    .map(|&x| x.exp()).collect();
+                let sum_exp: f32 = exp_logits.iter().sum();
+                return Matrix::from_sized(exp_logits.iter().map(|x| x / sum_exp).collect::<Vec<f32>>(), data.rows, data.columns)
+            }
+        };
+    }
+    pub fn apply_derivative(&self, mut data: Matrix) -> Matrix {
+        match self{
+            Activations::SIGMOID | Activations::TANH | Activations::RELU | Activations::LEAKYRELU => {
+                return data.map(self.get_function().unwrap().derivative);
+            },
+            Activations::SOFTMAX => { 
+                let softmax_output = data.to_param()
+                    .iter()
+                    .zip(data.to_param().iter().map(|&x| 1.0 - x))
+                    .map(|(s,ds)| s * ds)
+                    .collect();
+                return Matrix::from_sized(softmax_output, data.rows, data.columns);
+            }
         };
     }
 }

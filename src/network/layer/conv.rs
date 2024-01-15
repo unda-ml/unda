@@ -31,7 +31,7 @@ pub struct Convolutional{
 impl Convolutional{
     pub fn new(filters: usize, kernel_size: (usize, usize), input_shape: (usize, usize, usize), stride: usize, activation_fn: Activations, learning_rate: f32, seed: &Option<String>, input_size: usize) -> Convolutional {
         let distribution = match activation_fn {
-            Activations::TANH | Activations::SIGMOID => Distributions::Xavier(input_size, kernel_size.0 * kernel_size.1),
+            Activations::TANH | Activations::SIGMOID | Activations::SOFTMAX => Distributions::Xavier(input_size, kernel_size.0 * kernel_size.1),
             Activations::RELU | Activations::LEAKYRELU => Distributions::He(input_size)
         };
         let mut res = Convolutional{
