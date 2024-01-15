@@ -3,6 +3,8 @@ use super::matrix::Matrix;
 use super::input::Input;
 use serde::{Serialize, Deserialize};
 
+use rayon::prelude::*;
+
 use serde_json::{to_string, from_str};
 use std::io;
 use std::{
@@ -87,6 +89,10 @@ impl Network{
     pub fn set_seed(&mut self, seed: &str){
         self.seed = Some(String::from(seed));
     }
+    fn minibatch_gradients(&self, minibatch: Vec<&dyn Input>) -> Vec<Vec<Box<dyn Input>>> {
+        minibatch.iter();
+        vec![]
+    }
     ///Travels through a neural network's abstracted Layers and returns the resultant vector at the
     ///end
     ///
@@ -164,7 +170,7 @@ impl Network{
             let iteration_scale_factor = ITERATIONS_PER_EPOCH / train_in.len();
             iterations_per_epoch = (iteration_scale_factor as f32 * 25.0).ceil() as usize;
         }
-        //println!("{}", iterations_per_epoch);
+        println!("{}", iterations_per_epoch);
         let iterations_divided_even = iterations_per_epoch / 20;
 
         for epoch in 0..epochs {

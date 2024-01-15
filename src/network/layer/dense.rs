@@ -1,6 +1,7 @@
 use crate::network::{matrix::Matrix, activations::{Activation, Activations}, input::Input};
 
 use super::{layers::Layer, distributions::Distributions};
+use rayon::prelude::ParallelIterator;
 use serde::{Deserialize, Serialize};
 
 ///A Dense Neural Network Layer of a model, containing just nodes, weights, biases and an
@@ -64,6 +65,7 @@ impl Dense{
         1e-10
     }
 }
+
 
 #[typetag::serde]
 impl Layer for Dense{

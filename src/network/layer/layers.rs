@@ -1,4 +1,5 @@
 use crate::network::{input::Input, matrix::Matrix, activations::Activations, network::Network};
+use rayon::prelude::ParallelIterator;
 use serde::{Serialize, Deserialize};
 
 use super::{dense::Dense};
