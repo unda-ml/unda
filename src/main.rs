@@ -24,20 +24,19 @@ fn main() {
 
     let mut network = Network::new(5);
 
-    network.add_layer(LayerTypes::DENSE(784, Activations::RELU, 0.1));
-    network.add_layer(LayerTypes::DENSE(64, Activations::RELU, 0.1));
-    network.add_layer(LayerTypes::DENSE(32, Activations::RELU, 0.1));
-    network.add_layer(LayerTypes::DENSE(10, Activations::RELU, 0.1));
+    network.add_layer(LayerTypes::DENSE(784, Activations::SIGMOID, 0.01));
+    network.add_layer(LayerTypes::DENSE(64, Activations::SIGMOID, 0.01));
+    network.add_layer(LayerTypes::DENSE(32, Activations::SIGMOID, 0.01));
+    network.add_layer(LayerTypes::DENSE(10, Activations::SOFTMAX, 0.01));
 
     network.compile();
 
-    network.fit(&inputs, &true_outputs, 10);
+    network.fit(&inputs, &true_outputs, 100);
     for i in 0..inputs.len(){
         println!("predicted: {:?} \n\n actual: {:?}\n", network.predict(inputs[i]), true_outputs[i]);
     }
 
-    network.plot_loss_history("mnist_loss.png");
-    */
+    network.plot_loss_history("mnist_loss.png");*/
     //Dense Example
     //
     let mut inputs: Vec<&dyn Input> = vec![];

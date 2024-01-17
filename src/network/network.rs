@@ -3,7 +3,7 @@ use super::matrix::Matrix;
 use super::input::Input;
 use serde::{Serialize, Deserialize};
 
-use rayon::prelude::*;
+use futures::{future::ready, stream::{StreamExt, TryStreamExt}};
 
 use serde_json::{to_string, from_str};
 use std::io;
@@ -89,8 +89,14 @@ impl Network{
     pub fn set_seed(&mut self, seed: &str){
         self.seed = Some(String::from(seed));
     }
-    fn minibatch_gradients(&self, minibatch: Vec<&dyn Input>) -> Vec<Vec<Box<dyn Input>>> {
-        minibatch.iter();
+
+    async fn minibatch_gradients(&self, minibatch: Vec<(&Box<dyn Input>, Vec<f32>)>) -> Vec<Vec<Box<dyn Input>>> {
+        let len = minibatch.len();
+        let mut minibatch_futures = futures::stream::iter(minibatch)
+            .map(|input| self.feed_forward_async(input.0));
+        
+        minibatch_futures;
+
         vec![]
     }
     ///Travels through a neural network's abstracted Layers and returns the resultant vector at the
@@ -123,6 +129,18 @@ impl Network{
         let mut data_at: Box<dyn Input> = Box::new(input_obj.to_param());
         for i in 0..self.layers.len(){
             data_at = self.layers[i].forward(&data_at);
+            self.layers[i].set_data(&data_at);
+        }
+        data_at.to_param().to_owned()
+    }
+    async fn feed_forward_async(&self, input_obj: &Box<dyn Input>) -> Vec<f32> {
+        if input_obj.to_param().shape() != self.layers[0].shape(){
+            panic!("Input shape does not match input layer shape \nInput: {:?}\nInput Layer:{:?}", input_obj.shape(), self.layers[0].shape());
+        }
+        
+        let mut data_at: Box<dyn Input> = Box::new(input_obj.to_param());
+        for i in 0..self.layers.len(){
+            data_at = self.layers[i].forward(&data_at);
         }
         data_at.to_param().to_owned()
     }
@@ -148,6 +166,24 @@ impl Network{
             errors = self.layers[i+1].backward(gradients, errors, data_box);
         }
     }
+    async fn back_propegate_async(&mut self, outputs: Vec<f32>, target_obj: &Box<dyn Input>) -> Vec<Box<dyn Input>> {
+        let mut res = vec![];
+        let parsed = Matrix::from(outputs.to_param_2d());
+        
+        if let None = self.layers[self.layers.len()-1].get_activation() {
+            panic!("Output layer is not a dense layer");
+        }
+        
+        let mut gradients: Box<dyn Input>;
+        let mut errors: Box<dyn Input> = Box::new((Matrix::from(target_obj.to_param_2d()) - &parsed).transpose());
+
+        for i in (0..self.layers.len() - 1).rev() {
+            gradients = self.layers[i + 1].update_gradient();
+            res.push(gradients);
+        }
+        res
+    }
+
     ///Trains a neural network by iteratively feeding forward a series of inputs and then doing
     ///back propegation based on the outputs supplied
     ///
@@ -164,14 +200,14 @@ impl Network{
         let mut loss: f32;
         let num_batches = train_in.len() / self.batch_size;
 
-        let mut iterations_per_epoch: usize = 20;
+        let mut iterations_per_epoch: usize = 40;
 
         if train_in.len() < ITERATIONS_PER_EPOCH {
             let iteration_scale_factor = ITERATIONS_PER_EPOCH / train_in.len();
             iterations_per_epoch = (iteration_scale_factor as f32 * 25.0).ceil() as usize;
         }
         println!("{}", iterations_per_epoch);
-        let iterations_divided_even = iterations_per_epoch / 20;
+        let iterations_divided_even = iterations_per_epoch / 40;
 
         for epoch in 0..epochs {
             io::stdout().flush();
@@ -180,7 +216,7 @@ impl Network{
             for iteration in 0..iterations_per_epoch {
                 if iteration % iterations_divided_even == 0 {
                     io::stdout().flush();
-                    print!("#");
+                    print!("=");
                 }
                 for batch_index in 0..num_batches {
                     let start = batch_index * self.batch_size;

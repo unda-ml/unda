@@ -76,7 +76,7 @@ impl Convolutional{
     fn get_epsilon(&self) -> f32{
         1e-10
     }
-    pub fn convolute(&mut self, idx: usize, input: Matrix) {
+    pub fn convolute(&self, idx: usize, input: Matrix) -> Matrix {
         let kernel = self.filter_weights.get_slice(idx);
         let mut output = Matrix::new_empty(self.output_shape.0, self.output_shape.1);
 
@@ -95,7 +95,8 @@ impl Convolutional{
         }
 
         //println!("{}", output);
-        self.data.set_slice(idx, output);
+        //self.data.set_slice(idx, output);
+        output
     }
     fn get_res_size(w: usize, k: usize, p: usize, s:usize) -> usize {
         (w - k + 2*p) / s + 1
@@ -104,15 +105,18 @@ impl Convolutional{
 
 #[typetag::serde]
 impl Layer for Convolutional {
-    fn forward(&mut self,inputs: &Box<dyn Input>) -> Box<dyn Input> {
+    fn forward(&self,inputs: &Box<dyn Input>) -> Box<dyn Input> {
         let input_mat = Matrix3D::from(inputs.to_param_3d());
         for i in 0..input_mat.layers {
             for j in 0..self.filters {
                 self.convolute(j, input_mat.get_slice(i));
             }
         }
-        self.data = self.data.clone() + &self.filter_biases;
-        Box::new(self.data.clone())
+        let data = self.data.clone() + &self.filter_biases;
+        Box::new(data.clone())
+    }
+    fn set_data(&mut self, data: &Box<dyn Input>) {
+        self.data = Matrix3D::from(data.to_param_3d())
     }
     fn backward(&mut self,gradients:Box<dyn Input> ,errors:Box<dyn Input> ,data:Box<dyn Input>) -> Box<dyn Input> {
         let mut gradients_mat = Matrix3D::from(gradients.to_param_3d());
