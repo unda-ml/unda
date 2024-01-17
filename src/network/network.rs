@@ -3,6 +3,9 @@ use super::matrix::Matrix;
 use super::input::Input;
 use serde::{Serialize, Deserialize};
 
+use std::sync::{Arc, Mutex};
+use tokio::task;
+
 use futures::{stream::{StreamExt}};
 
 use serde_json::{to_string, from_str};
@@ -90,13 +93,20 @@ impl Network{
         self.seed = Some(String::from(seed));
     }
 
-    async fn get_minibatch_gradients(&self, minibatch: Vec<(&Box<dyn Input>, Vec<f32>)>) -> Vec<Vec<Box<dyn Input>>> {
-        let _len = minibatch.len();
-        let _minibatch_futures = futures::stream::iter(minibatch)
-            .map(|input| self.feed_forward_async(input.0, input.1)); //gives us an iterator of all data of every input (Vec<Box<dyn Input>)
+    /*async fn get_minibatch_gradients(&self, minibatch: Vec<(&Box<dyn Input>, Vec<f32>)>) -> Vec<Vec<Box<dyn Input>>> {
+        let results = Arc::new(Mutex::new(Vec::<Vec<Box<dyn Input>>>::new()));
+        
+        let tasks = minibatch.into_iter().map(|input| {
+                let results_par = Arc::clone(&results);
+                task::spawn(async move {
+                    let result = self.feed_forward_async(input.0, input.1).await;
+                    results_par.lock().unwrap().push(result.0);
+                });
+        });
 
         vec![]
-    }
+    }*/
+
     ///Travels through a neural network's abstracted Layers and returns the resultant vector at the
     ///end
     ///

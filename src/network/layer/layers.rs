@@ -5,7 +5,7 @@ use serde::{Serialize, Deserialize};
 use super::{dense::Dense};
 
 #[typetag::serde]
-pub trait Layer{
+pub trait Layer: Send + Sync{
     fn forward(&self, _inputs: &Box<dyn Input>) -> Box<dyn Input> {
         Box::new(Matrix::new_empty(0,0))
     }

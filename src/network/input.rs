@@ -1,6 +1,6 @@
 use super::{matrix::Matrix, matrix3d::Matrix3D};
 
-pub trait Input{
+pub trait Input: Send + Sync{
     fn to_param(&self) -> Vec<f32>;
     fn to_param_2d(&self) -> Vec<Vec<f32>>;
     fn to_param_3d(&self) -> Vec<Vec<Vec<f32>>>;
