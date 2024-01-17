@@ -90,12 +90,10 @@ impl Network{
         self.seed = Some(String::from(seed));
     }
 
-    async fn minibatch_gradients(&self, minibatch: Vec<(&Box<dyn Input>, Vec<f32>)>) -> Vec<Vec<Box<dyn Input>>> {
+    async fn get_minibatch_gradients(&self, minibatch: Vec<(&Box<dyn Input>, Vec<f32>)>) -> Vec<Vec<Box<dyn Input>>> {
         let len = minibatch.len();
         let mut minibatch_futures = futures::stream::iter(minibatch)
-            .map(|input| self.feed_forward_async(input.0));
-        
-        minibatch_futures;
+            .map(|input| self.feed_forward_async(input.0, input.1)); //gives us an iterator of all data of every input (Vec<Box<dyn Input>)
 
         vec![]
     }
@@ -133,7 +131,8 @@ impl Network{
         }
         data_at.to_param().to_owned()
     }
-    async fn feed_forward_async(&self, input_obj: &Box<dyn Input>) -> Vec<f32> {
+    async fn feed_forward_async(&self, input_obj: &Box<dyn Input>, output: Vec<f32>) -> (Vec<Box<dyn Input>>, Vec<f32>) {
+        let mut res: Vec<Box<dyn Input>> = vec![];
         if input_obj.to_param().shape() != self.layers[0].shape(){
             panic!("Input shape does not match input layer shape \nInput: {:?}\nInput Layer:{:?}", input_obj.shape(), self.layers[0].shape());
         }
@@ -141,8 +140,11 @@ impl Network{
         let mut data_at: Box<dyn Input> = Box::new(input_obj.to_param());
         for i in 0..self.layers.len(){
             data_at = self.layers[i].forward(&data_at);
+            res.push(data_at.to_box())
         }
-        data_at.to_param().to_owned()
+        //Expected output is passed through asynchronously as well so we don't need to worry about
+        //needing to get the response in order
+        (res, output)
     }
     ///Travels backwards through a neural network and updates weights and biases accordingly
     ///

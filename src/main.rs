@@ -62,7 +62,7 @@ fn main() {
     //new_net.set_seed("I said");
     new_net.compile();
 
-    new_net.fit(&inputs, &outputs, 100);
+    new_net.fit(&inputs, &outputs, 20);
 
     println!("1 and 0: {:?}", new_net.predict(&vec![1.0,0.0])[0]);
     println!("0 and 1: {:?}", new_net.predict(&vec![0.0,1.0])[0]);
