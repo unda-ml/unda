@@ -1,5 +1,5 @@
-use std::{fs::File, io::{self, Read}};
-use flate2::read::GzDecoder;
+use std::{fs::File, io::{Read}};
+
 
 use crate::network::{matrix::Matrix, input::Input};
 

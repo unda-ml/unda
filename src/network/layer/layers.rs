@@ -1,12 +1,12 @@
-use crate::network::{input::Input, matrix::Matrix, activations::Activations, network::Network};
-use rayon::prelude::ParallelIterator;
+use crate::network::{input::Input, matrix::Matrix, activations::Activations};
+
 use serde::{Serialize, Deserialize};
 
 use super::{dense::Dense};
 
 #[typetag::serde]
 pub trait Layer{
-    fn forward(&self, inputs: &Box<dyn Input>) -> Box<dyn Input> {
+    fn forward(&self, _inputs: &Box<dyn Input>) -> Box<dyn Input> {
         Box::new(Matrix::new_empty(0,0))
     }
     fn backward(&mut self, gradients: Box<dyn Input>, errors: Box<dyn Input>, data: Box<dyn Input>) -> Box<dyn Input>; 

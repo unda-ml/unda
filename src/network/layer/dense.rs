@@ -1,4 +1,4 @@
-use crate::network::{matrix::Matrix, activations::{Activation, Activations}, input::Input};
+use crate::network::{matrix::Matrix, activations::{Activations}, input::Input};
 
 use super::{layers::Layer, distributions::Distributions};
 use rayon::prelude::ParallelIterator;
@@ -78,7 +78,7 @@ impl Layer for Dense{
     ///Moves the DNN forward through the weights and biases of this current layer
     ///Maps an activation function and then returns the resultant Matrix
     fn forward(&self, inputs: &Box<dyn Input>) -> Box<dyn Input> {
-        let mut new_data = self.activation_fn.apply_fn(self.weights.clone() * &Matrix::from(inputs.to_param().to_param_2d()).transpose() + &self.biases);
+        let new_data = self.activation_fn.apply_fn(self.weights.clone() * &Matrix::from(inputs.to_param().to_param_2d()).transpose() + &self.biases);
 
         Box::new(new_data)
     }

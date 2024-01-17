@@ -3,7 +3,7 @@ use super::matrix::Matrix;
 use super::input::Input;
 use serde::{Serialize, Deserialize};
 
-use futures::{future::ready, stream::{StreamExt, TryStreamExt}};
+use futures::{stream::{StreamExt}};
 
 use serde_json::{to_string, from_str};
 use std::io;
@@ -91,8 +91,8 @@ impl Network{
     }
 
     async fn get_minibatch_gradients(&self, minibatch: Vec<(&Box<dyn Input>, Vec<f32>)>) -> Vec<Vec<Box<dyn Input>>> {
-        let len = minibatch.len();
-        let mut minibatch_futures = futures::stream::iter(minibatch)
+        let _len = minibatch.len();
+        let _minibatch_futures = futures::stream::iter(minibatch)
             .map(|input| self.feed_forward_async(input.0, input.1)); //gives us an iterator of all data of every input (Vec<Box<dyn Input>)
 
         vec![]
@@ -177,7 +177,7 @@ impl Network{
         }
         
         let mut gradients: Box<dyn Input>;
-        let mut errors: Box<dyn Input> = Box::new((Matrix::from(target_obj.to_param_2d()) - &parsed).transpose());
+        let _errors: Box<dyn Input> = Box::new((Matrix::from(target_obj.to_param_2d()) - &parsed).transpose());
 
         for i in (0..self.layers.len() - 1).rev() {
             gradients = self.layers[i + 1].update_gradient();

@@ -1,5 +1,5 @@
-use rand_distr::Distribution;
-use triton_grow::{network::{network::Network, activations::Activations, layer::{layers::LayerTypes, conv::Convolutional, distributions::Distributions}, input::*, matrix::Matrix, matrix3d::Matrix3D}, helper::{mnist::MnistEntry, categorical::to_categorical}};
+
+use triton_grow::{network::{network::Network, activations::Activations, layer::{layers::LayerTypes}, input::*, matrix::Matrix, matrix3d::Matrix3D}};
 
 fn main() {
     //Convolutional Example
