@@ -166,7 +166,7 @@ impl Network{
             errors = self.layers[i+1].backward(gradients, errors, data_box);
         }
     }
-    async fn back_propegate_async(&mut self, outputs: Vec<f32>, target_obj: &Box<dyn Input>) -> Vec<Box<dyn Input>> {
+    async fn back_propegate_async(&self, outputs: Vec<f32>, target_obj: &Box<dyn Input>) -> Vec<Box<dyn Input>> {
         let mut res = vec![];
         let parsed = Matrix::from(outputs.to_param_2d());
         
