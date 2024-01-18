@@ -2,7 +2,7 @@ use crate::network::{input::Input, matrix::Matrix, activations::Activations};
 
 use serde::{Serialize, Deserialize};
 
-use super::{dense::Dense};
+use super::{dense::Dense, pair::GradientPair};
 
 #[typetag::serde]
 pub trait Layer: Send + Sync{
@@ -10,8 +10,11 @@ pub trait Layer: Send + Sync{
         Box::new(Matrix::new_empty(0,0))
     }
     fn backward(&mut self, gradients: Box<dyn Input>, errors: Box<dyn Input>, data: Box<dyn Input>) -> Box<dyn Input>; 
+    fn avg_gradient(&self, gradients: Vec<&Box<dyn Input>>) -> Box<dyn Input>;
     fn get_data(&self) -> Box<dyn Input>;
     fn set_data(&mut self, data: &Box<dyn Input>); 
+    fn update_errors(&self, errors: Box<dyn Input>) -> Box<dyn Input>;
+    fn get_gradients(&self, data: &Box<dyn Input>, data_at: &Box<dyn Input>, errors: &Box<dyn Input>) -> GradientPair; 
     fn get_activation(&self) -> Option<Activations> {
         None
     }

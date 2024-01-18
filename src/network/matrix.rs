@@ -1,5 +1,5 @@
 use rand::{thread_rng, Rng, prelude::*};
-use std::ops;
+use std::{ops, iter};
 use rand_pcg::Pcg64;
 use serde::{Serialize, Deserialize};
 use rand_seeder::{Seeder};
@@ -127,6 +127,33 @@ impl ops::Div<f32> for Matrix {
     }
 }
 
+impl ops::Div<usize> for Matrix {
+    type Output = Matrix;
+    fn div(self, rhs: usize) -> Self::Output {
+        let mut res: Matrix = Matrix::new_empty(self.rows, self.columns);
+        for i in 0..self.rows{
+            for j in 0..self.columns{
+                res.data[i][j] = self.data[i][j] / rhs as f32;
+            }
+        }
+        res
+    }
+}
+
+impl iter::Sum for Matrix {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        let mut iter_peek = iter.peekable();
+        let first_peek = iter_peek.peek().unwrap(); 
+        let rows = first_peek.rows;
+        let cols = first_peek.columns;
+
+        iter_peek.fold(Matrix::new_empty(rows, cols), |curr, next|{
+            curr + &next
+        })
+    }
+
+}
+
 impl ops::Add<f32> for Matrix {
     type Output = Matrix;
     fn add(self, rhs: f32) -> Self::Output {
@@ -236,7 +263,7 @@ impl Matrix{
     }*/
     pub fn dot_multiply(&mut self, other: &Matrix) -> Matrix {
         if self.rows != other.rows || self.columns != self.columns{
-            panic!("Invalid matrix multiplaction, mismatched dimensions:\n{}x{}\n{}x{}", 
+            panic!("Invalid matrix dot multiplaction, mismatched dimensions:\n{}x{}\n{}x{}", 
                    self.rows, 
                    self.columns,
                    other.rows,

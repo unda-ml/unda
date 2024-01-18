@@ -1,6 +1,6 @@
 use crate::network::{matrix::Matrix, activations::{Activations}, input::Input};
 
-use super::{layers::Layer, distributions::Distributions};
+use super::{layers::Layer, distributions::Distributions, pair::GradientPair};
 use rayon::prelude::ParallelIterator;
 use serde::{Deserialize, Serialize};
 
@@ -69,6 +69,25 @@ impl Dense{
 
 #[typetag::serde]
 impl Layer for Dense{
+    fn avg_gradient(&self, gradients: Vec<&Box<dyn Input>>) -> Box<dyn Input>{
+        let len = gradients.len();
+        let gradients_mat = gradients.into_iter().map(|gradient| Matrix::from(gradient.to_param_2d()));
+        let sum: Matrix = gradients_mat.sum();
+        let avg = sum / len;
+        Box::new(avg) 
+    }
+    fn get_gradients(&self, data: &Box<dyn Input>, data_at: &Box<dyn Input>, errors: &Box<dyn Input>) -> GradientPair {
+        let gradient = self.activation_fn.apply_fn(Matrix::from(data_at.to_param_2d()));
+        let errors_mat = Matrix::from(errors.to_param_2d());
+        let mut gradients_mat = Matrix::from(gradient.to_param_2d());
+        let data_mat = Matrix::from(data.to_param_2d());
+
+        gradients_mat = gradients_mat.dot_multiply(&errors_mat) * self.learning_rate;
+
+        let weight_gradient = gradients_mat.clone() * &(data_mat.clone().transpose());
+
+        GradientPair(Box::new(gradients_mat), Box::new(weight_gradient))
+    }
     fn get_data(&self) -> Box<dyn Input>{
         Box::new(self.data.clone())
     }
@@ -81,6 +100,10 @@ impl Layer for Dense{
         let new_data = self.activation_fn.apply_fn(self.weights.clone() * &Matrix::from(inputs.to_param().to_param_2d()).transpose() + &self.biases);
 
         Box::new(new_data)
+    }
+    fn update_errors(&self, errors: Box<dyn Input>) -> Box<dyn Input> {
+        let errors_mat = Matrix::from(errors.to_param_2d());
+        Box::new(self.weights.clone().transpose() * &errors_mat)
     }
     ///Does Back Propegation according to simple Dense network rules
     ///Finds the error of the previous layer and returns what the updated weights and biases should

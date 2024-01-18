@@ -1,6 +1,7 @@
 use serde::{Serialize, Deserialize};
 use crate::network::{matrix::Matrix,activations::Activations, input::Input, matrix3d::Matrix3D};
 use super::{layers::Layer, distributions::Distributions};
+use crate::network::layer::pair::GradientPair;
 
 #[derive(Serialize, Deserialize)]
 pub struct Convolutional{
@@ -105,6 +106,15 @@ impl Convolutional{
 
 #[typetag::serde]
 impl Layer for Convolutional {
+    fn avg_gradient(&self, gradients: Vec<&Box<dyn Input>>) -> Box<dyn Input>{
+        panic!("unfinished");        
+    }
+    fn get_gradients(&self, data: &Box<dyn Input>, data_at: &Box<dyn Input>, errors: &Box<dyn Input>) -> GradientPair { 
+        panic!("unfinished");
+    }
+    fn update_errors(&self, errors: Box<dyn Input>) -> Box<dyn Input>{
+        panic!("unfinished");
+    }
     fn forward(&self,inputs: &Box<dyn Input>) -> Box<dyn Input> {
         let input_mat = Matrix3D::from(inputs.to_param_3d());
         for i in 0..input_mat.layers {
