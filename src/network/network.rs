@@ -7,7 +7,7 @@ use rand_pcg::Pcg64;
 use rand_seeder::Seeder;
 use serde::{Serialize, Deserialize};
 
-use futures::stream::{StreamExt, FuturesUnordered};
+use futures::stream::StreamExt;
 
 use serde_json::{to_string, from_str};
 use std::io;

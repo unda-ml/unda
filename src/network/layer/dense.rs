@@ -1,8 +1,7 @@
-use crate::network::{matrix::Matrix, activations::{Activations}, input::Input};
+use crate::network::{matrix::Matrix, activations::Activations, input::Input};
 
 use super::{layers::Layer, distributions::Distributions, pair::GradientPair};
 use rand::RngCore;
-use rayon::prelude::ParallelIterator;
 use serde::{Deserialize, Serialize};
 
 ///A Dense Neural Network Layer of a model, containing just nodes, weights, biases and an
@@ -181,26 +180,6 @@ impl Layer for Dense{
         Box::new(self.activation_fn.apply_fn(self.data.clone()))
     }
 
-    /*fn backward(&mut self, inputs: &Matrix, gradients: &Matrix, errors: &Matrix, layer_prev: &Matrix, layer_prev_bias: &Matrix) -> (Matrix, Matrix, Matrix, Matrix){
-        let mut gradients_mat = gradients.clone().dot_multiply(&errors).map(&|x| x * self.learning_rate);
-        let new_layer_prev = layer_prev.clone() + &(gradients_mat.clone() * &self.data.clone().transpose());
-        let new_biases = layer_prev_bias.clone() + &gradients_mat.clone();
-        
-        let errors_mat = layer_prev.clone().transpose() * errors;
-
-        //set error of layer, should have something to do with possibly the MSE of errors_mat,
-        //which we could call .to_param() on and iterate through like we do in the network accuracy
-        //fn
-        self.loss = 0.0;
-        errors_mat.to_param().iter().for_each(|error| {
-            self.loss += error.powi(2);
-        });
-
-        self.loss = self.loss / errors_mat.to_param().len() as f32;
-
-        gradients_mat = self.data.map(self.activation_fn.get_function().derivative);
-        (new_biases.clone(), new_layer_prev.clone(), gradients_mat, errors_mat)
-    }*/
     fn get_activation(&self) -> Option<Activations> {
         Some(self.activation_fn.clone())
     }

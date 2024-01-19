@@ -1,7 +1,4 @@
-
-use std::io::stdin;
-
-use triton_grow::{network::{network::Network, activations::Activations, layer::{layers::LayerTypes}, input::*, matrix::Matrix, matrix3d::Matrix3D}, helper::{mnist::MnistEntry, categorical::to_categorical}};
+use triton_grow::network::{network::Network, activations::Activations, layer::layers::LayerTypes, input::*, matrix::Matrix, matrix3d::Matrix3D};
 
 #[tokio::main]
 async fn main() {
@@ -75,5 +72,4 @@ async fn main() {
     println!("0 and 1: {:?}", new_net.predict(&vec![0.0,1.0])[0]);
     println!("1 and 1: {:?}", new_net.predict(&vec![1.0,1.0])[0]);
     println!("0 and 0: {:?}", new_net.predict(&vec![0.0,0.0])[0]);
-
 }

@@ -1,8 +1,6 @@
-use rand::{thread_rng, Rng, prelude::*};
+use rand::prelude::*;
 use std::{ops, iter};
-use rand_pcg::Pcg64;
 use serde::{Serialize, Deserialize};
-use rand_seeder::{Seeder};
 
 use super::layer::distributions::Distributions;
 
