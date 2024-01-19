@@ -7,7 +7,7 @@ use rand_pcg::Pcg64;
 use rand_seeder::Seeder;
 use serde::{Serialize, Deserialize};
 
-use futures::stream::StreamExt;
+use futures::stream::{StreamExt, FuturesUnordered};
 
 use serde_json::{to_string, from_str};
 use std::io;
@@ -90,10 +90,6 @@ impl Network{
             let layer = self.uncompiled_layers[i].to_layer(self.layer_sizes[i+1], &mut self.rng, input_size);
             self.layers.push(layer);
         }
-        //let final_layer = self.uncompiled_layers[self.uncompiled_layers.len()-1].to_layer(1, &self.seed, input_size);
-        //self.layers.push(final_layer);
-        //println!("{:?}", self.layer_sizes);
-
     }
     pub fn predict(&mut self, input: &dyn Input) -> Vec<f32>{
         let in_box: Box<dyn Input> = input.to_box();
@@ -103,6 +99,7 @@ impl Network{
         self.seed = Some(String::from(seed));
         self.rng = self.get_rng();
     }
+
     async fn get_minibatch_gradient(&self, minibatch: &Vec<(Box<dyn Input>, Vec<f32>)>) -> (Vec<Box<dyn Input>>, Vec<Box<dyn Input>>) {
         let len = minibatch.len();
         let gradients = futures::stream::iter(minibatch)
@@ -110,7 +107,7 @@ impl Network{
             .buffer_unordered(len)
             .map(|data_output| self.back_propegate_async(data_output.0, data_output.1))
             .buffer_unordered(len)
-            .collect::<Vec<_>>()
+            .collect::<FuturesUnordered<_>>()
             .await;
 
         let (mut bias_gradients,mut weight_gradients) = (vec![], vec![]);
@@ -320,10 +317,10 @@ impl Network{
             let all_gradients = futures::stream::iter(&minibatches)
                 .map(|batch| self.get_minibatch_gradient(batch))
                 .buffer_unordered(len)
-                .collect::<Vec<_>>();
+                .collect::<FuturesUnordered<_>>();
             let res = all_gradients.await;
-            for i in 0..res.len() {
-                self.update_gradients(&res[i]);
+            for gradient_pair in res.iter() {
+                self.update_gradients(&gradient_pair);
             }
         }
         //println!("]");
