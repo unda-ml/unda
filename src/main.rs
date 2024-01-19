@@ -1,4 +1,6 @@
 
+use std::io::stdin;
+
 use triton_grow::{network::{network::Network, activations::Activations, layer::{layers::LayerTypes}, input::*, matrix::Matrix, matrix3d::Matrix3D}, helper::{mnist::MnistEntry, categorical::to_categorical}};
 
 #[tokio::main]
@@ -55,10 +57,18 @@ async fn main() {
 
     new_net.add_layer(LayerTypes::DENSE(2, Activations::RELU, 0.01));
     new_net.add_layer(LayerTypes::DENSE(3, Activations::RELU, 0.01));
-    new_net.add_layer(LayerTypes::DENSE(1, Activations::SOFTMAX, 0.01));
+    new_net.add_layer(LayerTypes::DENSE(1, Activations::RELU, 0.01));
 
-    new_net.set_seed("frank");
-    //new_net.set_seed("I said");
+    /*
+     * User Input Seed
+    let mut buffer = String::new();
+    stdin().read_line(&mut buffer);
+
+    println!("{}", buffer);
+
+    new_net.set_seed(&buffer);*/
+
+    new_net.set_seed("rust");
     new_net.compile();
 
     new_net.fit_minibatch(&inputs, &outputs, 1000).await;

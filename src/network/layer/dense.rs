@@ -38,7 +38,7 @@ impl Dense{
         let mut res = Dense { 
             loss: 1.0,
             weights: Matrix::new_random(layer_cols_before, layers, rng, &distribution),
-            biases: Matrix::new_random(layer_cols_before, 1, rng, &distribution),
+            biases: Matrix::new_empty(layer_cols_before, 1),
 
             m_weights: Matrix::new_empty(layer_cols_before, layers),
             v_weights: Matrix::new_empty(layer_cols_before, layers),

@@ -41,7 +41,7 @@ impl Convolutional{
             m_weights: Matrix3D::new_empty(kernel_size.0, kernel_size.1, filters),
             v_weights: Matrix3D::new_empty(kernel_size.0, kernel_size.1, filters),
 
-            filter_biases: Matrix::new_random(1, filters, rng, &distribution).to_param(),
+            filter_biases: vec![0.0; filters],
             m_biases: vec![0.0; filters],
             v_biases: vec![0.0; filters],
 
