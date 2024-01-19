@@ -253,12 +253,12 @@ impl Network{
         let iterations_divided_even = iterations_per_epoch / 40;
 
         for epoch in 0..epochs {
-            io::stdout().flush();
+            let _ = io::stdout().flush();
             print!("Epoch {}: [", epoch+1);
             loss = 0.0;
             for iteration in 0..iterations_per_epoch {
                 if iteration % iterations_divided_even == 0 {
-                    io::stdout().flush();
+                    let _ = io::stdout().flush();
                     print!("=");
                 }
                 for batch_index in 0..num_batches {

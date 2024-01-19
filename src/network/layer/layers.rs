@@ -76,7 +76,6 @@ impl LayerTypes{
     pub fn get_size(&self) -> usize{
         return match self{
             LayerTypes::DENSE(rows, _, _) => *rows,
-            _ => 0
         }
     }
 }
