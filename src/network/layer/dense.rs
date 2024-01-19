@@ -69,6 +69,30 @@ impl Dense{
 
 #[typetag::serde]
 impl Layer for Dense{
+    fn update_gradients(&mut self, gradient_pair: (&Box<dyn Input>, &Box<dyn Input>)) {
+        let bias_gradient = Matrix::from(gradient_pair.0.to_param_2d());
+        let weight_gradient = Matrix::from(gradient_pair.1.to_param_2d());
+
+        self.time += 1;
+
+        self.m_weights = self.m_weights.clone() * self.beta1 + &(weight_gradient.clone() * (1.0 - self.beta1));
+        self.v_weights = self.v_weights.clone() * self.beta2 + &((weight_gradient^2) * (1.0 - self.beta2));
+
+        self.m_biases = self.m_biases.clone() * self.beta1 + &(bias_gradient.clone() * (1.0 - self.beta1));
+        self.v_biases = self.v_biases.clone() * self.beta2 + &((bias_gradient.clone()^2) * (1.0 - self.beta2));
+
+        let m_weights_hat = self.m_weights.clone() / (1.0 - self.beta1.powi(self.time as i32));
+        let v_weights_hat = self.v_weights.clone() / (1.0 - self.beta2.powi(self.time as i32));
+
+        let m_bias_hat = self.m_biases.clone() / (1.0 - self.beta1.powi(self.time as i32));
+        let v_bias_hat = self.v_biases.clone() / (1.0 - self.beta2.powi(self.time as i32));
+
+        let weights_update = m_weights_hat.clone() / &(v_weights_hat.sqrt() + self.epsilon);
+        let bias_update = m_bias_hat.clone() / &(v_bias_hat.sqrt() + self.epsilon);
+
+        self.biases = self.biases.clone() + &bias_update;
+        self.weights = self.weights.clone() + &weights_update;
+    }
     fn avg_gradient(&self, gradients: Vec<&Box<dyn Input>>) -> Box<dyn Input>{
         let len = gradients.len();
         let gradients_mat = gradients.into_iter().map(|gradient| Matrix::from(gradient.to_param_2d()));
@@ -77,14 +101,18 @@ impl Layer for Dense{
         Box::new(avg) 
     }
     fn get_gradients(&self, data: &Box<dyn Input>, data_at: &Box<dyn Input>, errors: &Box<dyn Input>) -> GradientPair {
-        let gradient = self.activation_fn.apply_fn(Matrix::from(data_at.to_param_2d()));
+        let gradient = self.activation_fn.apply_fn(Matrix::from(data.to_param_2d()));
         let errors_mat = Matrix::from(errors.to_param_2d());
         let mut gradients_mat = Matrix::from(gradient.to_param_2d());
-        let data_mat = Matrix::from(data.to_param_2d());
+        let mut data_mat = Matrix::from(data_at.to_param_2d());
 
         gradients_mat = gradients_mat.dot_multiply(&errors_mat) * self.learning_rate;
+        
+        if gradients_mat.columns != data_mat.rows {
+            data_mat = data_mat.transpose();
+        }
 
-        let weight_gradient = gradients_mat.clone() * &(data_mat.clone().transpose());
+        let weight_gradient = gradients_mat.clone() * &(data_mat.clone());
 
         GradientPair(Box::new(gradients_mat), Box::new(weight_gradient))
     }

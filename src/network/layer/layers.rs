@@ -11,6 +11,7 @@ pub trait Layer: Send + Sync{
     }
     fn backward(&mut self, gradients: Box<dyn Input>, errors: Box<dyn Input>, data: Box<dyn Input>) -> Box<dyn Input>; 
     fn avg_gradient(&self, gradients: Vec<&Box<dyn Input>>) -> Box<dyn Input>;
+    fn update_gradients(&mut self, gradient_pair: (&Box<dyn Input>, &Box<dyn Input>));
     fn get_data(&self) -> Box<dyn Input>;
     fn set_data(&mut self, data: &Box<dyn Input>); 
     fn update_errors(&self, errors: Box<dyn Input>) -> Box<dyn Input>;

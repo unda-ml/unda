@@ -10,6 +10,7 @@ use serde::{Serialize, Deserialize};
 use futures::stream::{StreamExt, FuturesUnordered};
 
 use serde_json::{to_string, from_str};
+use std::io;
 use std::{
     fs::File,
     io::{Read,Write},
@@ -82,6 +83,8 @@ impl Network{
             let layer = self.uncompiled_layers[i].to_layer(self.layer_sizes[i+1], &self.seed, input_size);
             self.layers.push(layer);
         }
+        //let final_layer = self.uncompiled_layers[self.uncompiled_layers.len()-1].to_layer(1, &self.seed, input_size);
+        //self.layers.push(final_layer);
         //println!("{:?}", self.layer_sizes);
 
     }
@@ -107,7 +110,7 @@ impl Network{
         gradients.iter().for_each(|pair| {
             let mut gradient_bias = vec![];
             let mut gradient_weight = vec![];
-            pair.iter().for_each(|GradientPair(weight, bias)| {
+            pair.iter().for_each(|GradientPair(bias, weight)| {
                 gradient_bias.push(bias);
                 gradient_weight.push(weight);
             });
@@ -122,6 +125,8 @@ impl Network{
             avg_bias_gradient.push(self.layers[layer_gradient].avg_gradient(bias_gradients.iter().map(|grad| grad[layer_gradient]).collect::<Vec<_>>()));
             avg_weights_gradient.push(self.layers[layer_gradient].avg_gradient(weight_gradients.iter().map(|grad| grad[layer_gradient]).collect::<Vec<_>>()));
         }
+        //println!("{:?}", avg_bias_gradient.iter().map(|x| x.to_param()).collect::<Vec<_>>());
+        //println!("{:?}", avg_weights_gradient.iter().map(|x| x.to_param()).collect::<Vec<_>>());
         (avg_bias_gradient, avg_weights_gradient)
     }
 
@@ -206,10 +211,14 @@ impl Network{
         
         let mut errors: Box<dyn Input> = Box::new(Matrix::from(output.to_param_2d()).transpose() - &parsed);
 
-        for i in (0..self.layers.len()-1).rev() {
-            res.push(self.layers[i + 1].get_gradients(&data[i+1], &data[i+2], &errors));
+        //println!("{}", data.len());
+
+        for i in (0..self.layers.len() - 1).rev() {
             errors = self.layers[i + 1].update_errors(errors);
+            res.push(self.layers[i + 1].get_gradients(&data[i + 1], &data[i], &errors));
+            //println!("{:?}", res[res.len()-1].1.shape());
         }
+        res.reverse();
         res
     }
 
@@ -223,7 +232,7 @@ impl Network{
     ///compared to what is actually derived during back propegation
     ///* `epochs` - How many epochs you want your model training for
     ///
-    /*pub fn fit(&mut self, train_in: &Vec<&dyn Input>, train_out: &Vec<Vec<f32>>, epochs: usize) {
+    pub fn fit(&mut self, train_in: &Vec<&dyn Input>, train_out: &Vec<Vec<f32>>, epochs: usize) {
         self.loss_train = vec![];
 
         let mut loss: f32;
@@ -277,25 +286,39 @@ impl Network{
         for i in 0..self.layers.len() - 1 {
             println!("Error on layer {}: +/- {:.2}", i + 1, self.layers[i].get_loss());
         }
-    }*/
+    }
 
+    fn update_gradients(&mut self, gradient_pairs: &(Vec<Box<dyn Input>>, Vec<Box<dyn Input>>)) {
+        if gradient_pairs.0.len() != self.layers.len() - 1 {
+            panic!("Gradients length not equal to number of layers:\nGradients: {}\nLayers: {}", 
+                   gradient_pairs.0.len(),
+                   self.layers.len());
+        }
+        for i in 0..self.layers.len() - 1 {
+            self.layers[i].update_gradients((&gradient_pairs.0[i], &gradient_pairs.1[i]));
+        }
+    }
 
-    pub async fn fit(&mut self, train_in: &Vec<&dyn Input>, train_out: &Vec<Vec<f32>>, epochs: usize) {
+    pub async fn fit_minibatch(&mut self, train_in: &Vec<&dyn Input>, train_out: &Vec<Vec<f32>>, epochs: usize) {
         //Generate minibatches to train on
         let minibatches: Vec<Vec<(Box<dyn Input>, Vec<f32>)>> = self.generate_minibatches(train_in.clone(), train_out.clone());
         let len = minibatches.len();
-
+        io::stdout().flush();
+        print!("[");
+        
         for i in 0..epochs {
-            println!("ENTER {}", i);
+            io::stdout().flush();
+            print!("#");
             let all_gradients = futures::stream::iter(&minibatches)
                 .map(|batch| self.get_minibatch_gradient(batch))
                 .buffer_unordered(len)
                 .collect::<Vec<_>>();
             let res = all_gradients.await;
-            //TODO - Now we have a list of avg gradients, now we just need to update weights and
-            //biases
-            println!("DONE");
+            for i in 0..res.len() {
+                self.update_gradients(&res[i]);
+            }
         }
+        println!("]");
     }
    
     fn generate_minibatches(&self,mut inputs: Vec<&dyn Input>,mut outputs: Vec<Vec<f32>>) -> Vec<Vec<(Box<dyn Input>, Vec<f32>)>> {
@@ -339,19 +362,5 @@ impl Network{
 
         let net: Network = from_str(&buffer).expect("Json was not formatted well >:(");
         net
-    }
-
-    pub fn fit_to_loss(&mut self, train_in: Vec<&dyn Input>, train_out: Vec<Vec<f32>>, desired_loss: f32, steps_per: usize) -> usize{
-        let mut epochs_total = 0;
-        while self.loss > desired_loss{
-            self.fit(&train_in, &train_out, steps_per);
-            epochs_total += steps_per;
-            
-        }
-        println!("Trained to a loss of {:.2}%", self.loss * 100.0);
-        for i in 0..self.layers.len()-1{
-            println!("Error on layer {}: +/- {:.2}", i+1, self.layers[i].get_loss());
-        }
-        epochs_total
     }
 }

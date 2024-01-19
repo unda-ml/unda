@@ -106,6 +106,9 @@ impl Convolutional{
 
 #[typetag::serde]
 impl Layer for Convolutional {
+    fn update_gradients(&mut self, gradient_pair: (&Box<dyn Input>, &Box<dyn Input>)) {
+        panic!("unfinished");
+    }
     fn avg_gradient(&self, gradients: Vec<&Box<dyn Input>>) -> Box<dyn Input>{
         panic!("unfinished");        
     }
