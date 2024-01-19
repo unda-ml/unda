@@ -1,6 +1,7 @@
 use crate::network::{matrix::Matrix, activations::{Activations}, input::Input};
 
 use super::{layers::Layer, distributions::Distributions, pair::GradientPair};
+use rand::RngCore;
 use rayon::prelude::ParallelIterator;
 use serde::{Deserialize, Serialize};
 
@@ -29,15 +30,15 @@ pub struct Dense{
 }
 
 impl Dense{
-    pub fn new(layers: usize, layer_cols_before: usize, activation: Activations, learning_rate: f32, seed: &Option<String>, input_size: usize) -> Dense{
+    pub fn new(layers: usize, layer_cols_before: usize, activation: Activations, learning_rate: f32, rng: &mut Box<dyn RngCore>, input_size: usize) -> Dense{
         let distribution: Distributions = match activation{
             Activations::RELU | Activations::LEAKYRELU | Activations::SOFTMAX => Distributions::He(input_size),
             Activations::TANH | Activations::SIGMOID => Distributions::Xavier(input_size, layers),
         };
         let mut res = Dense { 
             loss: 1.0,
-            weights: Matrix::new_random(layer_cols_before, layers, seed, &distribution),
-            biases: Matrix::new_random(layer_cols_before, 1, seed, &distribution),
+            weights: Matrix::new_random(layer_cols_before, layers, rng, &distribution),
+            biases: Matrix::new_random(layer_cols_before, 1, rng, &distribution),
 
             m_weights: Matrix::new_empty(layer_cols_before, layers),
             v_weights: Matrix::new_empty(layer_cols_before, layers),
@@ -55,6 +56,8 @@ impl Dense{
         };
         (res.beta1, res.beta2) = res.get_betas();
         res.epsilon = res.get_epsilon();
+
+        println!("{}\n{}", res.weights, res.biases);
 
         res
     }

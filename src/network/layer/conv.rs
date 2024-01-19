@@ -1,3 +1,4 @@
+use rand::RngCore;
 use serde::{Serialize, Deserialize};
 use crate::network::{matrix::Matrix,activations::Activations, input::Input, matrix3d::Matrix3D};
 use super::{layers::Layer, distributions::Distributions};
@@ -30,17 +31,17 @@ pub struct Convolutional{
 }
 
 impl Convolutional{
-    pub fn new(filters: usize, kernel_size: (usize, usize), input_shape: (usize, usize, usize), stride: usize, activation_fn: Activations, learning_rate: f32, seed: &Option<String>, input_size: usize) -> Convolutional {
+    pub fn new(filters: usize, kernel_size: (usize, usize), input_shape: (usize, usize, usize), stride: usize, activation_fn: Activations, learning_rate: f32, rng: &mut Box<dyn RngCore>, input_size: usize) -> Convolutional {
         let distribution = match activation_fn {
             Activations::TANH | Activations::SIGMOID | Activations::SOFTMAX => Distributions::Xavier(input_size, kernel_size.0 * kernel_size.1),
             Activations::RELU | Activations::LEAKYRELU => Distributions::He(input_size)
         };
         let mut res = Convolutional{
-            filter_weights: Matrix3D::new_random(kernel_size.0, kernel_size.1, filters, seed, &distribution),
+            filter_weights: Matrix3D::new_random(kernel_size.0, kernel_size.1, filters, rng, &distribution),
             m_weights: Matrix3D::new_empty(kernel_size.0, kernel_size.1, filters),
             v_weights: Matrix3D::new_empty(kernel_size.0, kernel_size.1, filters),
 
-            filter_biases: Matrix::new_random(1, filters, seed, &distribution).to_param(),
+            filter_biases: Matrix::new_random(1, filters, rng, &distribution).to_param(),
             m_biases: vec![0.0; filters],
             v_biases: vec![0.0; filters],
 

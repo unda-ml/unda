@@ -1,5 +1,6 @@
 use crate::network::{input::Input, matrix::Matrix, activations::Activations};
 
+use rand::RngCore;
 use serde::{Serialize, Deserialize};
 
 use super::{dense::Dense, pair::GradientPair};
@@ -35,9 +36,9 @@ pub enum LayerTypes{
 }
 
 impl LayerTypes{
-    pub fn to_layer(&self, prev_cols: usize, seed: &Option<String>, input_size: usize) -> Box<dyn Layer> {
+    pub fn to_layer(&self, prev_cols: usize, rand: &mut Box<dyn RngCore>, input_size: usize) -> Box<dyn Layer> {
         return match self {
-            LayerTypes::DENSE(rows, activation, learning) => Box::new(Dense::new(rows.clone(), prev_cols, activation.clone(), learning.clone(), seed, input_size)),
+            LayerTypes::DENSE(rows, activation, learning) => Box::new(Dense::new(rows.clone(), prev_cols, activation.clone(), learning.clone(), rand, input_size)),
             /*LayerTypes::NETWORK(layers, batch_size) => {
                 let mut new_net: Network = Network::new(*batch_size);
                 layers.iter().for_each(|layer| {

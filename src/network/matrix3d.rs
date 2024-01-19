@@ -227,17 +227,13 @@ impl Matrix3D{
     pub fn new_empty(rows: usize, cols: usize, layers: usize) -> Matrix3D {
         Matrix3D { rows, columns: cols, layers, data: vec![vec![vec![0.0; cols]; rows]; layers] }
     }
-    pub fn new_random(rows: usize, cols: usize, layers: usize, seed: &Option<String>, distribution: &Distributions) -> Matrix3D {
+    pub fn new_random(rows: usize, cols: usize, layers: usize, rng: &mut Box<dyn RngCore>, distribution: &Distributions) -> Matrix3D {
         let mut res = Matrix3D::new_empty(rows, cols, layers);
-        let mut rng: Box<dyn RngCore> = match seed {
-            Some(seed_rng) => Box::new(Seeder::from(seed_rng).make_rng::<Pcg64>()),
-            None => Box::new(thread_rng())
-        };
         
         for z in 0..layers {
             for y in 0..rows {
                 for x in 0..cols {
-                    res.data[z][y][x] = distribution.sample(&mut rng);
+                    res.data[z][y][x] = distribution.sample(rng);
                 }
             }
         }

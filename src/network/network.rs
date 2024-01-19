@@ -2,7 +2,7 @@ use super::layer::layers::{Layer, LayerTypes};
 use super::layer::pair::GradientPair;
 use super::matrix::Matrix;
 use super::input::Input;
-use rand::{RngCore, Rng};
+use rand::{RngCore, Rng, thread_rng};
 use rand_pcg::Pcg64;
 use rand_seeder::Seeder;
 use serde::{Serialize, Deserialize};
@@ -24,12 +24,18 @@ pub struct Network {
     loss_train: Vec<f32>,
     pub layers: Vec<Box<dyn Layer>>,
     uncompiled_layers: Vec<LayerTypes>,
-    seed: Option<String>
+    seed: Option<String>,
+    #[serde(skip)]
+    #[serde(default = "Network::thread_rng")]
+    rng: Box<dyn RngCore>
 }
 
 const ITERATIONS_PER_EPOCH: usize = 1000;
 
 impl Network{
+    fn thread_rng() -> Box<dyn RngCore> {
+        Box::new(thread_rng())
+    }
     ///Creates a new neural network that is completely empty
     ///
     ///Example:
@@ -44,7 +50,8 @@ impl Network{
             layers: vec![],
             uncompiled_layers: vec![],
             loss_train: vec![],
-            seed: None
+            seed: None,
+            rng: Box::new(thread_rng())
         }
     } 
     pub fn get_layer_loss(&self) -> Vec<(f32, f32)> {
@@ -80,7 +87,7 @@ impl Network{
     pub fn compile(&mut self){
         let input_size = self.uncompiled_layers[0].get_size();
         for i in 0..self.uncompiled_layers.len() - 1 {
-            let layer = self.uncompiled_layers[i].to_layer(self.layer_sizes[i+1], &self.seed, input_size);
+            let layer = self.uncompiled_layers[i].to_layer(self.layer_sizes[i+1], &mut self.rng, input_size);
             self.layers.push(layer);
         }
         //let final_layer = self.uncompiled_layers[self.uncompiled_layers.len()-1].to_layer(1, &self.seed, input_size);
@@ -94,6 +101,7 @@ impl Network{
     }
     pub fn set_seed(&mut self, seed: &str){
         self.seed = Some(String::from(seed));
+        self.rng = self.get_rng();
     }
     async fn get_minibatch_gradient(&self, minibatch: &Vec<(Box<dyn Input>, Vec<f32>)>) -> (Vec<Box<dyn Input>>, Vec<Box<dyn Input>>) {
         let len = minibatch.len();
@@ -303,12 +311,12 @@ impl Network{
         //Generate minibatches to train on
         let minibatches: Vec<Vec<(Box<dyn Input>, Vec<f32>)>> = self.generate_minibatches(train_in.clone(), train_out.clone());
         let len = minibatches.len();
-        io::stdout().flush();
-        print!("[");
+        //io::stdout().flush();
+        //print!("[");
         
         for i in 0..epochs {
-            io::stdout().flush();
-            print!("#");
+            //io::stdout().flush();
+            //print!("#");
             let all_gradients = futures::stream::iter(&minibatches)
                 .map(|batch| self.get_minibatch_gradient(batch))
                 .buffer_unordered(len)
@@ -318,7 +326,7 @@ impl Network{
                 self.update_gradients(&res[i]);
             }
         }
-        println!("]");
+        //println!("]");
     }
    
     fn generate_minibatches(&self,mut inputs: Vec<&dyn Input>,mut outputs: Vec<Vec<f32>>) -> Vec<Vec<(Box<dyn Input>, Vec<f32>)>> {
@@ -337,6 +345,7 @@ impl Network{
                 inputs.remove(location);
                 outputs.remove(location);
             }
+            println!("{:?}", minibatch.iter().map(|x| x.0.to_param()).collect::<Vec<_>>());
             res.push(minibatch);
         }
         res

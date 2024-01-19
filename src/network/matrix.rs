@@ -233,17 +233,11 @@ impl Matrix{
         }
     }
 
-    pub fn new_random(rows: usize, cols: usize, seed: &Option<String>, distribution: &Distributions) -> Matrix{
-        let mut rng: Box<dyn RngCore>;
-        if let Some(seed_rng) = seed {
-            rng = Box::new(Seeder::from(seed_rng).make_rng::<Pcg64>());
-        } else{
-            rng = Box::new(thread_rng());
-        }
+    pub fn new_random(rows: usize, cols: usize, rng: &mut Box<dyn RngCore>, distribution: &Distributions) -> Matrix{
         let mut res = Matrix::new_empty(rows, cols); 
         for row in 0..rows{
             for col in 0..cols{
-                res.data[row][col] = distribution.sample(&mut rng);
+                res.data[row][col] = distribution.sample(rng);
             }
         }
         res
