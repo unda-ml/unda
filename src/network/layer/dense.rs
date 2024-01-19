@@ -98,7 +98,7 @@ impl Layer for Dense{
         let len = gradients.len();
         let gradients_mat = gradients.into_iter().map(|gradient| Matrix::from(gradient.to_param_2d()));
         let sum: Matrix = gradients_mat.sum();
-        let avg = sum / len;
+        let avg = sum; // len;
         Box::new(avg) 
     }
     fn get_gradients(&self, data: &Box<dyn Input>, data_at: &Box<dyn Input>, errors: &Box<dyn Input>) -> GradientPair {

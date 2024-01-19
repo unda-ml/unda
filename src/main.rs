@@ -53,7 +53,6 @@ async fn main() {
 
     let mut new_net = Network::new(4);
 
-
     new_net.add_layer(LayerTypes::DENSE(2, Activations::RELU, 0.01));
     new_net.add_layer(LayerTypes::DENSE(3, Activations::RELU, 0.01));
     new_net.add_layer(LayerTypes::DENSE(1, Activations::SOFTMAX, 0.01));
@@ -67,13 +66,14 @@ async fn main() {
 
     new_net.set_seed(&buffer);*/
 
-    //new_net.set_seed("meat");
+    new_net.set_seed("teller");
     new_net.compile();
 
-    new_net.fit_minibatch(&inputs, &outputs, 100).await;
+    new_net.fit_minibatch(&inputs, &outputs, 1000).await;
 
     println!("1 and 0: {:?}", new_net.predict(&vec![1.0,0.0])[0]);
     println!("0 and 1: {:?}", new_net.predict(&vec![0.0,1.0])[0]);
     println!("1 and 1: {:?}", new_net.predict(&vec![1.0,1.0])[0]);
     println!("0 and 0: {:?}", new_net.predict(&vec![0.0,0.0])[0]);
+
 }
