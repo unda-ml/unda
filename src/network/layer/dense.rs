@@ -32,8 +32,8 @@ pub struct Dense{
 impl Dense{
     pub fn new(layers: usize, layer_cols_before: usize, activation: Activations, learning_rate: f32, rng: &mut Box<dyn RngCore>, input_size: usize) -> Dense{
         let distribution: Distributions = match activation{
-            Activations::RELU | Activations::LEAKYRELU | Activations::SOFTMAX => Distributions::He(input_size),
-            Activations::TANH | Activations::SIGMOID => Distributions::Xavier(input_size, layers),
+            Activations::RELU | Activations::LEAKYRELU | Activations::SOFTMAX => Distributions::Default,//Distributions::He(input_size),
+            Activations::TANH | Activations::SIGMOID => Distributions::Default//Distributions::Xavier(input_size, layers),
         };
         let mut res = Dense { 
             loss: 1.0,
@@ -56,8 +56,6 @@ impl Dense{
         };
         (res.beta1, res.beta2) = res.get_betas();
         res.epsilon = res.get_epsilon();
-
-        println!("{}\n{}", res.weights, res.biases);
 
         res
     }

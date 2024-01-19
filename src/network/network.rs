@@ -309,12 +309,12 @@ impl Network{
 
     pub async fn fit_minibatch(&mut self, train_in: &Vec<&dyn Input>, train_out: &Vec<Vec<f32>>, epochs: usize) {
         //Generate minibatches to train on
-        let minibatches: Vec<Vec<(Box<dyn Input>, Vec<f32>)>> = self.generate_minibatches(train_in.clone(), train_out.clone());
-        let len = minibatches.len();
         //io::stdout().flush();
         //print!("[");
         
         for i in 0..epochs {
+            let minibatches: Vec<Vec<(Box<dyn Input>, Vec<f32>)>> = self.generate_minibatches(train_in.clone(), train_out.clone());
+            let len = minibatches.len();
             //io::stdout().flush();
             //print!("#");
             let all_gradients = futures::stream::iter(&minibatches)
@@ -345,7 +345,6 @@ impl Network{
                 inputs.remove(location);
                 outputs.remove(location);
             }
-            println!("{:?}", minibatch.iter().map(|x| x.0.to_param()).collect::<Vec<_>>());
             res.push(minibatch);
         }
         res
@@ -369,7 +368,8 @@ impl Network{
 
         file.read_to_string(&mut buffer).expect("Unable to read file but even sadder :(");
 
-        let net: Network = from_str(&buffer).expect("Json was not formatted well >:(");
+        let mut net: Network = from_str(&buffer).expect("Json was not formatted well >:(");
+        net.rng = net.get_rng();
         net
     }
 }
