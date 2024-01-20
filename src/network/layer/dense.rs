@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 use crate::network::{matrix::Matrix, activations::Activations, input::Input};
 
 use super::{layers::Layer, distributions::Distributions, pair::GradientPair};
@@ -69,9 +71,9 @@ impl Dense{
 
 #[typetag::serde]
 impl Layer for Dense{
-    fn update_gradients(&mut self, gradient_pair: (&Box<dyn Input>, &Box<dyn Input>)) {
-        let bias_gradient = Matrix::from(gradient_pair.0.to_param_2d());
-        let weight_gradient = Matrix::from(gradient_pair.1.to_param_2d());
+    fn update_gradients(&mut self, gradient_pair: (&Box<dyn Input>, &Box<dyn Input>)) {//, noise: &f32) {
+        let bias_gradient = Matrix::from(gradient_pair.0.to_param_2d()); //+ noise;
+        let weight_gradient = Matrix::from(gradient_pair.1.to_param_2d()); //+ noise;
 
         self.time += 1;
 
@@ -107,7 +109,7 @@ impl Layer for Dense{
         let mut data_mat = Matrix::from(data_at.to_param_2d());
 
         gradients_mat = gradients_mat.dot_multiply(&errors_mat) * self.learning_rate;
-        
+
         if gradients_mat.columns != data_mat.rows {
             data_mat = data_mat.transpose();
         }

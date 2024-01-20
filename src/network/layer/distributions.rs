@@ -7,6 +7,7 @@ use rand_distr::{Normal, num_traits::Zero};
 pub enum Distributions{
     Xavier(usize, usize),
     He(usize),
+    Ranged(Range<f32>),
     Default
 }
 
@@ -19,7 +20,8 @@ impl Distributions {
                 Distributions::He(inputs) => { 
                     rng.sample(get_he_range(*inputs))
                 }
-                Distributions::Default => rng.gen_range(-0.05..0.05)
+                Distributions::Default => rng.gen_range(-0.05..0.05),
+                Distributions::Ranged(range) => rng.gen_range(range.clone())
             };
         }
         res

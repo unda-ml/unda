@@ -1,11 +1,10 @@
-use triton_grow::network::{network::Network, activations::Activations, layer::layers::LayerTypes, input::*, matrix::Matrix, matrix3d::Matrix3D};
+use triton_grow::{network::{network::Network, activations::Activations, layer::layers::LayerTypes, input::*, matrix::Matrix, matrix3d::Matrix3D}, helper::{categorical::to_categorical, mnist::MnistEntry}};
 
 #[tokio::main]
 async fn main() {
     //Convolutional Example
-    /*
     let mut inputs: Vec<&dyn Input> = vec![];
-    let mut outputs: Vec<Vec<f32>>;
+    let outputs: Vec<Vec<f32>>;
     let mut true_outputs: Vec<Vec<f32>> = vec![];
 
     let inputs_undyn: Vec<Matrix>;
@@ -21,7 +20,7 @@ async fn main() {
         true_outputs.push(outputs[i].clone());
     }
 
-    let mut network = Network::new(128);
+    let mut network = Network::new(512);
 
     network.add_layer(LayerTypes::DENSE(784, Activations::RELU, 0.01));
     network.add_layer(LayerTypes::DENSE(64, Activations::RELU, 0.01));
@@ -33,9 +32,9 @@ async fn main() {
     network.fit_minibatch(&inputs, &true_outputs, 10).await;
     for i in 0..10{
         println!("predicted: {:?} \n\n actual: {:?}\n", network.predict(inputs[i]), true_outputs[i]);
-    }*/
+    }
     //Dense Example
-    //
+    /*
     let mut inputs: Vec<&dyn Input> = vec![];
     let input_1 = vec![1.0,1.0];
     let input_2 = vec![vec![0.0], vec![1.0]];
@@ -50,9 +49,9 @@ async fn main() {
 
     let mut new_net = Network::new(4);
 
-    new_net.add_layer(LayerTypes::DENSE(2, Activations::RELU, 0.01));
-    new_net.add_layer(LayerTypes::DENSE(3, Activations::RELU, 0.01));
-    new_net.add_layer(LayerTypes::DENSE(1, Activations::SOFTMAX, 0.01));
+    new_net.add_layer(LayerTypes::DENSE(2, Activations::RELU, 0.0001));
+    new_net.add_layer(LayerTypes::DENSE(3, Activations::RELU, 0.0001));
+    new_net.add_layer(LayerTypes::DENSE(1, Activations::SOFTMAX, 0.0001));
 
     /*
      * User Input Seed
@@ -62,14 +61,14 @@ async fn main() {
     println!("{}", buffer);
 
     new_net.set_seed(&buffer);*/
-
-    new_net.set_seed("teller");
+    //new_net.set_seed("teller");
     new_net.compile();
 
-    new_net.fit_minibatch(&inputs, &outputs, 1000).await;
+    new_net.fit_minibatch(&inputs, &outputs, 10000).await;
 
     println!("1 and 0: {:?}", new_net.predict(&vec![1.0,0.0])[0]);
     println!("0 and 1: {:?}", new_net.predict(&vec![0.0,1.0])[0]);
     println!("1 and 1: {:?}", new_net.predict(&vec![1.0,1.0])[0]);
     println!("0 and 0: {:?}", new_net.predict(&vec![0.0,0.0])[0]);
+    */
 }

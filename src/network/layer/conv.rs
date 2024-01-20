@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 use rand::RngCore;
 use serde::{Serialize, Deserialize};
 use crate::network::{matrix::Matrix,activations::Activations, input::Input, matrix3d::Matrix3D};
@@ -107,7 +109,8 @@ impl Convolutional{
 
 #[typetag::serde]
 impl Layer for Convolutional {
-    fn update_gradients(&mut self, gradient_pair: (&Box<dyn Input>, &Box<dyn Input>)) {
+
+    fn update_gradients(&mut self, gradient_pair: (&Box<dyn Input>, &Box<dyn Input>)) {//, noise: &f32) {
         panic!("unfinished");
     }
     fn avg_gradient(&self, gradients: Vec<&Box<dyn Input>>) -> Box<dyn Input>{

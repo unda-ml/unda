@@ -3,3 +3,4 @@ pub mod conv;
 pub mod layers;
 pub mod distributions;
 pub mod pair;
+pub mod noise;

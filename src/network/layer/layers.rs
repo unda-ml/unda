@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 use crate::network::{input::Input, matrix::Matrix, activations::Activations};
 
 use rand::RngCore;
@@ -23,7 +25,7 @@ pub trait Layer: Send + Sync{
     fn avg_gradient(&self, gradients: Vec<&Box<dyn Input>>) -> Box<dyn Input>;
     ///Updates the model's current weights and biases according to a paired gradient in the format
     ///(Bias Gradient, Weight Gradient)
-    fn update_gradients(&mut self, gradient_pair: (&Box<dyn Input>, &Box<dyn Input>));
+    fn update_gradients(&mut self, gradient_pair: (&Box<dyn Input>, &Box<dyn Input>));//, noise: &f32);
     ///Returns the data currently found at this layer. The data is dependent on the current
     ///iteration and input data going through
     fn get_data(&self) -> Box<dyn Input>;

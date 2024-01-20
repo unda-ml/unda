@@ -1,5 +1,5 @@
 use rand::prelude::*;
-use std::{ops, iter};
+use std::{ops::{self, Range}, iter};
 use serde::{Serialize, Deserialize};
 
 use super::layer::distributions::Distributions;
@@ -165,6 +165,19 @@ impl ops::Add<f32> for Matrix {
     }
 }
 
+impl ops::Add<&f32> for Matrix {
+    type Output = Matrix;
+    fn add(self, rhs: &f32) -> Self::Output {
+        let mut res: Matrix = Matrix::new_empty(self.rows, self.columns);
+        for i in 0..self.rows{
+            for j in 0..self.columns{
+                res.data[i][j] = self.data[i][j] + rhs;
+            }
+        }
+        res
+    }
+}
+
 impl ops::Div<&Matrix> for Matrix{
     type Output = Matrix;
     fn div(self, rhs: &Matrix) -> Self::Output {
@@ -238,6 +251,13 @@ impl Matrix{
                 res.data[row][col] = distribution.sample(rng);
             }
         }
+        res
+    }
+
+    pub fn sample_noise(&self, noise: &Range<f32>, rng: &mut Box<dyn RngCore>) -> Matrix {
+        let noise_dist: Distributions = Distributions::Ranged(noise.clone());
+
+        let res = self.clone() + noise_dist.sample(rng);
         res
     }
 

@@ -1,4 +1,6 @@
+use super::layer::distributions::Distributions;
 use super::layer::layers::{Layer, LayerTypes};
+use super::layer::noise::gen_noise;
 use super::layer::pair::GradientPair;
 use super::matrix::Matrix;
 use super::input::Input;
@@ -11,6 +13,7 @@ use futures::stream::{StreamExt, FuturesUnordered};
 
 use serde_json::{to_string, from_str};
 use std::io;
+use std::ops::Range;
 use std::{
     fs::File,
     io::{Read,Write},
@@ -293,34 +296,36 @@ impl Network{
         }
     }
 
-    fn update_gradients(&mut self, gradient_pairs: &(Vec<Box<dyn Input>>, Vec<Box<dyn Input>>)) {
+    fn update_gradients(&mut self, gradient_pairs: &(Vec<Box<dyn Input>>, Vec<Box<dyn Input>>)) {//, noise: &f32) {
         if gradient_pairs.0.len() != self.layers.len() - 1 {
             panic!("Gradients length not equal to number of layers:\nGradients: {}\nLayers: {}", 
                    gradient_pairs.0.len(),
                    self.layers.len());
         }
         for i in 0..self.layers.len() - 1 {
-            self.layers[i].update_gradients((&gradient_pairs.0[i], &gradient_pairs.1[i]));
+            self.layers[i].update_gradients((&gradient_pairs.0[i], &gradient_pairs.1[i]));//, noise);
         }
     }
 
     pub async fn fit_minibatch(&mut self, train_in: &Vec<&dyn Input>, train_out: &Vec<Vec<f32>>, epochs: usize) {
         //Generate minibatches to train on
-        //io::stdout().flush();
-        //print!("[");
-        
-        for i in 0..epochs {
+        let _ = io::stdout().flush();
+        print!("[");
+        for _ in 1..=epochs {
+            //let noise_fn = gen_noise(epochs as f32, i); 
+            //let noise_distr = Distributions::Ranged(noise_fn);
+            //let noise = noise_distr.sample(&mut self.rng);
             let minibatches: Vec<Vec<(Box<dyn Input>, Vec<f32>)>> = self.generate_minibatches(train_in.clone(), train_out.clone());
             let len = minibatches.len();
-            //io::stdout().flush();
-            //print!("#");
+            let _ = io::stdout().flush();
+            print!("#");
             let all_gradients = futures::stream::iter(&minibatches)
                 .map(|batch| self.get_minibatch_gradient(batch))
                 .buffer_unordered(len)
                 .collect::<FuturesUnordered<_>>();
             let res = all_gradients.await;
             for gradient_pair in res.iter() {
-                self.update_gradients(&gradient_pair);
+                self.update_gradients(&gradient_pair);//, &noise);
             }
         }
         //println!("]");

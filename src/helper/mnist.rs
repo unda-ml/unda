@@ -1,4 +1,4 @@
-use std::{fs::File, io::{Read}};
+use std::{fs::File, io::{Read, stdin, self, Write, stdout}};
 
 
 use crate::network::{matrix::Matrix, input::Input};
@@ -24,9 +24,8 @@ impl MnistEntry {
         
         MnistEntry::load_mnist().into_iter().for_each(|entry| {
             matrices.push(entry.data);
-            labels.push(entry.label)
+            labels.push(entry.label);
         });
-            
         (matrices, labels)
     }
     fn load_mnist() -> Vec<MnistEntry> {
@@ -68,8 +67,15 @@ impl MnistEntry {
         let num_rows = read_u32(&mut file);
         let num_cols = read_u32(&mut file);
 
+        let count_div = 1000;
+
+        stdout().flush(); print!("[");
+
         let mut images = Vec::with_capacity(num_items as usize);
-        for _ in 0..num_items {
+        for i in 0..num_items {
+            if i % count_div == 0{
+                stdout().flush(); print!("#");
+            }
             let mut image = Vec::with_capacity((num_rows * num_cols) as usize);
             for _ in 0..(num_rows * num_cols) {
                 let mut pixel_buffer = [0; 1];
@@ -78,6 +84,7 @@ impl MnistEntry {
             }
             images.push(image);
         }
+        println!("]");
 
         images
     }
