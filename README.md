@@ -1,4 +1,4 @@
- <img align="left" src="./assets/triton-logo.svg" width="70px" height="70px" alt="triton mascot icon">
+ <img align="left" src="./triton-logo.svg" width="70px" height="70px" alt="triton mascot icon">
 
 # triton 🦎
 
