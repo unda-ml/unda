@@ -1,6 +1,6 @@
- <img align="left" src="./triton-logo.svg" width="70px" height="70px" alt="triton mascot icon">
+ <img align="left" src="./triton-logo.svg" width="100px" height="100px" alt="triton mascot icon">
 
-# triton 🦎
+# triton
 
 ### A self sustaining growing neural net that can repair itself until reaching a desired accuracy
 
