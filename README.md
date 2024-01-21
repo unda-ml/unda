@@ -1,12 +1,13 @@
-# triton 🦎
+ <img align="left" src="./triton-logo.svg" width="80px" height="80px" alt="triton mascot icon">
+
+# triton
 
 ### A self sustaining growing neural net that can repair itself until reaching a desired accuracy
 
-Triton aims to provide Keras level performance and ease of use to the world of Rust without being simply a wrapper library. Using Rust's unique traits system, Triton will enable more robust neural networks along with control over finer aspects that keras simply does not have. Using the build in Input trait, practically any data type can be mapped to an input for a neural network without the need for cutting corners, and the inner trait for layers allows for a plug and play style to neural network development. Currently, Triton has full support for Dense layers, Adam Optimization for Backprop, Activation functions (Sigmoid, TanH, ReLU and LeakyReLU), and even loss analysis per model and per layer.
+[![crates.io](https://img.shields.io/crates/v/triton_grow.svg)](https://crates.io/crates/triton_grow)
+[![Documentation](https://docs.rs/triton_grow/badge.svg)](https://docs.rs/triton_grow)
 
-One feature in development is that of self growing systems, allowing the neural network to analyze the loss of every layer and algorithmically deduce where the best place to splice in a new layer of a certain length would be. This feature was finalized in an earlier version of Triton, but is currently unavailable with the new rewrite currently taking place. Self growing neural networks is the main goal of the Triton crate, and is currently one of the highest priorities in development.
-
-Currently, the other features in development for Triton are as follows: Convolutional layers(Forward is finished, working on backprop now), Flattening layers(goes hand in hand with convolutional backprop) and self growth systems. The future of Triton is unknown, but the goal would be to implement more layer types, with Recurrent layers likely being next and GAN support being a pipe dream for far into the future.
+Triton aims to bring the future of deep learning to the world of rust. With dynamic input traits, concurrent minibatch processing, and full Dense network support(with convolutions soon to come), Triton is quickly emerging and making neural network development easy and robust.
 
 ## Installation
 
@@ -29,8 +30,8 @@ triton_grow = "{version}"
 use triton_grow::network::{network::Network, activations::Activations, layer::layers::LayerTypes, input::Input};
 
 fn main() {
-    let inputs: Vec<Vec<f32>> = vec![vec![0.0,0.0],vec![1.0,0.0],vec![0.0,1.0], vec![1.0,1.0]];
-    let outputs: Vec<Vec<f32>> = vec![vec![0.0],vec![1.0],vec![1.0], vec![0.0]];
+    let inputs = vec![vec![0.0,0.0],vec![1.0,0.0],vec![0.0,1.0], vec![1.0,1.0]];
+    let outputs = vec![vec![0.0],vec![1.0],vec![1.0], vec![0.0]];
 
     let mut new_net = Network::new(4);
 
@@ -51,35 +52,12 @@ fn main() {
     new_net.save("best_network.json");
 }
 ```
-## Proven Results [Outdated as of Triton version 2.0, statistics will be updated upon completion of the new self growth algorithm]
 
-Upon testing Triton's self growth method against a traditional preconfigured network model. Three neural networks were all tasked with learning a simple **XOR predictor** with the following inputs and outputs:
+Using the built in **Input** trait, practically any data type can be mapped to an input for a neural network without the need for cutting corners, and the inner trait for layers allows for a plug and play style to neural network development. Currently, Triton has full support for Dense layers, Adam Optimization for Backprop, Activation functions (Sigmoid, TanH, ReLU and LeakyReLU), and even loss analysis per model and per layer. 
 
-### Inputs
-```
-[ 1.0 , 0.0 ]
-[ 0.0 , 1.0 ]
-[ 0.0 , 0.0 ]
-[ 1.0 , 1.0 ]
-```
+Gradient descent currently can happen both syncronously as stochastic gradient descent or asynchronously through minibatch gradient descent. 
 
-### Outputs
-```
-[ 1.0 ]
-[ 1.0 ]
-[ 0.0 ]
-[ 0.0 ]
-```
-
-### Testing
-
-| Model Name    | Layers {input -[hidden] - output} | Epochs Needed to Get 0.001 Avg Loss |
-| ------------- | ------------- | ------------- |
-| Minimum  | 2 - { *3* } - 1  |  7,880,000 |
-| Well Fit  | 2 - { *3 - 4 - 3* } - 1 | 2,790,000  |
-| Triton  | 2 - { *self growing* } - 1 | 100,000  |
-
-Triton was 98.09% more efficient than the minimum fit model, and 94.62% more than even the well fit model.
+One feature in development is that of self growing systems, allowing the neural network to analyze the loss of every layer and algorithmically deduce where the best place to splice in a new layer of a certain length would be. This feature was finalized in an earlier version of Triton, but is currently unavailable with the new rewrite currently taking place. Self growing neural networks is the main goal of the Triton crate, and is currently one of the highest priorities in development.
 
 ### Data Visualization
 
@@ -90,8 +68,6 @@ Currently the following visualizations exist:
 - Loss history
 - Error per layer
 
-### Example
-
 ```rust
 use std::error::Error;
 
@@ -99,8 +75,8 @@ use triton_grow::network::{network::Network, activations::Activations, layer::la
 use triton_grow::helper::data_vis;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let inputs: Vec<Vec<f32>> = vec![vec![0.0,0.0],vec![1.0,0.0],vec![0.0,1.0], vec![1.0,1.0]];
-    let outputs: Vec<Vec<f32>> = vec![vec![0.0],vec![1.0],vec![1.0], vec![0.0]];
+    let inputs = vec![vec![0.0,0.0],vec![1.0,0.0],vec![0.0,1.0], vec![1.0,1.0]];
+    let outputs = vec![vec![0.0],vec![1.0],vec![1.0], vec![0.0]];
 
     let mut new_net = Network::new(4);
 
@@ -146,6 +122,7 @@ Currently, triton is in a very beta stage, the following features are still in d
 - [X] Helper Function for generating the MNIST dataset
 - [X] Helper Functions for generating and deriving categorical data
 
-## License
+#### If open source development is your thing, we at Triton would love additional work on anything that can be implemented, please contact **eversonb@msoe.edu** if you'd like to help out!
 
-[MIT](https://choosealicense.com/licenses/mit/)
+# License
+Licensed under the Apache License, Version 2.0 http://www.apache.org/licenses/LICENSE-2.0 or the MIT license http://opensource.org/licenses/MIT, at your option. This file may not be copied, modified, or distributed except according to those terms.

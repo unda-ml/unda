@@ -1140,7 +1140,7 @@ dependencies = [
 
 [[package]]
 name = "triton_grow"
-version = "2.2.8"
+version = "2.2.9"
 dependencies = [
  "csv",
  "flate2",
