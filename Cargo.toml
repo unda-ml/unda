@@ -1,8 +1,8 @@
 [package]
 name = "triton_grow"
-version = "2.3.0"
+version = "2.3.1"
 authors = ["BradenEverson"]
-description = "A self sustaining growing neural net that can repair itself until reaching a desired accuracy"
+description = "General purpose neural network crate"
 edition = "2021"
 license = "MIT"
 
