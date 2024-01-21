@@ -311,7 +311,7 @@ impl Network{
         //Generate minibatches to train on
         let _ = io::stdout().flush();
         print!("[");
-        for _ in 1..=epochs {
+        for i in 1..=epochs {
             //let noise_fn = gen_noise(epochs as f32, i); 
             //let noise_distr = Distributions::Ranged(noise_fn);
             //let noise = noise_distr.sample(&mut self.rng);
