@@ -126,6 +126,5 @@ Currently, triton is in a very beta stage, the following features are still in d
 - [X] Helper Function for generating the MNIST dataset
 - [X] Helper Functions for generating and deriving categorical data
 
-## License
-
-[MIT](https://choosealicense.com/licenses/mit/)
+# License
+Licensed under the Apache License, Version 2.0 http://www.apache.org/licenses/LICENSE-2.0 or the MIT license http://opensource.org/licenses/MIT, at your option. This file may not be copied, modified, or distributed except according to those terms.
