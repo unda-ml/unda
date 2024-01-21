@@ -9,14 +9,6 @@
 
 Triton aims to bring the future of deep learning to the world of rust. With dynamic input traits, concurrent minibatch processing, and full Dense network support(with convolutions soon to come), Triton is quickly emerging and making neural network development easy and robust.
 
-Using the built in **Input** trait, practically any data type can be mapped to an input for a neural network without the need for cutting corners, and the inner trait for layers allows for a plug and play style to neural network development. Currently, Triton has full support for Dense layers, Adam Optimization for Backprop, Activation functions (Sigmoid, TanH, ReLU and LeakyReLU), and even loss analysis per model and per layer. 
-
-Gradient descent currently can happen both syncronously as stochastic gradient descent or asynchronously through minibatch gradient descent. 
-
-One feature in development is that of self growing systems, allowing the neural network to analyze the loss of every layer and algorithmically deduce where the best place to splice in a new layer of a certain length would be. This feature was finalized in an earlier version of Triton, but is currently unavailable with the new rewrite currently taking place. Self growing neural networks is the main goal of the Triton crate, and is currently one of the highest priorities in development.
-
-Currently, the other features in development for Triton are as follows: Convolutional layers(Forward is finished, working on backprop now) and self growth systems. The future of Triton is unknown, but the goal would be to implement more layer types, with Recurrent layers likely being next and GAN support being a pipe dream for far into the future.
-
 ## Installation
 
 Use the package manager [cargo](https://crates.io/) to add [triton](https://crates.io/crates/triton_grow) to your rust project.
@@ -60,6 +52,12 @@ fn main() {
     new_net.save("best_network.json");
 }
 ```
+
+Using the built in **Input** trait, practically any data type can be mapped to an input for a neural network without the need for cutting corners, and the inner trait for layers allows for a plug and play style to neural network development. Currently, Triton has full support for Dense layers, Adam Optimization for Backprop, Activation functions (Sigmoid, TanH, ReLU and LeakyReLU), and even loss analysis per model and per layer. 
+
+Gradient descent currently can happen both syncronously as stochastic gradient descent or asynchronously through minibatch gradient descent. 
+
+One feature in development is that of self growing systems, allowing the neural network to analyze the loss of every layer and algorithmically deduce where the best place to splice in a new layer of a certain length would be. This feature was finalized in an earlier version of Triton, but is currently unavailable with the new rewrite currently taking place. Self growing neural networks is the main goal of the Triton crate, and is currently one of the highest priorities in development.
 
 ### Data Visualization
 
