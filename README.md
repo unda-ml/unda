@@ -72,8 +72,6 @@ Currently the following visualizations exist:
 - Loss history
 - Error per layer
 
-### Example
-
 ```rust
 use std::error::Error;
 
