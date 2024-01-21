@@ -17,8 +17,6 @@ One feature in development is that of self growing systems, allowing the neural 
 
 Currently, the other features in development for Triton are as follows: Convolutional layers(Forward is finished, working on backprop now) and self growth systems. The future of Triton is unknown, but the goal would be to implement more layer types, with Recurrent layers likely being next and GAN support being a pipe dream for far into the future.
 
-If open source development is your thing, we at Triton would love additional work on anything that can be implemented, please contact **eversonb@msoe.edu** if you'd like to help out!
-
 ## Installation
 
 Use the package manager [cargo](https://crates.io/) to add [triton](https://crates.io/crates/triton_grow) to your rust project.
@@ -125,6 +123,8 @@ Currently, triton is in a very beta stage, the following features are still in d
 - [X] Helper Function for parsing CSV data
 - [X] Helper Function for generating the MNIST dataset
 - [X] Helper Functions for generating and deriving categorical data
+
+## If open source development is your thing, we at Triton would love additional work on anything that can be implemented, please contact **eversonb@msoe.edu** if you'd like to help out!
 
 # License
 Licensed under the Apache License, Version 2.0 http://www.apache.org/licenses/LICENSE-2.0 or the MIT license http://opensource.org/licenses/MIT, at your option. This file may not be copied, modified, or distributed except according to those terms.
