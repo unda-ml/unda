@@ -1,4 +1,5 @@
-# triton 🦎
+# ![triton logo](https://github.com/BradenEverson/triton/assets/67135608/532d6737-1cc5-47bd-9629-8c4da4bf0a22)
+ triton 🦎
 
 ### A self sustaining growing neural net that can repair itself until reaching a desired accuracy
 
