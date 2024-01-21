@@ -4,6 +4,9 @@
 
 ### A self sustaining growing neural net that can repair itself until reaching a desired accuracy
 
+[![crates.io](https://img.shields.io/crates/v/triton_grow.svg)](https://crates.io/crates/triton_grow)
+[![Documentation](https://docs.rs/triton_grow/badge.svg)](https://docs.rs/triton_grow)
+
 Triton aims to provide Keras level performance and ease of use to the world of Rust without being simply a wrapper library. Using Rust's unique traits system, Triton will enable more robust neural networks along with control over finer aspects that keras simply does not have. Using the build in Input trait, practically any data type can be mapped to an input for a neural network without the need for cutting corners, and the inner trait for layers allows for a plug and play style to neural network development. Currently, Triton has full support for Dense layers, Adam Optimization for Backprop, Activation functions (Sigmoid, TanH, ReLU and LeakyReLU), and even loss analysis per model and per layer.
 
 One feature in development is that of self growing systems, allowing the neural network to analyze the loss of every layer and algorithmically deduce where the best place to splice in a new layer of a certain length would be. This feature was finalized in an earlier version of Triton, but is currently unavailable with the new rewrite currently taking place. Self growing neural networks is the main goal of the Triton crate, and is currently one of the highest priorities in development.
