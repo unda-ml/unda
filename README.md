@@ -1,4 +1,4 @@
- <img align="left" src="./assets/67135608/532d6737-1cc5-47bd-9629-8c4da4bf0a22" width="70px" height="70px" alt="Linfa mascot icon">
+ <img align="left" src="./assets/triton-logo.svg" width="70px" height="70px" alt="triton mascot icon">
 
 # triton 🦎
 
