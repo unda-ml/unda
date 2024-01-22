@@ -3,6 +3,7 @@ use triton_grow::{network::{network::Network, activations::Activations, layer::l
 #[tokio::main]
 async fn main() {
     //Convolutional Example
+    /*
     let mut inputs: Vec<&dyn Input> = vec![];
     let outputs: Vec<Vec<f32>>;
     let mut true_outputs: Vec<Vec<f32>> = vec![];
@@ -35,9 +36,8 @@ async fn main() {
     for i in 0..10{
         println!("predicted: {:?} \n\n actual: {:?}\n", network.predict(inputs[i]), true_outputs[i]);
     }
-    network.save("mnist_weight_check.json");
+    network.save("mnist_weight_check.json");*/
     //Dense Example
-    /*
     let mut inputs: Vec<&dyn Input> = vec![];
     let input_1 = vec![1.0,1.0];
     let input_2 = vec![vec![0.0], vec![1.0]];
@@ -52,9 +52,9 @@ async fn main() {
 
     let mut new_net = Network::new(4);
 
-    new_net.add_layer(LayerTypes::DENSE(2, Activations::RELU, 0.01));
-    new_net.add_layer(LayerTypes::DENSE(3, Activations::RELU, 0.01));
-    new_net.add_layer(LayerTypes::DENSE(1, Activations::RELU, 0.01));
+    new_net.add_layer(LayerTypes::DENSE(2, Activations::ELU(0.1), 0.01));
+    new_net.add_layer(LayerTypes::DENSE(2, Activations::ELU(0.1), 0.01));
+    new_net.add_layer(LayerTypes::DENSE(1, Activations::SOFTMAX, 0.01));
 
     /*
      * User Input Seed
@@ -67,10 +67,11 @@ async fn main() {
     //new_net.set_seed("teller");
     new_net.compile();
 
-    new_net.fit_minibatch(&inputs, &outputs, 100).await;
+    new_net.fit_minibatch(&inputs, &outputs, 200).await;
+    //new_net.fit(&inputs, &outputs, 100);
 
     println!("1 and 0: {:?}", new_net.predict(&vec![1.0,0.0])[0]);
     println!("0 and 1: {:?}", new_net.predict(&vec![0.0,1.0])[0]);
     println!("1 and 1: {:?}", new_net.predict(&vec![1.0,1.0])[0]);
-    println!("0 and 0: {:?}", new_net.predict(&vec![0.0,0.0])[0]);*/
+    println!("0 and 0: {:?}", new_net.predict(&vec![0.0,0.0])[0]);
 }

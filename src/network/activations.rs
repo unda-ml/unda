@@ -15,7 +15,8 @@ pub enum Activations{
     TANH,
     RELU,
     LEAKYRELU,
-    SOFTMAX
+    SOFTMAX,
+    ELU(f32)
 }
 impl Activations{
     fn get_function(&self) -> Option<Activation>{
@@ -38,7 +39,14 @@ impl Activations{
                     .map(|&x| x.exp()).collect();
                 let sum_exp: f32 = exp_logits.iter().sum();
                 return Matrix::from_sized(exp_logits.iter().map(|x| x / sum_exp).collect::<Vec<f32>>(), data.rows, data.columns)
+            },
+            Activations::ELU(alpha) => {
+                let data_elu = data.to_param()
+                    .iter()
+                    .map(|&x| elu(*alpha, x)).collect();
+                return Matrix::from_sized(data_elu, data.rows, data.columns);
             }
+
         };
     }
     pub fn apply_derivative(&self, mut data: Matrix) -> Matrix {
@@ -53,6 +61,12 @@ impl Activations{
                     .map(|(s,ds)| s * ds)
                     .collect();
                 return Matrix::from_sized(softmax_output, data.rows, data.columns);
+            },
+            Activations::ELU(alpha) => {
+                let data_elu = data.to_param()
+                    .iter()
+                    .map(|&x| d_elu(*alpha, x)).collect();
+                return Matrix::from_sized(data_elu, data.rows, data.columns);
             }
         };
     }
@@ -96,7 +110,7 @@ const RELU: Activation = Activation {
 
 const LEAKY_RELU: Activation = Activation{
     function: &|x| {
-        if x.max(0.0) == x{
+        if x > 0.0{
             return x;
         }
         return 0.001 * x;
@@ -108,3 +122,18 @@ const LEAKY_RELU: Activation = Activation{
         return 0.001;
     }
 };
+
+fn d_elu(alpha: f32, x: f32) -> f32 {
+     if x > 0.0 {
+        return 1.0;
+    }
+    return alpha * E.powf(x);
+   
+}
+
+fn elu(alpha: f32, x: f32) -> f32 {
+    if x.max(0.0) == x{
+        return x;
+    }
+    return alpha * (E.powf(x) - 1.0);
+}

@@ -33,8 +33,8 @@ pub struct Dense{
 impl Dense{
     pub fn new(layers: usize, layer_cols_before: usize, activation: Activations, learning_rate: f32, rng: &mut Box<dyn RngCore>) -> Dense{
         let distribution: Distributions = match activation{
-            Activations::RELU | Activations::LEAKYRELU | Activations::SOFTMAX => Distributions::He(layer_cols_before),
-            Activations::TANH | Activations::SIGMOID => Distributions::Xavier(layer_cols_before, layers),
+            Activations::ELU(_) | Activations::RELU | Activations::LEAKYRELU | Activations::SOFTMAX => Distributions::He(layers),
+            Activations::TANH | Activations::SIGMOID => Distributions::Xavier(layers, layer_cols_before),
         };
         let mut res = Dense { 
             loss: 1.0,
@@ -98,7 +98,7 @@ impl Layer for Dense{
             weights_update.clip(&clip_range);
         }
         self.biases = self.biases.clone() + &bias_update;
-        self.weights = self.weights.clone() - &weights_update;
+        self.weights = self.weights.clone() + &weights_update;
     }
     fn avg_gradient(&self, gradients: Vec<&Box<dyn Input>>) -> Box<dyn Input>{
         let len = gradients.len();
@@ -114,7 +114,7 @@ impl Layer for Dense{
         let mut gradients_mat = Matrix::from(gradient.to_param_2d());
         let mut data_mat = Matrix::from(data_at.to_param_2d());
 
-        gradients_mat = gradients_mat.dot_multiply(&errors_mat) * self.learning_rate;
+        gradients_mat = gradients_mat.dot_multiply(&errors_mat) * self.learning_rate; 
 
         if gradients_mat.columns != data_mat.rows {
             data_mat = data_mat.transpose();
