@@ -110,7 +110,7 @@ impl Convolutional{
 #[typetag::serde]
 impl Layer for Convolutional {
 
-    fn update_gradients(&mut self, gradient_pair: (&Box<dyn Input>, &Box<dyn Input>)) {//, noise: &f32) {
+    fn update_gradients(&mut self, gradient_pair: (&Box<dyn Input>, &Box<dyn Input>), clip: Option<Range<f32>>) {//, noise: &f32) {
         panic!("unfinished");
     }
     fn avg_gradient(&self, gradients: Vec<&Box<dyn Input>>) -> Box<dyn Input>{

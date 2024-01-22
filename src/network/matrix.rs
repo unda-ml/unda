@@ -192,6 +192,17 @@ impl ops::Div<&Matrix> for Matrix{
 }
 
 impl Matrix{
+    pub fn clip(&mut self, clip_range: &Range<f32>){
+        for i in 0..self.rows {
+            for j in 0..self.columns {
+                if self.data[i][j] < clip_range.start {
+                    self.data[i][j] = clip_range.start;
+                } else if self.data[i][j] > clip_range.end {
+                    self.data[i][j] = clip_range.end;
+                }
+            }
+        }
+    }
     pub fn from_sized(data: Vec<f32>, rows: usize, cols: usize) -> Matrix {
         if rows * cols != data.len() {
             panic!("Size incompatible between data inputted and desired matrix size");

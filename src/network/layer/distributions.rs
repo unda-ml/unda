@@ -16,7 +16,7 @@ impl Distributions {
         let mut res = 0.0;
         while res.is_zero() {
             res = match self {
-                Distributions::Xavier(inputs, layer_len) => rng.gen_range(get_xavier_range(*inputs, *layer_len)),
+                Distributions::Xavier(n_inputs, n_outputs) => rng.gen_range(get_xavier_range(*n_inputs, *n_outputs)),
                 Distributions::He(inputs) => { 
                     rng.sample(get_he_range(*inputs))
                 }

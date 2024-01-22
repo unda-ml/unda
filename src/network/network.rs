@@ -90,7 +90,7 @@ impl Network{
     pub fn compile(&mut self){
         let input_size = self.uncompiled_layers[0].get_size();
         for i in 0..self.uncompiled_layers.len() - 1 {
-            let layer = self.uncompiled_layers[i].to_layer(self.layer_sizes[i+1], &mut self.rng, input_size);
+            let layer = self.uncompiled_layers[i].to_layer(self.layer_sizes[i+1], &mut self.rng);
             self.layers.push(layer);
         }
     }
@@ -298,24 +298,22 @@ impl Network{
 
     fn update_gradients(&mut self, gradient_pairs: &(Vec<Box<dyn Input>>, Vec<Box<dyn Input>>)) {//, noise: &f32) {
         if gradient_pairs.0.len() != self.layers.len() - 1 {
-            panic!("Gradients length not equal to number of layers:\nGradients: {}\nLayers: {}", 
+            panic!("Gradients length not equal to number of layers:
+                   \nGradients: {}\nLayers: {}", 
                    gradient_pairs.0.len(),
                    self.layers.len());
         }
         for i in 0..self.layers.len() - 1 {
-            self.layers[i].update_gradients((&gradient_pairs.0[i], &gradient_pairs.1[i]));//, noise);
+            self.layers[i].update_gradients((&gradient_pairs.0[i], &gradient_pairs.1[i]), Some(-1.0..1.0));//, noise);
         }
     }
 
     pub async fn fit_minibatch(&mut self, train_in: &Vec<&dyn Input>, train_out: &Vec<Vec<f32>>, epochs: usize) {
-        //Generate minibatches to train on
         let _ = io::stdout().flush();
         print!("[");
-        for i in 1..=epochs {
-            //let noise_fn = gen_noise(epochs as f32, i); 
-            //let noise_distr = Distributions::Ranged(noise_fn);
-            //let noise = noise_distr.sample(&mut self.rng);
-            let minibatches: Vec<Vec<(Box<dyn Input>, Vec<f32>)>> = self.generate_minibatches(train_in.clone(), train_out.clone());
+        for _ in 1..=epochs {
+            let minibatches: Vec<Vec<(Box<dyn Input>, Vec<f32>)>> = 
+                self.generate_minibatches(train_in.clone(), train_out.clone());
             let len = minibatches.len();
             let _ = io::stdout().flush();
             print!("#");
@@ -325,10 +323,10 @@ impl Network{
                 .collect::<FuturesUnordered<_>>();
             let res = all_gradients.await;
             for gradient_pair in res.iter() {
-                self.update_gradients(&gradient_pair);//, &noise);
+                self.update_gradients(&gradient_pair);
             }
         }
-        //println!("]");
+        println!("]");
     }
    
     fn generate_minibatches(&self,mut inputs: Vec<&dyn Input>,mut outputs: Vec<Vec<f32>>) -> Vec<Vec<(Box<dyn Input>, Vec<f32>)>> {

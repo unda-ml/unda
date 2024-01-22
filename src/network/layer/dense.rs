@@ -31,10 +31,10 @@ pub struct Dense{
 }
 
 impl Dense{
-    pub fn new(layers: usize, layer_cols_before: usize, activation: Activations, learning_rate: f32, rng: &mut Box<dyn RngCore>, input_size: usize) -> Dense{
+    pub fn new(layers: usize, layer_cols_before: usize, activation: Activations, learning_rate: f32, rng: &mut Box<dyn RngCore>) -> Dense{
         let distribution: Distributions = match activation{
-            Activations::RELU | Activations::LEAKYRELU | Activations::SOFTMAX => Distributions::Default,//Distributions::He(input_size),
-            Activations::TANH | Activations::SIGMOID => Distributions::Default//Distributions::Xavier(input_size, layers),
+            Activations::RELU | Activations::LEAKYRELU | Activations::SOFTMAX => Distributions::He(layer_cols_before),
+            Activations::TANH | Activations::SIGMOID => Distributions::Xavier(layer_cols_before, layers),
         };
         let mut res = Dense { 
             loss: 1.0,
@@ -71,9 +71,10 @@ impl Dense{
 
 #[typetag::serde]
 impl Layer for Dense{
-    fn update_gradients(&mut self, gradient_pair: (&Box<dyn Input>, &Box<dyn Input>)) {//, noise: &f32) {
+    fn update_gradients(&mut self, gradient_pair: (&Box<dyn Input>, &Box<dyn Input>), clip: Option<Range<f32>>) {//, noise: &f32) {
         let bias_gradient = Matrix::from(gradient_pair.0.to_param_2d()); //+ noise;
         let weight_gradient = Matrix::from(gradient_pair.1.to_param_2d()); //+ noise;
+
 
         self.time += 1;
 
@@ -89,17 +90,22 @@ impl Layer for Dense{
         let m_bias_hat = self.m_biases.clone() / (1.0 - self.beta1.powi(self.time as i32));
         let v_bias_hat = self.v_biases.clone() / (1.0 - self.beta2.powi(self.time as i32));
 
-        let weights_update = m_weights_hat.clone() / &(v_weights_hat.sqrt() + self.epsilon);
-        let bias_update = m_bias_hat.clone() / &(v_bias_hat.sqrt() + self.epsilon);
+        let mut weights_update = m_weights_hat.clone() / &(v_weights_hat.sqrt() + self.epsilon);
+        let mut bias_update = m_bias_hat.clone() / &(v_bias_hat.sqrt() + self.epsilon);
 
+        if let Some(clip_range) = clip{
+            bias_update.clip(&clip_range);
+            weights_update.clip(&clip_range);
+        }
         self.biases = self.biases.clone() + &bias_update;
-        self.weights = self.weights.clone() + &weights_update;
+        self.weights = self.weights.clone() - &weights_update;
     }
     fn avg_gradient(&self, gradients: Vec<&Box<dyn Input>>) -> Box<dyn Input>{
         let len = gradients.len();
-        let gradients_mat = gradients.into_iter().map(|gradient| Matrix::from(gradient.to_param_2d()));
+        let gradients_mat = gradients.into_iter()
+            .map(|gradient| Matrix::from(gradient.to_param_2d()));
         let sum: Matrix = gradients_mat.sum();
-        let avg = sum; // len;
+        let avg = sum / len;
         Box::new(avg) 
     }
     fn get_gradients(&self, data: &Box<dyn Input>, data_at: &Box<dyn Input>, errors: &Box<dyn Input>) -> GradientPair {

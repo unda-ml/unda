@@ -25,7 +25,7 @@ pub trait Layer: Send + Sync{
     fn avg_gradient(&self, gradients: Vec<&Box<dyn Input>>) -> Box<dyn Input>;
     ///Updates the model's current weights and biases according to a paired gradient in the format
     ///(Bias Gradient, Weight Gradient)
-    fn update_gradients(&mut self, gradient_pair: (&Box<dyn Input>, &Box<dyn Input>));//, noise: &f32);
+    fn update_gradients(&mut self, gradient_pair: (&Box<dyn Input>, &Box<dyn Input>), clip: Option<Range<f32>>);//, noise: &f32);
     ///Returns the data currently found at this layer. The data is dependent on the current
     ///iteration and input data going through
     fn get_data(&self) -> Box<dyn Input>;
@@ -61,9 +61,9 @@ pub enum LayerTypes{
 }
 
 impl LayerTypes{
-    pub fn to_layer(&self, prev_cols: usize, rand: &mut Box<dyn RngCore>, input_size: usize) -> Box<dyn Layer> {
+    pub fn to_layer(&self, prev_cols: usize, rand: &mut Box<dyn RngCore>) -> Box<dyn Layer> {
         return match self {
-            LayerTypes::DENSE(rows, activation, learning) => Box::new(Dense::new(rows.clone(), prev_cols, activation.clone(), learning.clone(), rand, input_size)),
+            LayerTypes::DENSE(rows, activation, learning) => Box::new(Dense::new(rows.clone(), prev_cols, activation.clone(), learning.clone(), rand)),
             /*LayerTypes::NETWORK(layers, batch_size) => {
                 let mut new_net: Network = Network::new(*batch_size);
                 layers.iter().for_each(|layer| {

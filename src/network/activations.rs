@@ -76,7 +76,16 @@ const TANH: Activation = Activation {
 };
 
 const RELU: Activation = Activation {
-    function: &|x| x.max(0.0),
+    function: &|x| {
+        let res = x.max(0.0);
+        
+
+        /*if res > 0.0 {
+            println!("not zero");
+        }*/
+
+        return res;
+    },
     derivative: &|x| {
         if x.max(0.0) == x {
             return 1.0;

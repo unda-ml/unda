@@ -3,7 +3,6 @@ use triton_grow::{network::{network::Network, activations::Activations, layer::l
 #[tokio::main]
 async fn main() {
     //Convolutional Example
-    /*
     let mut inputs: Vec<&dyn Input> = vec![];
     let outputs: Vec<Vec<f32>>;
     let mut true_outputs: Vec<Vec<f32>> = vec![];
@@ -16,25 +15,29 @@ async fn main() {
     println!("Done Generating MNIST");
 
     outputs = to_categorical(outputs_uncat);
-    for i in 0..inputs_undyn.len(){
+    for i in 0..500{
         inputs.push(&inputs_undyn[i]);
         true_outputs.push(outputs[i].clone());
     }
 
-    let mut network = Network::new(512);
+    let mut network = Network::new(10);
 
-    network.add_layer(LayerTypes::DENSE(784, Activations::RELU, 0.01));
-    network.add_layer(LayerTypes::DENSE(64, Activations::RELU, 0.01));
-    network.add_layer(LayerTypes::DENSE(32, Activations::RELU, 0.01));
-    network.add_layer(LayerTypes::DENSE(10, Activations::SOFTMAX, 0.01));
+    network.add_layer(LayerTypes::DENSE(784, Activations::RELU, 0.1));
+    network.add_layer(LayerTypes::DENSE(64, Activations::RELU, 0.1));
+    network.add_layer(LayerTypes::DENSE(32, Activations::RELU, 0.1));
+    network.add_layer(LayerTypes::DENSE(10, Activations::SOFTMAX, 0.1));
+
+    
 
     network.compile();
 
-    network.fit_minibatch(&inputs, &true_outputs, 10).await;
+    network.fit_minibatch(&inputs, &true_outputs, 1000).await;
     for i in 0..10{
         println!("predicted: {:?} \n\n actual: {:?}\n", network.predict(inputs[i]), true_outputs[i]);
-    }*/
+    }
+    network.save("mnist_weight_check.json");
     //Dense Example
+    /*
     let mut inputs: Vec<&dyn Input> = vec![];
     let input_1 = vec![1.0,1.0];
     let input_2 = vec![vec![0.0], vec![1.0]];
@@ -51,7 +54,7 @@ async fn main() {
 
     new_net.add_layer(LayerTypes::DENSE(2, Activations::RELU, 0.01));
     new_net.add_layer(LayerTypes::DENSE(3, Activations::RELU, 0.01));
-    new_net.add_layer(LayerTypes::DENSE(1, Activations::SOFTMAX, 0.01));
+    new_net.add_layer(LayerTypes::DENSE(1, Activations::RELU, 0.01));
 
     /*
      * User Input Seed
@@ -69,5 +72,5 @@ async fn main() {
     println!("1 and 0: {:?}", new_net.predict(&vec![1.0,0.0])[0]);
     println!("0 and 1: {:?}", new_net.predict(&vec![0.0,1.0])[0]);
     println!("1 and 1: {:?}", new_net.predict(&vec![1.0,1.0])[0]);
-    println!("0 and 0: {:?}", new_net.predict(&vec![0.0,0.0])[0]);
+    println!("0 and 0: {:?}", new_net.predict(&vec![0.0,0.0])[0]);*/
 }
