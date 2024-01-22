@@ -93,6 +93,9 @@ impl Network{
             let layer = self.uncompiled_layers[i].to_layer(self.layer_sizes[i+1], &mut self.rng);
             self.layers.push(layer);
         }
+        
+        let final_layer = self.uncompiled_layers[self.uncompiled_layers.len()-1].to_layer(1, &mut self.rng);
+        self.layers.push(final_layer);
     }
     pub fn predict(&mut self, input: &dyn Input) -> Vec<f32>{
         let in_box: Box<dyn Input> = input.to_box();
@@ -221,10 +224,9 @@ impl Network{
 
         //println!("{}", data.len());
 
-        for i in (0..self.layers.len() - 1).rev() {
-            errors = self.layers[i + 1].update_errors(errors);
-            res.push(self.layers[i + 1].get_gradients(&data[i + 1], &data[i], &errors));
-            //println!("{:?}", res[res.len()-1].1.shape());
+        for i in (0..self.layers.len()).rev() {
+            res.push(self.layers[i].get_gradients(&data[i + 1], &data[i], &errors));
+            errors = self.layers[i].update_errors(errors);
         }
         res.reverse();
         res
@@ -297,14 +299,14 @@ impl Network{
     }
 
     fn update_gradients(&mut self, gradient_pairs: &(Vec<Box<dyn Input>>, Vec<Box<dyn Input>>)) {//, noise: &f32) {
-        if gradient_pairs.0.len() != self.layers.len() - 1 {
+        if gradient_pairs.0.len() != self.layers.len() {
             panic!("Gradients length not equal to number of layers:
                    \nGradients: {}\nLayers: {}", 
                    gradient_pairs.0.len(),
                    self.layers.len());
         }
-        for i in 0..self.layers.len() - 1 {
-            self.layers[i].update_gradients((&gradient_pairs.0[i], &gradient_pairs.1[i]), Some(-1.0..1.0));//, noise);
+        for i in 0..self.layers.len() {
+            self.layers[i].update_gradients((&gradient_pairs.0[i], &gradient_pairs.1[i]), None);//Some(-1.0..1.0));//, noise);
         }
     }
 
