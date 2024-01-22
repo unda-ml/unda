@@ -3,7 +3,6 @@ use triton_grow::{network::{network::Network, activations::Activations, layer::l
 #[tokio::main]
 async fn main() {
     //Convolutional Example
-    /*
     let mut inputs: Vec<&dyn Input> = vec![];
     let outputs: Vec<Vec<f32>>;
     let mut true_outputs: Vec<Vec<f32>> = vec![];
@@ -23,12 +22,11 @@ async fn main() {
 
     let mut network = Network::new(10);
 
-    network.add_layer(LayerTypes::DENSE(784, Activations::RELU, 0.1));
-    network.add_layer(LayerTypes::DENSE(64, Activations::RELU, 0.1));
-    network.add_layer(LayerTypes::DENSE(32, Activations::RELU, 0.1));
-    network.add_layer(LayerTypes::DENSE(10, Activations::SOFTMAX, 0.1));
+    network.add_layer(LayerTypes::DENSE(784, Activations::SIGMOID, 0.1));
+    network.add_layer(LayerTypes::DENSE(64, Activations::SIGMOID, 0.1));
+    network.add_layer(LayerTypes::DENSE(32, Activations::SIGMOID, 0.1));
+    network.add_layer(LayerTypes::DENSE(10, Activations::SIGMOID, 0.1));
 
-    
 
     network.compile();
 
@@ -36,8 +34,9 @@ async fn main() {
     for i in 0..10{
         println!("predicted: {:?} \n\n actual: {:?}\n", network.predict(inputs[i]), true_outputs[i]);
     }
-    network.save("mnist_weight_check.json");*/
+    network.save("mnist_weight_check.json");
     //Dense Example
+    /*
     let mut inputs: Vec<&dyn Input> = vec![];
     let input_1 = vec![1.0,1.0];
     let input_2 = vec![vec![0.0], vec![1.0]];
@@ -52,17 +51,18 @@ async fn main() {
 
     let mut new_net = Network::new(4);
 
-    new_net.add_layer(LayerTypes::DENSE(2, Activations::RELU, 0.1));
-    new_net.add_layer(LayerTypes::DENSE(3, Activations::RELU, 0.1));
-    new_net.add_layer(LayerTypes::DENSE(1, Activations::RELU, 0.1));
+    new_net.add_layer(LayerTypes::DENSE(2, Activations::SIGMOID, 0.0001));
+    new_net.add_layer(LayerTypes::DENSE(3, Activations::SIGMOID, 0.0001));
+    new_net.add_layer(LayerTypes::DENSE(1, Activations::SIGMOID, 0.0001));
 
     new_net.compile();
 
-    new_net.fit_minibatch(&inputs, &outputs, 2000).await;
+    new_net.fit_minibatch(&inputs, &outputs, 500).await;
     //new_net.fit(&inputs, &outputs, 100);
 
     println!("1 and 0: {:?}", new_net.predict(&vec![1.0,0.0])[0]);
     println!("0 and 1: {:?}", new_net.predict(&vec![0.0,1.0])[0]);
     println!("1 and 1: {:?}", new_net.predict(&vec![1.0,1.0])[0]);
     println!("0 and 0: {:?}", new_net.predict(&vec![0.0,0.0])[0]);
+    */
 }

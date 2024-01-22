@@ -94,7 +94,7 @@ impl Network{
             self.layers.push(layer);
         }
         
-        let final_layer = self.uncompiled_layers[self.uncompiled_layers.len()-1].to_layer(1, &mut self.rng);
+        let final_layer = self.uncompiled_layers[self.uncompiled_layers.len()-1].to_layer(self.layer_sizes[self.layer_sizes.len()-1], &mut self.rng);
         self.layers.push(final_layer);
     }
     pub fn predict(&mut self, input: &dyn Input) -> Vec<f32>{
@@ -196,7 +196,7 @@ impl Network{
     ///bias updating is different as well
     ///
     ///When constructing a neural network, be cautious that your layers behave well with each other
-    fn back_propegate(&mut self, outputs: Vec<f32>, target_obj: &Box<dyn Input>) {
+    fn back_propegate(&mut self, outputs: &Vec<f32>, target_obj: &Box<dyn Input>) {
         let parsed = Matrix::from(outputs.to_param_2d());
         
         if let None = self.layers[self.layers.len()-1].get_activation() {
@@ -277,7 +277,7 @@ impl Network{
                         let input: Box<dyn Input> = train_in[input_index].to_box();
                         let output: Box<dyn Input> = Box::new(train_out[input_index].clone());
                         let outputs = self.feed_forward(&input);
-                        self.back_propegate(outputs.clone(), &output);
+                        self.back_propegate(&outputs, &output);
 
                         for i in 0..outputs.len() {
                             loss_on_input += (outputs[i] - train_out[input_index].to_param()[i]).powi(2);

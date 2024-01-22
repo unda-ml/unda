@@ -1,8 +1,8 @@
 [package]
 name = "triton_grow"
-version = "2.3.2"
+version = "2.3.3"
 authors = ["BradenEverson"]
-description = "General purpose neural network crate"
+description = "General purpose machine learning crate for neural network development and analysis"
 edition = "2021"
 license = "MIT"
 
