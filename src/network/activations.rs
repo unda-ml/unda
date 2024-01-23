@@ -92,12 +92,6 @@ const TANH: Activation = Activation {
 const RELU: Activation = Activation {
     function: &|x| {
         let res = x.max(0.0);
-        
-
-        /*if res > 0.0 {
-            println!("not zero");
-        }*/
-
         return res;
     },
     derivative: &|x| {

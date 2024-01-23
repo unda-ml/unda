@@ -1,4 +1,5 @@
 use rand::prelude::*;
+use std::ops::{AddAssign, SubAssign};
 use std::{ops::{self, Range}, iter};
 use serde::{Serialize, Deserialize};
 
@@ -26,6 +27,40 @@ impl std::fmt::Display for Matrix{
             resp += "]\n";
         }
         write!(f, "{}", resp)
+    }
+}
+
+impl AddAssign for Matrix {
+    fn add_assign(&mut self, rhs: Self) {
+        if self.rows != rhs.rows || self.columns != rhs.columns {
+            panic!("Error attempting to add two matrices with different dimensions \nMatrix A: {} x {}\nMatrix B: {} x {}", 
+                   self.rows, 
+                   self.columns, 
+                   rhs.rows,
+                   rhs.columns);
+        }
+        for i in 0..self.rows {
+            for j in 0..self.columns {
+                self.data[i][j] = self.data[i][j] + rhs.data[i][j];
+            }
+        }
+    }
+}
+
+impl SubAssign for Matrix {
+    fn sub_assign(&mut self, rhs: Self) {
+        if self.rows != rhs.rows || self.columns != rhs.columns {
+            panic!("Error attempting to add two matrices with different dimensions \nMatrix A: {} x {}\nMatrix B: {} x {}", 
+                   self.rows, 
+                   self.columns, 
+                   rhs.rows,
+                   rhs.columns);
+        }
+        for i in 0..self.rows {
+            for j in 0..self.columns {
+                self.data[i][j] = self.data[i][j] - rhs.data[i][j];
+            }
+        }
     }
 }
 
