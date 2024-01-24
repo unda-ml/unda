@@ -364,6 +364,10 @@ impl Network{
         let file_ser = to_string(self).expect("Unable to serialize network :(((");
         file.write_all(file_ser.to_string().as_bytes()).expect("Write failed :(");
     }
+    pub fn save_cbor(&self, path: &str) {
+        let res_file = File::create(path).expect("Unable to save file");
+        serde_cbor::to_writer(res_file, self).expect("Unable to write or compile cbor");
+    }
     pub fn load(path: &str) -> Network{
         let mut buffer = String::new();
         let mut file = File::open(path).expect("Unable to read file :(");
@@ -373,5 +377,11 @@ impl Network{
         let mut net: Network = from_str(&buffer).expect("Json was not formatted well >:(");
         net.rng = net.get_rng();
         net
+    }
+    pub fn load_cbor(path: &str) -> Result<Network, serde_cbor::Error> {
+        let file = File::open(path).expect("error loading file");
+        let mut network: Network = serde_cbor::from_reader(file)?;
+        network.rng = network.get_rng();
+        Ok(network)
     }
 }
