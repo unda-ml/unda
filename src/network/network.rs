@@ -384,4 +384,10 @@ impl Network{
         network.rng = network.get_rng();
         Ok(network)
     }
+    pub fn to_vec(&self) -> Result<Vec<u8>, serde_cbor::Error> {
+        serde_cbor::to_vec(self)
+    }
+    pub fn from_vec(data: Vec<u8>) -> Result<Network, serde_cbor::Error> {
+        serde_cbor::from_slice(&data[..])
+    }
 }
