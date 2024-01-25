@@ -49,6 +49,8 @@ pub trait Layer: Send + Sync{
     fn get_loss(&self) -> f32;
     ///Returns the unmodified gradient of this layer, to be used on the next layer
     fn update_gradient(&self) -> Box<dyn Input>;
+    fn get_weights(&self) -> Box<dyn Input>;
+    fn get_biases(&self) -> Box<dyn Input>;
 }
 
 #[derive(Serialize, Deserialize, Clone)]

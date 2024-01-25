@@ -4,6 +4,7 @@ use super::layer::noise::gen_noise;
 use super::layer::pair::GradientPair;
 use super::matrix::Matrix;
 use super::input::Input;
+use super::serialize::ser_layer::SerializedLayer;
 use rand::{RngCore, Rng, thread_rng};
 use rand_pcg::Pcg64;
 use rand_seeder::Seeder;
@@ -12,7 +13,7 @@ use serde::{Serialize, Deserialize};
 use futures::stream::{StreamExt, FuturesUnordered};
 
 use serde_json::{to_string, from_str};
-use std::io;
+use std::{io, fs};
 use std::ops::Range;
 use std::{
     fs::File,
@@ -389,5 +390,24 @@ impl Network{
     }
     pub fn from_vec(data: Vec<u8>) -> Result<Network, serde_cbor::Error> {
         serde_cbor::from_slice(&data[..])
+    }
+
+    pub fn serialize_triton_fmt(&self, path: &str) {
+        let mut str_fmt: Vec<String> = vec![];
+        for i in 0..self.layers.len() {
+            let layer_serialized: SerializedLayer = SerializedLayer::new(&self.layers[i], &self.uncompiled_layers[i]);
+            str_fmt.push(layer_serialized.to_string());
+        }
+        fs::write(path, str_fmt.join("#")).expect("Error writing to file");
+    }
+    pub fn deserialize_triton_fmt_string(format_string: String) -> Network {
+        let mut net: Network = Network::new(0);
+        let parse_triton = format_string.split("#");
+        for layer in parse_triton {
+            let new_layer: Box<dyn Layer> = SerializedLayer::from_string(layer.to_string()).from();
+            net.layers.push(new_layer);
+        }
+
+        net
     }
 }

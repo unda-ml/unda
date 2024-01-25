@@ -31,6 +31,27 @@ pub struct Dense{
 }
 
 impl Dense{
+    pub fn new_ser(rows: usize, cols: usize, flat_weight: Vec<f32>, flat_bias: Vec<f32>) -> Dense {
+        let weight_shape: Matrix = Matrix::from_sized(flat_weight, rows, cols);
+        let bias_shape: Matrix = Matrix::from_sized(flat_bias, rows, 1);
+
+        Dense {
+            weights: weight_shape,
+            biases: bias_shape,
+            data: Matrix::new_empty(0, 0),
+            loss: 1.0,
+            activation_fn: Activations::SIGMOID,
+            learning_rate: 0.01,
+            beta1: 0.99,
+            beta2: 0.99,
+            epsilon: 1e-16,
+            time: 1,
+            m_weights: Matrix::new_empty(0, 0),
+            v_weights: Matrix::new_empty(0, 0),
+            m_biases: Matrix::new_empty(0, 0),
+            v_biases: Matrix::new_empty(0, 0)
+        }
+    }
     pub fn new(layers: usize, layer_cols_before: usize, activation: Activations, learning_rate: f32, rng: &mut Box<dyn RngCore>) -> Dense{
         let distribution: Distributions = match activation{
             Activations::ELU(_) | Activations::RELU | Activations::LEAKYRELU | Activations::SOFTMAX => Distributions::He(layers),
@@ -196,5 +217,11 @@ impl Layer for Dense{
     }
     fn get_loss(&self) -> f32{
         self.loss
+    }
+    fn get_weights(&self) -> Box<dyn Input> {
+        self.weights.to_box()
+    }
+    fn get_biases(&self) -> Box<dyn Input>{
+        self.biases.to_box()
     }
 }

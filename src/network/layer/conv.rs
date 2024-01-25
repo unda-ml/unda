@@ -164,4 +164,10 @@ impl Layer for Convolutional {
         //TODO
         self.data.to_box()
     }
+    fn get_weights(&self) -> Box<dyn Input> {
+        self.filter_weights.to_box()
+    }
+    fn get_biases(&self) -> Box<dyn Input>{
+        self.filter_biases.to_box()
+    }
 }

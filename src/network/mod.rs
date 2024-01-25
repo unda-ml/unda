@@ -4,3 +4,4 @@ pub mod network;
 pub mod activations;
 pub mod input;
 pub mod layer;
+pub mod serialize;
