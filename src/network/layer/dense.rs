@@ -8,7 +8,6 @@ use serde::{Deserialize, Serialize};
 
 ///A Dense Neural Network Layer of a model, containing just nodes, weights, biases and an
 ///activation function
-///Implements the Layer trait
 #[derive(Serialize, Deserialize)]
 pub struct Dense{
     pub weights: Matrix,   
