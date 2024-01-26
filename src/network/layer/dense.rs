@@ -95,7 +95,6 @@ impl Layer for Dense{
         let bias_gradient = Matrix::from(gradient_pair.0.to_param_2d()); //+ noise;
         let weight_gradient = Matrix::from(gradient_pair.1.to_param_2d()); //+ noise;
 
-
         self.time += 1;
 
         self.m_weights = self.m_weights.clone() * self.beta1 + &(weight_gradient.clone() * (1.0 - self.beta1));
@@ -125,7 +124,7 @@ impl Layer for Dense{
         let gradients_mat = gradients.into_iter()
             .map(|gradient| Matrix::from(gradient.to_param_2d()));
         let sum: Matrix = gradients_mat.sum();
-        let avg = sum / len;
+        let avg = sum;
         Box::new(avg) 
     }
     fn get_gradients(&self, data: &Box<dyn Input>, data_at: &Box<dyn Input>, errors: &Box<dyn Input>) -> GradientPair {

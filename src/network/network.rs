@@ -1,6 +1,4 @@
-use super::layer::distributions::Distributions;
 use super::layer::layers::{Layer, LayerTypes};
-use super::layer::noise::gen_noise;
 use super::layer::pair::GradientPair;
 use super::matrix::Matrix;
 use super::input::Input;
@@ -14,7 +12,6 @@ use futures::stream::{StreamExt, FuturesUnordered};
 
 use serde_json::{to_string, from_str};
 use std::{io, fs};
-use std::ops::Range;
 use std::{
     fs::File,
     io::{Read,Write},
