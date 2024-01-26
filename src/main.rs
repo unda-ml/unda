@@ -52,13 +52,13 @@ async fn main() {
 
     let mut new_net = Network::new(4);
 
-    new_net.add_layer(LayerTypes::DENSE(2, Activations::SIGMOID, 0.0001));
-    new_net.add_layer(LayerTypes::DENSE(3, Activations::SIGMOID, 0.0001));
-    new_net.add_layer(LayerTypes::DENSE(1, Activations::SIGMOID, 0.0001));
+    new_net.add_layer(LayerTypes::DENSE(2, Activations::RELU, 0.0001));
+    new_net.add_layer(LayerTypes::DENSE(3, Activations::RELU, 0.0001));
+    new_net.add_layer(LayerTypes::DENSE(1, Activations::RELU, 0.0001));
 
     new_net.compile();
 
-    new_net.fit_minibatch(&inputs, &outputs, 200).await;
+    new_net.fit_minibatch(&inputs, &outputs, 100).await;
     println!("1 and 0: {:?}", new_net.predict(&vec![1.0,0.0])[0]);
     println!("0 and 1: {:?}", new_net.predict(&vec![0.0,1.0])[0]);
     println!("1 and 1: {:?}", new_net.predict(&vec![1.0,1.0])[0]);

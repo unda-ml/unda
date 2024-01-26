@@ -53,7 +53,7 @@ impl Dense{
     }
     pub fn new(layers: usize, layer_cols_before: usize, activation: Activations, learning_rate: f32, rng: &mut Box<dyn RngCore>) -> Dense{
         let distribution: Distributions = match activation{
-            Activations::ELU(_) | Activations::RELU | Activations::LEAKYRELU | Activations::SOFTMAX => Distributions::He(layers),
+            Activations::ELU(_) | Activations::RELU | Activations::LEAKYRELU | Activations::SOFTMAX => Distributions::He(layer_cols_before),
             Activations::TANH | Activations::SIGMOID => Distributions::Xavier(layers, layer_cols_before),
         };
         let mut res = Dense { 
