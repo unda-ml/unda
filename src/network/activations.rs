@@ -78,7 +78,7 @@ const SIGMOID: Activation = Activation {
         let res = 1.0 / (1.0 + E.powf(-x));
         return res;
     },
-    derivative: &|x| x * (1.0 - x)
+    derivative: &|x| (1.0 / (1.0 + E.powf(-x))) * (1.0 - (1.0 / (1.0 + E.powf(-x))))
 };
 
 const TANH: Activation = Activation {
@@ -130,4 +130,52 @@ fn elu(alpha: f32, x: f32) -> f32 {
         return x;
     }
     return alpha * (E.powf(x) - 1.0);
+}
+
+#[cfg(test)]
+mod test {
+    use crate::network::activations::RELU;
+
+    use super::SIGMOID;
+
+    #[test]
+    fn test_sigmoid() {
+        let sigmoid_fn = SIGMOID.function;
+        let res = sigmoid_fn(0.8);
+        assert_eq!(res, 0.689974481128);
+        let res = sigmoid_fn(1.0);
+        assert_eq!(res, 0.73105857863);
+        let res = sigmoid_fn(0.0);
+        assert_eq!(res, 0.5);
+    }
+    #[test]
+    fn test_sigmoid_der() {
+        let sigmoid_der = SIGMOID.derivative;
+        let res = sigmoid_der(0.8);
+        assert_eq!(res, 0.21390969652);
+        let res = sigmoid_der(1.0);
+        assert_eq!(res, 0.196611933241);
+        let res = sigmoid_der(0.0);
+        assert_eq!(res, 0.25);
+    }
+
+
+    #[test]
+    fn test_relu() {
+        let relu_fn = RELU.function;
+        let res = relu_fn(-100.0);
+        assert_eq!(res, 0.0);
+        let res = relu_fn(100.0);
+        assert_eq!(res, 100.0);
+        let res = relu_fn(0.6);
+        assert_eq!(res, 0.6);
+    }
+    #[test]
+    fn test_relu_der() {
+        let relu_der = RELU.derivative;
+        let res = relu_der(-1.0);
+        assert_eq!(res, 0.0);
+        let res = relu_der(5.0);
+        assert_eq!(res, 1.0);
+    }
 }
