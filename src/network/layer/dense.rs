@@ -92,8 +92,8 @@ impl Dense{
 #[typetag::serde]
 impl Layer for Dense{
     fn update_gradients(&mut self, gradient_pair: (&Box<dyn Input>, &Box<dyn Input>), clip: Option<Range<f32>>) {//, noise: &f32) {
-        let bias_gradient = Matrix::from(gradient_pair.0.to_param_2d()); //+ noise;
-        let weight_gradient = Matrix::from(gradient_pair.1.to_param_2d()); //+ noise;
+        let bias_gradient = Matrix::from(gradient_pair.0.to_param_2d()) * self.learning_rate; //+ noise;
+        let weight_gradient = Matrix::from(gradient_pair.1.to_param_2d()) * self.learning_rate; //+ noise;
 
         self.time += 1;
 
@@ -133,7 +133,7 @@ impl Layer for Dense{
         let mut gradients_mat = Matrix::from(gradient.to_param_2d());
         let mut data_mat = Matrix::from(data_at.to_param_2d());
 
-        gradients_mat = gradients_mat.dot_multiply(&errors_mat) * self.learning_rate; 
+        gradients_mat = gradients_mat.dot_multiply(&errors_mat);// * self.learning_rate; 
 
         if gradients_mat.columns != data_mat.rows {
             data_mat = data_mat.transpose();
