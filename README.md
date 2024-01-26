@@ -4,6 +4,7 @@
 
 ### A self sustaining growing neural net that can repair itself until reaching a desired accuracy
 
+[![Tests](https://github.com/BradenEverson/triton/actions/workflows/rust.yml)](https://github.com/BradenEverson/triton/actions/workflows/rust.yml)
 [![crates.io](https://img.shields.io/crates/v/triton_grow.svg)](https://crates.io/crates/triton_grow)
 [![Documentation](https://docs.rs/triton_grow/badge.svg)](https://docs.rs/triton_grow)
 
