@@ -44,7 +44,8 @@ impl Network{
     ///
     ///Example:
     ///```
-    ///let mut new_net = Network::new();
+    ///use triton_grow::network::network::Network;
+    ///let mut new_net = Network::new(10);
     ///```
     pub fn new(batch_size: usize) -> Network{
         Network{
@@ -77,8 +78,12 @@ impl Network{
     ///# Example
     ///
     ///```
-    ///let mut new_net = Network::new();
-    ///new_new.add_layer(LayerTypes::Dense(4, Activations::SIGMOID, 0.01));
+    ///use triton_grow::network::network::Network;
+    ///use triton_grow::network::layer::layers::LayerTypes;
+    ///use triton_grow::network::activations::Activations;
+    ///
+    ///let mut new_net = Network::new(2);
+    ///new_net.add_layer(LayerTypes::DENSE(4, Activations::SIGMOID, 0.01));
     ///```
     ///Adds a new Dense layer of 4 nodes with the sigmoid activation and a learning rate of 0.01
     pub fn add_layer(&mut self, layer: LayerTypes){
@@ -153,16 +158,20 @@ impl Network{
     ///# Examples
     ///
     ///```
-    ///let new_net = Network::New();
-    ///new_new.add_layer(LayerTypes::Dense(2, Activations::SIGMOID, 0.01));
-    ///new_new.add_layer(LayerTypes::Dense(3, Activations::SIGMOID, 0.01));
-    ///new_new.add_layer(LayerTypes::Dense(4, Activations::SIGMOID, 0.01));
-    ///new_new.add_layer(LayerTypes::Dense(2, Activations::TANH, 0.01));
-    ///new_new.add_layer(LayerTypes::Dense(1, Activations::SIGMOID, 0.01));
+    ///use triton_grow::network::network::Network;
+    ///use triton_grow::network::layer::layers::LayerTypes;
+    ///use triton_grow::network::activations::Activations;
+
+    ///let mut new_net = Network::new(4);
+    ///new_net.add_layer(LayerTypes::DENSE(2, Activations::SIGMOID, 0.01));
+    ///new_net.add_layer(LayerTypes::DENSE(3, Activations::SIGMOID, 0.01));
+    ///new_net.add_layer(LayerTypes::DENSE(4, Activations::SIGMOID, 0.01));
+    ///new_net.add_layer(LayerTypes::DENSE(2, Activations::TANH, 0.01));
+    ///new_net.add_layer(LayerTypes::DENSE(1, Activations::SIGMOID, 0.01));
     ///
-    ///new_net.compile()
+    ///new_net.compile();
     ///
-    ///let res = new_net.feed_forward(vec![1.0, 0.54]);
+    ///let res = new_net.predict(&vec![1.0, 0.54]);
     ///```
     fn feed_forward(&mut self, input_obj: &Box<dyn Input>) -> Vec<f32> {
         if input_obj.to_param().shape() != self.layers[0].shape(){

@@ -5,7 +5,7 @@ use serde::{Serialize, Deserialize};
 
 use super::layer::distributions::Distributions;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Matrix{
     pub rows: usize,
     pub columns: usize,
@@ -376,5 +376,85 @@ impl Matrix{
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::Matrix;
 
+    #[test]
+    fn matrix_add() {
+        let mat_a = Matrix::from_sized(vec![1.0,0.0,0.5,0.25], 2, 2);
+        let mat_b = Matrix::from_sized(vec![0.0,0.0,0.5,0.5], 2, 2);
+
+        assert_eq!(Matrix::from_sized(vec![1.0,0.0,1.0,0.75], 2, 2), mat_a + &mat_b);
+    }
+    #[test]
+    #[should_panic]
+    fn matrix_panic() {
+        let mat_a = Matrix::from_sized(vec![1.0,0.0,0.5,0.25], 4, 1);
+        let mat_b = Matrix::from_sized(vec![0.0,0.0,0.5,0.5], 2, 2);
+
+        mat_a + &mat_b;
+    }
+    #[test]
+    fn test_transpose() {
+        let mat_a = Matrix::from_sized(vec![1.0,1.0,1.0,4.0], 4, 1);
+        let mut mat_b = Matrix::from_sized(vec![1.0,1.0,1.0,4.0], 1, 4);
+
+        assert_eq!(mat_a, mat_b.transpose());
+    }
+    #[test]
+    fn test_transpose_ne(){
+        let mat_a = Matrix::from_sized(vec![1.0,1.0,1.0,4.0], 4, 1);
+        let mut mat_b = Matrix::from_sized(vec![4.0,1.0,1.0,1.0], 1, 4);
+
+        assert_ne!(mat_a, mat_b.transpose());
+    }
+    #[test]
+    fn test_pow() {
+        let mat_a = Matrix::from_sized(vec![2.0,3.0,1.0,2.0,3.0,1.0], 2, 3);
+        let res_test = Matrix::from_sized(vec![4.0,9.0,1.0,4.0,9.0,1.0], 2, 3);
+        assert_eq!(res_test, mat_a ^ 2);
+    }
+    #[test]
+    fn test_addassign(){
+        let mut mat_a = Matrix::from_sized(vec![2.0, 3.0, 1.0, 2.0, 3.0, 1.0], 2, 3);
+        mat_a += Matrix::from_sized(       vec![1.0, 0.0,-1.0, 5.0, 3.0,-1.0], 2, 3);
+
+        assert_eq!(mat_a, Matrix::from_sized(vec![3.0, 3.0, 0.0, 7.0, 6.0, 0.0], 2, 3));
+    }
+    #[test]
+    #[should_panic]
+    fn test_invalid_mul() {
+        let mat_a = Matrix::from_sized(vec![1.0,0.0,0.0,1.0], 2, 2);
+        let mat_b = Matrix::from_sized(vec![1.0,0.0,0.0,1.0], 4, 1);
+
+        mat_a * &mat_b;
+    }
+    #[test]
+    fn test_mul(){
+        let mat_a = Matrix::new_empty(2, 5);
+        let mat_b = Matrix::new_empty(5, 10);
+
+        mat_a * &mat_b;
+    }
+    #[test]
+    fn test_mul_vals(){
+        let mat_a = Matrix::from_sized(vec![2.5, 1.0, 3.0, 4.55, 8.9, -1.0], 2, 3);
+        let mat_b = Matrix::from_sized(vec![0.66, 77.1, 10.5, 2.0,
+                                             3.0, 9.75, 11.1, 18.0,
+                                            15.0, 8.0, 1.9, 0.5], 3, 4);
+
+        let res_mat = Matrix::from_sized(vec![49.65, 226.5, 43.05, 24.5, 14.702999, 429.58, 144.66501, 168.8], 2, 4);
+        let res = mat_a * &mat_b;
+        assert_eq!(res_mat, res);
+    }
+    #[test]
+    fn test_mul_shape() {
+        let mat_a = Matrix::new_empty(2, 5);
+        let mat_b = Matrix::new_empty(5, 10);
+        let res = mat_a * &mat_b;
+
+        assert_eq!(res, Matrix::new_empty(2, 10));
+    }
+}
 
