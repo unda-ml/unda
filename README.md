@@ -2,12 +2,12 @@
 
 # triton
 
-### A self sustaining growing neural net that can repair itself until reaching a desired accuracy
+### General purpose neural network crate for rust
 
 [![crates.io](https://img.shields.io/crates/v/triton_grow.svg)](https://crates.io/crates/triton_grow)
 [![Documentation](https://docs.rs/triton_grow/badge.svg)](https://docs.rs/triton_grow)
 
-Triton aims to bring the future of deep learning to the world of rust. With dynamic input traits, concurrent minibatch processing, and full Dense network support(with convolutions soon to come), Triton is quickly emerging and making neural network development easy and robust.
+Triton aims to bring the future of deep learning to the world of rust. With dynamic input traits, concurrent minibatch processing, and full Dense network support(with convolutions soon to come), Triton is quickly emerging and making neural network development easy and ***blazingly fast***.
 
 ## Installation
 
