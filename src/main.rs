@@ -16,27 +16,28 @@ async fn main() {
     println!("Done Generating MNIST");
 
     outputs = to_categorical(outputs_uncat);
-    for i in 0..500{
+    for i in 0..50{
         inputs.push(&inputs_undyn[i]);
         true_outputs.push(outputs[i].clone());
     }
 
     let mut network = Network::new(10);
 
-    network.add_layer(LayerTypes::DENSE(784, Activations::RELU, 0.1));
-    network.add_layer(LayerTypes::DENSE(64, Activations::RELU, 0.1));
-    network.add_layer(LayerTypes::DENSE(32, Activations::RELU, 0.1));
-    network.add_layer(LayerTypes::DENSE(10, Activations::SOFTMAX, 0.1));
+    network.add_layer(LayerTypes::DENSE(784, Activations::RELU, 0.001));
+    network.add_layer(LayerTypes::DENSE(64, Activations::RELU, 0.001));
+    network.add_layer(LayerTypes::DENSE(32, Activations::RELU, 0.001));
+    network.add_layer(LayerTypes::DENSE(10, Activations::SIGMOID, 0.001));
 
     
 
     network.compile();
 
-    network.fit_minibatch(&inputs, &true_outputs, 1000).await;
+    network.fit_minibatch(&inputs, &true_outputs, 10000).await;
     for i in 0..10{
         println!("predicted: {:?} \n\n actual: {:?}\n", network.predict(inputs[i]), true_outputs[i]);
     }
-    network.save("mnist_weight_check.json");*/
+    network.save("mnist_weight_check.json");
+    */
     //Dense Example
     let mut inputs: Vec<&dyn Input> = vec![];
     let input_1 = vec![1.0,1.0];
