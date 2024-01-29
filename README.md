@@ -6,7 +6,7 @@
 
 [![crates.io](https://img.shields.io/crates/v/triton_grow.svg)](https://crates.io/crates/triton_grow)
 [![Documentation](https://docs.rs/triton_grow/badge.svg)](https://docs.rs/triton_grow)
-[![Unit Tests](https://github.com/BradenEverson/triton/workflows/rust.yml/badge.svg)](https://github.com/BradenEverson/triton/actions/workflows/rust.yml)
+[![Unit Tests](https://github.com/BradenEverson/triton/actions/workflows/rust.yml/badge.svg)](https://github.com/BradenEverson/triton/actions/workflows/rust.yml)
 
 Triton aims to bring the future of deep learning to the world of rust. With dynamic input traits, concurrent minibatch processing, and full Dense network support(with convolutions soon to come), Triton is quickly emerging and making neural network development easy and ***blazingly fast***.
 
