@@ -1,4 +1,4 @@
-name: Triton General Unit Tests
+name: Triton Tests
 
 on:
   push:
