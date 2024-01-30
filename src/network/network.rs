@@ -6,6 +6,7 @@ use super::serialize::ser_layer::SerializedLayer;
 use rand::{RngCore, Rng, thread_rng};
 use rand_pcg::Pcg64;
 use rand_seeder::Seeder;
+use rayon::prelude::IntoParallelRefMutIterator;
 use serde::{Serialize, Deserialize};
 
 use futures::stream::{StreamExt, FuturesUnordered};
@@ -381,13 +382,16 @@ impl Network{
         }
 
         let epochs_per_generation = epochs / generations;
+
+        println!("{}", epochs_per_generation);
+
         for i in 0..generations {
             let epochs_per = epochs_per_generation.min(epochs);
             println!("Generation {}", i+1);
 
-            let mut mutation_pool = self.generate_mutations(&generation_size, &mutation_rate);
+            //let mut mutation_pool = self.generate_mutations(&generation_size, &mutation_rate);
 
-            mutation_pool.iter_mut().map(|network| network.fit_minibatch(train_in, train_out, epochs_per));
+            //mutation_pool.iter_mut().map(|network| network.fit_minibatch(train_in, train_out, epochs_per));
 
             epochs -= epochs_per_generation;
         }

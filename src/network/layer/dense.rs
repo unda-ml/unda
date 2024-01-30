@@ -164,7 +164,7 @@ impl Layer for Dense{
     ///Finds the error of the previous layer and returns what the updated weights and biases should
     ///be in that layer, updates the gradients and errors to move backwards once
     fn backward(&mut self, gradients: Box<dyn Input>, errors: Box<dyn Input>, data: Box<dyn Input>) -> Box<dyn Input> {
-        let mut gradients_mat = Matrix::from(gradients.to_param_2d());
+        let mut gradients_mat: Matrix = Matrix::from(gradients.to_param_2d());
         let mut errors_mat = Matrix::from(errors.to_param_2d());
         let data_mat = Matrix::from(data.to_param_2d());
 
