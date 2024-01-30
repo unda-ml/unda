@@ -6,7 +6,7 @@ use crate::network::{matrix::Matrix,activations::Activations, input::Input, matr
 use super::{layers::Layer, distributions::Distributions};
 use crate::network::layer::pair::GradientPair;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Convolutional{
     filter_weights: Matrix3D,
     filter_biases: Vec<f32>,
