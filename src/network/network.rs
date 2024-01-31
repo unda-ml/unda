@@ -108,14 +108,13 @@ impl Network{
     ///Must be done after all layers are added as the sizes of layer rows depends on the columns of
     ///the next layer
     pub fn compile(&mut self){
-        let input_size = self.uncompiled_layers[0].get_size();
         for i in 0..self.uncompiled_layers.len() - 1 {
             let layer = self.uncompiled_layers[i].to_layer(self.layer_sizes[i+1], &mut self.rng);
             self.layers.push(layer);
         }
         
-        let final_layer = self.uncompiled_layers[self.uncompiled_layers.len()-1].to_layer(self.layer_sizes[self.layer_sizes.len()-1], &mut self.rng);
-        self.layers.push(final_layer);
+        //let final_layer = self.uncompiled_layers[self.uncompiled_layers.len()-1].to_layer(self.layer_sizes[self.layer_sizes.len()-1], &mut self.rng);
+        //self.layers.push(final_layer);
     }
     pub fn predict(&mut self, input: &dyn Input) -> Vec<f32>{
         let in_box: Box<dyn Input> = input.to_box();
@@ -376,7 +375,7 @@ impl Network{
         res
     }
 
-    pub async fn evolve(&mut self, train_in: &Vec<&dyn Input>, train_out: &Vec<Vec<f32>>, mut epochs: usize, generations: usize, generation_size: usize, mutation_rate: f32) {
+    /*pub async fn evolve(&mut self, train_in: &Vec<&dyn Input>, train_out: &Vec<Vec<f32>>, mut epochs: usize, generations: usize, generation_size: usize, mutation_rate: f32) {
         if generations > epochs {
             panic!("More generations than epochs supplied");
         }
@@ -396,7 +395,7 @@ impl Network{
             epochs -= epochs_per_generation;
         }
 
-    }
+    }*/
 
     fn generate_mutations(&self, size: &usize, mut_rate: &f32) -> Vec<Network> {
         vec![self.clone(); *size]

@@ -65,7 +65,7 @@ async fn main() {
     println!("0 and 0: {:?}", new_net.predict(&vec![0.0,0.0])[0]);*/
 
 
-    new_net.fit(&inputs, &outputs, 10);
+    new_net.fit_minibatch(&inputs, &outputs, 1000).await;
     println!("1 and 0: {:?}", new_net.predict(&vec![1.0,0.0])[0]);
     println!("0 and 1: {:?}", new_net.predict(&vec![0.0,1.0])[0]);
     println!("1 and 1: {:?}", new_net.predict(&vec![1.0,1.0])[0]);

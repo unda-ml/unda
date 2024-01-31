@@ -51,21 +51,21 @@ impl Dense{
             v_biases: Matrix::new_empty(0, 0)
         }
     }
-    pub fn new(layers: usize, layer_cols_before: usize, activation: Activations, learning_rate: f32, rng: &mut Box<dyn RngCore>) -> Dense{
+    pub fn new(rows: usize, cols: usize, activation: Activations, learning_rate: f32, rng: &mut Box<dyn RngCore>) -> Dense{
         let distribution: Distributions = match activation{
-            Activations::ELU(_) | Activations::RELU | Activations::LEAKYRELU | Activations::SOFTMAX => Distributions::He(layer_cols_before),
-            Activations::TANH | Activations::SIGMOID => Distributions::Xavier(layers, layer_cols_before),
+            Activations::ELU(_) | Activations::RELU | Activations::LEAKYRELU | Activations::SOFTMAX => Distributions::He(cols),
+            Activations::TANH | Activations::SIGMOID => Distributions::Xavier(rows, cols),
         };
         let mut res = Dense { 
             loss: 1.0,
-            weights: Matrix::new_random(layer_cols_before, layers, rng, &distribution),
-            biases: Matrix::new_empty(layer_cols_before, 1),
+            weights: Matrix::new_random(cols, rows, rng, &distribution),
+            biases: Matrix::new_empty(cols, 1),
 
-            m_weights: Matrix::new_empty(layer_cols_before, layers),
-            v_weights: Matrix::new_empty(layer_cols_before, layers),
+            m_weights: Matrix::new_empty(cols, rows),
+            v_weights: Matrix::new_empty(cols, rows),
 
-            m_biases: Matrix::new_empty(layer_cols_before, 1),
-            v_biases: Matrix::new_empty(layer_cols_before, 1),
+            m_biases: Matrix::new_empty(cols, 1),
+            v_biases: Matrix::new_empty(cols, 1),
 
             data: Matrix::new_empty(0, 0),
             activation_fn: activation,
