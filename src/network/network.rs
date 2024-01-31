@@ -34,22 +34,6 @@ pub struct Network {
 
 const ITERATIONS_PER_EPOCH: usize = 1000;
 
-impl Clone for Network{
-    fn clone(&self) -> Self {
-        Network { 
-            batch_size: self.batch_size,
-            layer_sizes: self.layer_sizes.clone(),
-            loss: self.loss,
-            loss_train: self.loss_train.clone(),
-            //layers: self.layers.clone(),
-            layers: vec![],
-            uncompiled_layers: self.uncompiled_layers.clone(),
-            seed: self.seed.clone(),
-            rng: self.get_rng()
-        }
-    }
-}
-
 impl Network{
     fn thread_rng() -> Box<dyn RngCore> {
         Box::new(thread_rng())
@@ -373,32 +357,6 @@ impl Network{
             res.push(minibatch);
         }
         res
-    }
-
-    /*pub async fn evolve(&mut self, train_in: &Vec<&dyn Input>, train_out: &Vec<Vec<f32>>, mut epochs: usize, generations: usize, generation_size: usize, mutation_rate: f32) {
-        if generations > epochs {
-            panic!("More generations than epochs supplied");
-        }
-
-        let epochs_per_generation = epochs / generations;
-
-        println!("{}", epochs_per_generation);
-
-        for i in 0..generations {
-            let epochs_per = epochs_per_generation.min(epochs);
-            println!("Generation {}", i+1);
-
-            //let mut mutation_pool = self.generate_mutations(&generation_size, &mutation_rate);
-
-            //mutation_pool.iter_mut().map(|network| network.fit_minibatch(train_in, train_out, epochs_per));
-
-            epochs -= epochs_per_generation;
-        }
-
-    }*/
-
-    fn generate_mutations(&self, size: &usize, mut_rate: &f32) -> Vec<Network> {
-        vec![self.clone(); *size]
     }
 
     fn get_rng(&self) -> Box<dyn RngCore> {
