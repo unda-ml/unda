@@ -58,8 +58,6 @@ Using the built in **Input** trait, practically any data type can be mapped to a
 
 Gradient descent currently can happen both syncronously as stochastic gradient descent or asynchronously through minibatch gradient descent. 
 
-One feature in development is that of self growing systems, allowing the neural network to analyze the loss of every layer and algorithmically deduce where the best place to splice in a new layer of a certain length would be. This feature was finalized in an earlier version of Triton, but is currently unavailable with the new rewrite currently taking place. Self growing neural networks is the main goal of the Triton crate, and is currently one of the highest priorities in development.
-
 ### Data Visualization
 
 Using the triton_grow::helper::data_vis extension, you can use the plotters library to visualize aspects of your neural network!
@@ -99,23 +97,12 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 Currently, triton is in a very beta stage, the following features are still in development:
 
-[Growth Goals]
- - [ ]  Mutating a neural network
-    - [ ]  Adding a new layer with ```n``` neurons into any point of an existent network
-    - [ ]  Removing a layer from an existent network **!!IN PROGRESS!!**
-- [ ]  Back propegation only affecting a single column (allows for a newly added layer to 'catch up')
-- [X]  *Analysis* mode during back propegation allowing for all individual errors to be recorded
-- [ ]  Updated training function
-    - [ ]  Input desired success rate
-    - [ ]  Dynamic error analysis to allow for choosing if the network should grow or shrink
-    - [ ]  Acceptable threshold of +/- in the errors to allow for a less punishing learning process especially when a new neuron layer has been added
-- [X]  Model serialization (serde)
-- [ ] Accelerated matrix multiplication (Rayon or Cuda, or BOTH)
-
 [Neural Network Goals]
 - [X] Create abstract representation for layers (Layer trait)
     - [X] Dense
     - [ ] Convolutional
+        - [ ] Cateogorical Crossentropy
+        - [ ] SoftMax
     - [ ] Recurrent
 - [X] Allow for different activation functions and learning rates on each layer
 - [X] Adam Optimization in backprop
