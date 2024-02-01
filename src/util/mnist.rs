@@ -1,7 +1,7 @@
 use std::{fs::File, io::{Read, stdin, self, Write, stdout}};
 
 
-use crate::network::{matrix::Matrix, input::Input};
+use crate::core::data::{matrix::Matrix, input::Input};
 
 fn read_u32<T: Read>(reader: &mut T) -> u32 {
     let mut buffer = [0; 4];

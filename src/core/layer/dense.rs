@@ -1,8 +1,8 @@
 use std::ops::Range;
 
-use crate::network::{matrix::Matrix, activations::Activations, input::Input};
+use crate::core::data::{matrix::Matrix, input::Input};
 
-use super::{layers::Layer, distributions::Distributions, pair::GradientPair};
+use super::{layers::Layer, distributions::Distributions, pair::GradientPair, activations::Activations};
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
 
@@ -226,7 +226,7 @@ impl Layer for Dense{
 
 #[cfg(test)]
 mod test{
-    use crate::network::{layer::layers::Layer, input::Input, matrix::Matrix};
+    use crate::core::{layer::layers::Layer, data::input::Input};
 
     use super::Dense;
 

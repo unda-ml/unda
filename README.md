@@ -28,7 +28,9 @@ triton_grow = "{version}"
 
 ### Dense Network
 ```rust
-use triton_grow::network::{network::Network, activations::Activations, layer::layers::LayerTypes, input::Input};
+use triton_grow::core::network::Network;
+use triton_grow::core::layer::{activations::Activations, layers::LayerTypes};
+use triton_grow::core::data::input::Input;
 
 fn main() {
     let inputs = vec![vec![0.0,0.0],vec![1.0,0.0],vec![0.0,1.0], vec![1.0,1.0]];
@@ -36,15 +38,14 @@ fn main() {
 
     let mut new_net = Network::new(4);
 
-    new_net.add_layer(LayerTypes::DENSE(2, Activations::SIGMOID, 0.1));
-    new_net.add_layer(LayerTypes::DENSE(3, Activations::SIGMOID, 0.1));
-    new_net.add_layer(LayerTypes::DENSE(1, Activations::SIGMOID, 0.1));
+    new_net.add_layer(LayerTypes::DENSE(2, Activations::RELU, 0.001));
+    new_net.add_layer(LayerTypes::DENSE(3, Activations::RELU, 0.001));
+    new_net.add_layer(LayerTypes::DENSE(1, Activations::SIGMOID, 0.001));
 
     new_net.compile();
 
-    new_net.fit(&inputs, &outputs, 40);
+    new_net.fit(&inputs, &outputs, 2);
 
-    //let mut new_net = Network::load("best_network.json");
     println!("1 and 0: {:?}", new_net.predict(vec![1.0,0.0])[0]);
     println!("0 and 1: {:?}", new_net.predict(vec![0.0,1.0])[0]);
     println!("1 and 1: {:?}", new_net.predict(vec![1.0,1.0])[0]);

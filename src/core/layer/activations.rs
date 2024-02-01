@@ -1,7 +1,7 @@
 use std::f32::consts::E;
 use serde::{Deserialize, Serialize};
 
-use super::{matrix::Matrix, input::Input};
+use crate::core::data::{matrix::Matrix, input::Input};
 
 #[derive(Clone)]
 pub struct Activation<'a>{
@@ -134,9 +134,8 @@ fn elu(alpha: f32, x: f32) -> f32 {
 
 #[cfg(test)]
 mod test {
-    use crate::network::activations::RELU;
 
-    use super::SIGMOID;
+    use super::{SIGMOID, RELU};
 
     #[test]
     fn test_sigmoid() {

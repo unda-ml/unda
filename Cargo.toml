@@ -1,6 +1,6 @@
 [package]
 name = "triton_grow"
-version = "2.3.11"
+version = "2.3.12"
 authors = ["BradenEverson"]
 description = "General purpose machine learning crate for neural network development and analysis"
 edition = "2021"

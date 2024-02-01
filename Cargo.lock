@@ -1156,7 +1156,7 @@ dependencies = [
 
 [[package]]
 name = "triton_grow"
-version = "2.3.11"
+version = "2.3.12"
 dependencies = [
  "csv",
  "flate2",

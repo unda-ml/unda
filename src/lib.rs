@@ -1,2 +1,2 @@
-pub mod network;
-pub mod helper;
+pub mod core;
+pub mod util;

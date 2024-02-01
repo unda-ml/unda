@@ -1,12 +1,12 @@
 use super::layer::layers::{Layer, LayerTypes};
 use super::layer::pair::GradientPair;
-use super::matrix::Matrix;
-use super::input::Input;
+use super::data::matrix::Matrix;
+use super::data::input::Input;
 use super::serialize::ser_layer::SerializedLayer;
+
 use rand::{RngCore, Rng, thread_rng};
 use rand_pcg::Pcg64;
 use rand_seeder::Seeder;
-use rayon::prelude::IntoParallelRefMutIterator;
 use serde::{Serialize, Deserialize};
 
 use futures::stream::{StreamExt, FuturesUnordered};
@@ -42,7 +42,7 @@ impl Network{
     ///
     ///Example:
     ///```
-    ///use triton_grow::network::network::Network;
+    ///use triton_grow::core::network::Network;
     ///let mut new_net = Network::new(10);
     ///```
     pub fn new(batch_size: usize) -> Network{
@@ -76,9 +76,9 @@ impl Network{
     ///# Example
     ///
     ///```
-    ///use triton_grow::network::network::Network;
-    ///use triton_grow::network::layer::layers::LayerTypes;
-    ///use triton_grow::network::activations::Activations;
+    ///use triton_grow::core::network::Network;
+    ///use triton_grow::core::layer::layers::LayerTypes;
+    ///use triton_grow::core::layer::activations::Activations;
     ///
     ///let mut new_net = Network::new(2);
     ///new_net.add_layer(LayerTypes::DENSE(4, Activations::SIGMOID, 0.01));
@@ -155,9 +155,9 @@ impl Network{
     ///# Examples
     ///
     ///```
-    ///use triton_grow::network::network::Network;
-    ///use triton_grow::network::layer::layers::LayerTypes;
-    ///use triton_grow::network::activations::Activations;
+    ///use triton_grow::core::network::Network;
+    ///use triton_grow::core::layer::layers::LayerTypes;
+    ///use triton_grow::core::layer::activations::Activations;
 
     ///let mut new_net = Network::new(4);
     ///new_net.add_layer(LayerTypes::DENSE(2, Activations::SIGMOID, 0.01));

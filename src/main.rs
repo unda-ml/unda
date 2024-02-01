@@ -1,4 +1,5 @@
-use triton_grow::{network::{network::Network, activations::Activations, layer::layers::LayerTypes, input::*, matrix::Matrix, matrix3d::Matrix3D}, helper::{categorical::to_categorical, mnist::MnistEntry}};
+use triton_grow::core::{data::{input::Input, matrix::Matrix, matrix3d::Matrix3D}, network::Network, layer::{layers::LayerTypes, activations::Activations}};
+
 
 #[tokio::main]
 async fn main() {

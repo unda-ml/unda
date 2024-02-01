@@ -1,4 +1,4 @@
-use crate::network::{layer::{layers::{Layer, LayerTypes}, dense::Dense}, input::Input};
+use crate::core::{layer::{layers::{Layer, LayerTypes}, dense::Dense}, data::input::Input};
 
 pub struct SerializedLayer {
     pub name: char,

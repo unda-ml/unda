@@ -1,4 +1,4 @@
-use crate::network::network::Network;
+use crate::core::network::Network;
 use plotters::prelude::*;
 
 impl Network {

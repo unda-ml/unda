@@ -1,6 +1,6 @@
 use std::ops::Range;
 
-use crate::network::{input::Input, matrix::Matrix, activations::Activations};
+use crate::core::{data::{input::Input, matrix::Matrix}, layer::activations::Activations};
 
 use rand::RngCore;
 use serde::{Serialize, Deserialize};
