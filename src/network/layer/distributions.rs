@@ -21,7 +21,7 @@ impl Distributions {
                     rng.sample(normal) * 10.0 * get_xavier_range(*layer_size_prev, *layer_size_curr)
                 },
                 Distributions::He(layer_size_before) => { 
-                    rng.sample(normal) * 10.0 * get_he_range(*layer_size_before)
+                    rng.sample(normal) * get_he_range(*layer_size_before)
                 }
                 Distributions::Default => rng.gen_range(-10.0..10.0),
                 Distributions::Ranged(range) => rng.gen_range(range.clone())

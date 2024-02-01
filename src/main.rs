@@ -3,6 +3,7 @@ use triton_grow::{network::{network::Network, activations::Activations, layer::l
 #[tokio::main]
 async fn main() {
     //Convolutional Example
+    /*
     let mut inputs: Vec<&dyn Input> = vec![];
     let outputs: Vec<Vec<f32>>;
     let mut true_outputs: Vec<Vec<f32>> = vec![];
@@ -35,9 +36,9 @@ async fn main() {
         for i in 0..10{
             println!("predicted: {:?} \n\n actual: {:?}\n", network.predict(inputs[i]), true_outputs[i]);
         }
-    }
+    }*/
     //Dense Example
-    /*let mut inputs: Vec<&dyn Input> = vec![];
+    let mut inputs: Vec<&dyn Input> = vec![];
     let input_1 = vec![1.0,1.0];
     let input_2 = vec![vec![0.0], vec![1.0]];
     let input_3 = Matrix::from(vec![vec![1.0],vec![0.0]]);
@@ -57,16 +58,15 @@ async fn main() {
 
     new_net.compile();
 
-    /*println!("1 and 0: {:?}", new_net.predict(&vec![1.0,0.0])[0]);
-    println!("0 and 1: {:?}", new_net.predict(&vec![0.0,1.0])[0]);
-    println!("1 and 1: {:?}", new_net.predict(&vec![1.0,1.0])[0]);
-    println!("0 and 0: {:?}", new_net.predict(&vec![0.0,0.0])[0]);*/
-
-
-    new_net.fit(&inputs, &outputs, 10);
     println!("1 and 0: {:?}", new_net.predict(&vec![1.0,0.0])[0]);
     println!("0 and 1: {:?}", new_net.predict(&vec![0.0,1.0])[0]);
     println!("1 and 1: {:?}", new_net.predict(&vec![1.0,1.0])[0]);
     println!("0 and 0: {:?}", new_net.predict(&vec![0.0,0.0])[0]);
-    */
+
+
+    new_net.fit(&inputs, &outputs, 2);
+    println!("1 and 0: {:?}", new_net.predict(&vec![1.0,0.0])[0]);
+    println!("0 and 1: {:?}", new_net.predict(&vec![0.0,1.0])[0]);
+    println!("1 and 1: {:?}", new_net.predict(&vec![1.0,1.0])[0]);
+    println!("0 and 0: {:?}", new_net.predict(&vec![0.0,0.0])[0]);
 }
