@@ -1,4 +1,4 @@
-use std::{fs::File, io::{Read, stdin, self, Write, stdout}};
+use std::{fs::File, io::{Read, Write, stdout}};
 
 
 use crate::core::data::{matrix::Matrix, input::Input};

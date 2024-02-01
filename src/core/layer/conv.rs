@@ -110,16 +110,16 @@ impl Convolutional{
 #[typetag::serde]
 impl Layer for Convolutional {
 
-    fn update_gradients(&mut self, gradient_pair: (&Box<dyn Input>, &Box<dyn Input>), clip: Option<Range<f32>>) {//, noise: &f32) {
+    fn update_gradients(&mut self, _gradient_pair: (&Box<dyn Input>, &Box<dyn Input>), _clip: Option<Range<f32>>) {//, noise: &f32) {
         panic!("unfinished");
     }
-    fn avg_gradient(&self, gradients: Vec<&Box<dyn Input>>) -> Box<dyn Input>{
+    fn avg_gradient(&self, _gradients: Vec<&Box<dyn Input>>) -> Box<dyn Input>{
         panic!("unfinished");        
     }
-    fn get_gradients(&self, data: &Box<dyn Input>, data_at: &Box<dyn Input>, errors: &Box<dyn Input>) -> GradientPair { 
+    fn get_gradients(&self, _data: &Box<dyn Input>, _data_at: &Box<dyn Input>, _errors: &Box<dyn Input>) -> GradientPair { 
         panic!("unfinished");
     }
-    fn update_errors(&self, errors: Box<dyn Input>) -> Box<dyn Input>{
+    fn update_errors(&self, _errors: Box<dyn Input>) -> Box<dyn Input>{
         panic!("unfinished");
     }
     fn forward(&self,inputs: &Box<dyn Input>) -> Box<dyn Input> {

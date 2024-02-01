@@ -9,7 +9,7 @@ pub struct SerializedLayer {
 }
 
 impl SerializedLayer {
-    pub fn new(layer: &Box<dyn Layer>, layer_type: &LayerTypes) -> Self {
+    pub fn new(layer: &Box<dyn Layer>, _layer_type: &LayerTypes) -> Self {
         let rows = layer.get_weights().to_param_2d().len();
         let cols = layer.get_weights().to_param_2d()[0].len();
         let weights: String = SerializedLayer::flatten_string(&layer.get_weights().to_param_2d());

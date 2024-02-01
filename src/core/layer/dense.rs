@@ -120,7 +120,7 @@ impl Layer for Dense{
         self.weights = self.weights.clone() + &weights_update;
     }
     fn avg_gradient(&self, gradients: Vec<&Box<dyn Input>>) -> Box<dyn Input>{
-        let len = gradients.len();
+        let _len = gradients.len();
         let gradients_mat = gradients.into_iter()
             .map(|gradient| Matrix::from(gradient.to_param_2d()));
         let sum: Matrix = gradients_mat.sum();
