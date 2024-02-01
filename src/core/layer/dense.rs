@@ -197,8 +197,8 @@ impl Layer for Dense{
         let weights_update = m_weights_hat.clone() / &(v_weights_hat.sqrt() + self.epsilon);
         let bias_update = m_bias_hat.clone() / &(v_bias_hat.sqrt() + self.epsilon);
 
-        self.biases = self.biases.clone() + &bias_update;
-        self.weights = self.weights.clone() + &weights_update;
+        self.biases = self.biases.clone() - &bias_update;
+        self.weights = self.weights.clone() - &weights_update;
 
         Box::new(errors_mat)
     }
