@@ -28,7 +28,16 @@ impl ErrorTypes{
                 Box::new(res)
             },
             ErrorTypes::CategoricalCrossEntropy => {
-                panic!("Unfinished")
+                let expected_matrix = Matrix::from(expected.to_param_2d());
+                let actual_matrix = Matrix::from(actual.to_param_2d());
+
+                //Small little friend is the MVP of CategoricalCrossEntropy, he prevents doing a
+                //log(0)
+                let small_little_friend: f32 = 1e-9;
+                (actual_matrix + small_little_friend).log();
+                
+
+                panic!()
             }
         }
     }

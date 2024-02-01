@@ -227,6 +227,14 @@ impl ops::Div<&Matrix> for Matrix{
 }
 
 impl Matrix{
+    ///Performs element-wise log
+    pub fn log(&mut self) {
+        for i in 0..self.rows {
+            for j in 0..self.columns {
+                self.data[i][j] = self.data[i][j].log(10.0);
+            }
+        }
+    }
     pub fn abs(&mut self) {
         for i in 0..self.rows{
             for j in 0..self.columns{
