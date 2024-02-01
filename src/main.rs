@@ -1,4 +1,4 @@
-use triton_grow::core::{data::{input::Input, matrix::Matrix, matrix3d::Matrix3D}, network::Network, layer::{layers::LayerTypes, activations::Activations}};
+use triton_grow::core::{data::{input::Input, matrix::Matrix, matrix3d::Matrix3D}, network::Network, layer::{layers::LayerTypes, methods::activations::Activations}};
 
 
 #[tokio::main]

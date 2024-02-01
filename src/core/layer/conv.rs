@@ -3,8 +3,8 @@ use std::ops::Range;
 use rand::RngCore;
 use serde::{Serialize, Deserialize};
 use crate::core::data::{matrix::Matrix, input::Input, matrix3d::Matrix3D};
-use super::{layers::Layer, distributions::Distributions, activations::Activations};
-use crate::core::layer::pair::GradientPair;
+use super::{layers::Layer, methods::distributions::Distributions, methods::activations::Activations};
+use crate::core::layer::methods::pair::GradientPair;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Convolutional{

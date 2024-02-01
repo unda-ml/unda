@@ -1,5 +1,5 @@
 use super::layer::layers::{Layer, LayerTypes};
-use super::layer::pair::GradientPair;
+use super::layer::methods::pair::GradientPair;
 use super::data::matrix::Matrix;
 use super::data::input::Input;
 use super::serialize::ser_layer::SerializedLayer;
@@ -78,7 +78,7 @@ impl Network{
     ///```
     ///use triton_grow::core::network::Network;
     ///use triton_grow::core::layer::layers::LayerTypes;
-    ///use triton_grow::core::layer::activations::Activations;
+    ///use triton_grow::core::layer::methods::activations::Activations;
     ///
     ///let mut new_net = Network::new(2);
     ///new_net.add_layer(LayerTypes::DENSE(4, Activations::SIGMOID, 0.01));
@@ -157,7 +157,7 @@ impl Network{
     ///```
     ///use triton_grow::core::network::Network;
     ///use triton_grow::core::layer::layers::LayerTypes;
-    ///use triton_grow::core::layer::activations::Activations;
+    ///use triton_grow::core::layer::methods::activations::Activations;
 
     ///let mut new_net = Network::new(4);
     ///new_net.add_layer(LayerTypes::DENSE(2, Activations::SIGMOID, 0.01));

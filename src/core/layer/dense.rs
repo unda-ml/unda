@@ -2,7 +2,7 @@ use std::ops::Range;
 
 use crate::core::data::{matrix::Matrix, input::Input};
 
-use super::{layers::Layer, distributions::Distributions, pair::GradientPair, activations::Activations};
+use super::{layers::Layer, methods::{distributions::Distributions, pair::GradientPair, activations::Activations}};
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
 

@@ -1,11 +1,11 @@
 use std::ops::Range;
 
-use crate::core::{data::{input::Input, matrix::Matrix}, layer::activations::Activations};
+use crate::core::{data::{input::Input, matrix::Matrix}, layer::methods::activations::Activations};
 
 use rand::RngCore;
 use serde::{Serialize, Deserialize};
 
-use super::{dense::Dense, pair::GradientPair};
+use super::{dense::Dense, methods::pair::GradientPair};
 
 #[typetag::serde]
 pub trait Layer: Send + Sync{

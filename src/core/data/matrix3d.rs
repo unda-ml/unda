@@ -4,7 +4,7 @@ use serde::{Serialize, Deserialize};
 use std::ops;
 
 use super::matrix::Matrix;
-use crate::core::layer::distributions::Distributions;
+use crate::core::layer::methods::distributions::Distributions;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Matrix3D {

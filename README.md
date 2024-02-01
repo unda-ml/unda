@@ -29,7 +29,7 @@ triton_grow = "{version}"
 ### Dense Network
 ```rust
 use triton_grow::core::network::Network;
-use triton_grow::core::layer::{activations::Activations, layers::LayerTypes};
+use triton_grow::core::layer::{methods::activations::Activations, layers::LayerTypes};
 use triton_grow::core::data::input::Input;
 
 fn main() {

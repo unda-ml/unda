@@ -3,7 +3,7 @@ use std::ops::{AddAssign, SubAssign};
 use std::{ops::{self, Range}, iter};
 use serde::{Serialize, Deserialize};
 
-use crate::core::layer::distributions::Distributions;
+use crate::core::layer::methods::distributions::Distributions;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Matrix{
