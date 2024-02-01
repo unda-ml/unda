@@ -12,7 +12,10 @@ impl ErrorTypes{
             ErrorTypes::MeanAbsolute => {
                 let actual_matrix = Matrix::from(actual.to_param_2d());
                 let expected_matrix = Matrix::from(expected.to_param_2d());
-                Box::new((actual_matrix - &expected_matrix).transpose())
+
+                let res = (actual_matrix - &expected_matrix).transpose();
+
+                Box::new(res)
             },
             ErrorTypes::MeanSquared => {
                 let actual_matrix = Matrix::from(actual.to_param_2d());
