@@ -1,4 +1,5 @@
 use super::layer::layers::{Layer, LayerTypes};
+use super::layer::methods::errors::ErrorTypes;
 use super::layer::methods::pair::GradientPair;
 use super::data::matrix::Matrix;
 use super::data::input::Input;
@@ -203,15 +204,16 @@ impl Network{
     ///bias updating is different as well
     ///
     ///When constructing a neural network, be cautious that your layers behave well with each other
-    fn back_propegate(&mut self, outputs: &Vec<f32>, target_obj: &Box<dyn Input>) {
-        let mut parsed = Matrix::from(outputs.to_param_2d());
+    fn back_propegate(&mut self, outputs: &Vec<f32>, target_obj: &Box<dyn Input>, loss: &ErrorTypes) {
+        //let mut parsed = Matrix::from(outputs.to_param_2d());
         
         if let None = self.layers[self.layers.len()-1].get_activation() {
             panic!("Output layer is not a dense layer");
         }
         
         let mut gradients: Box<dyn Input>;
-        let mut errors: Box<dyn Input> = Box::new((parsed - &Matrix::from(target_obj.to_param_2d())).transpose());
+        let actual: Box<dyn Input> = Box::new(outputs.clone());
+        let mut errors: Box<dyn Input> = loss.get_error(&actual, target_obj, 1);//Box::new((parsed - &Matrix::from(target_obj.to_param_2d())).transpose());
 
         for i in (0..self.layers.len() - 1).rev() {
             gradients = self.layers[i + 1].update_gradient();
@@ -249,7 +251,7 @@ impl Network{
     ///compared to what is actually derived during back propegation
     ///* `epochs` - How many epochs you want your model training for
     ///
-    pub fn fit(&mut self, train_in: &Vec<&dyn Input>, train_out: &Vec<Vec<f32>>, epochs: usize) {
+    pub fn fit(&mut self, train_in: &Vec<&dyn Input>, train_out: &Vec<Vec<f32>>, epochs: usize, error_fn: ErrorTypes) {
         self.loss_train = vec![];
 
         let mut loss: f32;
@@ -284,7 +286,7 @@ impl Network{
                         let input: Box<dyn Input> = train_in[input_index].to_box();
                         let output: Box<dyn Input> = Box::new(train_out[input_index].clone());
                         let outputs = self.feed_forward(&input);
-                        self.back_propegate(&outputs, &output);
+                        self.back_propegate(&outputs, &output, &error_fn);
 
                         for i in 0..outputs.len() {
                             loss_on_input += (outputs[i] - train_out[input_index].to_param()[i]).powi(2);
