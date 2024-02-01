@@ -205,12 +205,10 @@ impl Network{
     ///
     ///When constructing a neural network, be cautious that your layers behave well with each other
     fn back_propegate(&mut self, outputs: &Vec<f32>, target_obj: &Box<dyn Input>, loss: &ErrorTypes) {
-        //let mut parsed = Matrix::from(outputs.to_param_2d());
-        
         if let None = self.layers[self.layers.len()-1].get_activation() {
             panic!("Output layer is not a dense layer");
         }
-        
+
         let mut gradients: Box<dyn Input>;
         let actual: Box<dyn Input> = Box::new(outputs.clone());
         let mut errors: Box<dyn Input> = loss.get_error(&actual, target_obj, 1);//Box::new((parsed - &Matrix::from(target_obj.to_param_2d())).transpose());

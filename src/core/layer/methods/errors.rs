@@ -10,8 +10,9 @@ impl ErrorTypes{
     pub fn get_error(&self, actual: &Box<dyn Input>, expected: &Box<dyn Input>, batch_size: usize) -> Box<dyn Input> {
         return match self {
             ErrorTypes::MeanAbsolute => {
-                let parsed_matrix = Matrix::from(actual.to_param_2d());
-                Box::new((parsed_matrix - &Matrix::from(expected.to_param_2d())).transpose())
+                let actual_matrix = Matrix::from(actual.to_param_2d());
+                let expected_matrix = Matrix::from(expected.to_param_2d());
+                Box::new((actual_matrix - &expected_matrix).transpose())
             },
             ErrorTypes::MeanSquared => {
                 let actual_matrix = Matrix::from(actual.to_param_2d());
