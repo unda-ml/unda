@@ -311,9 +311,11 @@ impl Network{
         }
 
         self.loss = self.loss_train[self.loss_train.len() - 1];
-        println!("Trained to a loss of {:.2}%", self.loss * 100.0);
-        for i in 0..self.layers.len() - 1 {
-            println!("Error on layer {}: +/- {:.2}", i + 1, self.layers[i].get_loss());
+        if self.log {
+            println!("Trained to a loss of {:.2}%", self.loss * 100.0);
+            for i in 0..self.layers.len() - 1 {
+                println!("Error on layer {}: +/- {:.2}", i + 1, self.layers[i].get_loss());
+            }
         }
     }
 
