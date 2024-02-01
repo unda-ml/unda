@@ -30,6 +30,17 @@ impl std::fmt::Display for Matrix{
     }
 }
 
+impl AddAssign<f32> for Matrix {
+    fn add_assign(&mut self, rhs: f32) {
+        for i in 0..self.rows {
+            for j in 0..self.columns {
+                self.data[i][j] = self.data[i][j] + rhs;
+            }
+        }
+    }
+}
+
+
 impl AddAssign for Matrix {
     fn add_assign(&mut self, rhs: Self) {
         if self.rows != rhs.rows || self.columns != rhs.columns {
