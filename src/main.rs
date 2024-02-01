@@ -1,4 +1,4 @@
-use triton_grow::core::{data::{input::Input, matrix::Matrix, matrix3d::Matrix3D}, network::Network, layer::{layers::LayerTypes, methods::{activations::Activations, errors::ErrorTypes}}};
+use triton_grow::{core::{data::{input::Input, matrix::Matrix, matrix3d::Matrix3D}, network::Network, layer::{layers::LayerTypes, methods::{activations::Activations, errors::ErrorTypes}}}, util::{mnist::MnistEntry, categorical::to_categorical}};
 
 
 #[tokio::main]
@@ -22,22 +22,23 @@ async fn main() {
         true_outputs.push(outputs[i].clone());
     }
     loop{
-        let mut network = Network::new(10);
+        let mut network = Network::new(50);
 
         network.add_layer(LayerTypes::DENSE(784, Activations::SIGMOID, 0.001));
-        network.add_layer(LayerTypes::DENSE(64, Activations::SIGMOID, 0.001));
+        network.add_layer(LayerTypes::DENSE(128, Activations::SIGMOID, 0.001));
         network.add_layer(LayerTypes::DENSE(32, Activations::SIGMOID, 0.001));
-        network.add_layer(LayerTypes::DENSE(10, Activations::SIGMOID, 0.001));
+        network.add_layer(LayerTypes::DENSE(10, Activations::SOFTMAX, 0.001));
 
 
 
         network.compile();
 
-        network.fit(&inputs, &true_outputs, 5);
-        for i in 0..10{
+        network.fit(&inputs, &true_outputs, 5, ErrorTypes::CategoricalCrossEntropy);
+        for i in 0..5{
             println!("predicted: {:?} \n\n actual: {:?}\n", network.predict(inputs[i]), true_outputs[i]);
         }
-    }*/
+    }
+    */
     //Dense Example
     let mut inputs: Vec<&dyn Input> = vec![];
     let input_1 = vec![1.0,1.0];
@@ -51,23 +52,28 @@ async fn main() {
     
     let outputs: Vec<Vec<f32>> = vec![vec![0.0],vec![1.0],vec![1.0], vec![0.0]];
 
-    let mut new_net = Network::new(4);
+    loop{
 
-    new_net.add_layer(LayerTypes::DENSE(2, Activations::SIGMOID, 0.0001));
-    new_net.add_layer(LayerTypes::DENSE(3, Activations::SIGMOID, 0.0001));
-    new_net.add_layer(LayerTypes::DENSE(1, Activations::SIGMOID, 0.0001));
+        let mut new_net = Network::new(4);
+        new_net.set_log(false);
 
-    new_net.compile();
+        new_net.add_layer(LayerTypes::DENSE(2, Activations::RELU, 0.01));
+        new_net.add_layer(LayerTypes::DENSE(3, Activations::RELU, 0.01));
+        new_net.add_layer(LayerTypes::DENSE(1, Activations::SOFTMAX, 0.01));
 
-    println!("1 and 0: {:?}", new_net.predict(&vec![1.0,0.0])[0]);
-    println!("0 and 1: {:?}", new_net.predict(&vec![0.0,1.0])[0]);
-    println!("1 and 1: {:?}", new_net.predict(&vec![1.0,1.0])[0]);
-    println!("0 and 0: {:?}", new_net.predict(&vec![0.0,0.0])[0]);
+        new_net.compile();
+
+        //println!("1 and 0: {:?}", new_net.predict(&vec![1.0,0.0])[0]);
+        //println!("0 and 1: {:?}", new_net.predict(&vec![0.0,1.0])[0]);
+        //println!("1 and 1: {:?}", new_net.predict(&vec![1.0,1.0])[0]);
+        //println!("0 and 0: {:?}", new_net.predict(&vec![0.0,0.0])[0]);
 
 
-    new_net.fit(&inputs, &outputs, 2, ErrorTypes::MeanAbsolute);
-    println!("1 and 0: {:?}", new_net.predict(&vec![1.0,0.0])[0]);
-    println!("0 and 1: {:?}", new_net.predict(&vec![0.0,1.0])[0]);
-    println!("1 and 1: {:?}", new_net.predict(&vec![1.0,1.0])[0]);
-    println!("0 and 0: {:?}", new_net.predict(&vec![0.0,0.0])[0]);
+        new_net.fit(&inputs, &outputs, 2, ErrorTypes::MeanAbsolute);
+        println!("1 and 0: {:?}", new_net.predict(&vec![1.0,0.0])[0]);
+        println!("0 and 1: {:?}", new_net.predict(&vec![0.0,1.0])[0]);
+        println!("1 and 1: {:?}", new_net.predict(&vec![1.0,1.0])[0]);
+        println!("0 and 0: {:?}", new_net.predict(&vec![0.0,0.0])[0]);
+
+    }
 }

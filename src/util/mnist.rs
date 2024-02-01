@@ -29,8 +29,8 @@ impl MnistEntry {
         (matrices, labels)
     }
     fn load_mnist() -> Vec<MnistEntry> {
-        let train_image_path = "src/helper/mnist/train-images.idx3-ubyte";
-        let train_label_path = "src/helper/mnist/train-labels.idx1-ubyte";
+        let train_image_path = "src/util/mnist/train-images.idx3-ubyte";
+        let train_label_path = "src/util/mnist/train-labels.idx1-ubyte";
 
         let mut res = vec![];
         

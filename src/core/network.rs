@@ -30,7 +30,8 @@ pub struct Network {
     seed: Option<String>,
     #[serde(skip)]
     #[serde(default = "Network::thread_rng")]
-    rng: Box<dyn RngCore>
+    rng: Box<dyn RngCore>,
+    log: bool
 }
 
 const ITERATIONS_PER_EPOCH: usize = 1000;
@@ -38,6 +39,9 @@ const ITERATIONS_PER_EPOCH: usize = 1000;
 impl Network{
     fn thread_rng() -> Box<dyn RngCore> {
         Box::new(thread_rng())
+    }
+    pub fn set_log(&mut self, state: bool) {
+        self.log = state
     }
     ///Creates a new neural network that is completely empty
     ///
@@ -55,7 +59,8 @@ impl Network{
             uncompiled_layers: vec![],
             loss_train: vec![],
             seed: None,
-            rng: Box::new(thread_rng())
+            rng: Box::new(thread_rng()),
+            log: true
         }
     } 
     pub fn get_layer_loss(&self) -> Vec<(f32, f32)> {
@@ -261,15 +266,20 @@ impl Network{
             let iteration_scale_factor = ITERATIONS_PER_EPOCH / train_in.len();
             iterations_per_epoch = (iteration_scale_factor as f32 * 25.0).ceil() as usize;
         }
-        println!("{}", iterations_per_epoch);
+        if self.log {
+            println!("{}", iterations_per_epoch);
+
+        }
         let iterations_divided_even = iterations_per_epoch / 40;
 
         for epoch in 0..epochs {
             let _ = io::stdout().flush();
-            print!("Epoch {}: [", epoch+1);
+            if self.log {
+                print!("Epoch {}: [", epoch+1);
+            }
             loss = 0.0;
             for iteration in 0..iterations_per_epoch {
-                if iteration % iterations_divided_even == 0 {
+                if iteration % iterations_divided_even == 0 && self.log {
                     let _ = io::stdout().flush();
                     print!("=");
                 }
@@ -295,7 +305,9 @@ impl Network{
                 }
             }
             self.loss_train.push(loss / (iterations_per_epoch * num_batches) as f32);
-            println!("] Loss: {}", self.loss_train[self.loss_train.len()-1]);
+            if self.log {
+                println!("] Loss: {}", self.loss_train[self.loss_train.len()-1]);
+            }
         }
 
         self.loss = self.loss_train[self.loss_train.len() - 1];

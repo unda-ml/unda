@@ -36,9 +36,8 @@ impl ErrorTypes{
                 let small_little_friend: f32 = 1e-9;
                 actual_matrix += small_little_friend;
                 actual_matrix.log();
-                
-                let res = expected_matrix.dot_multiply(&actual_matrix);
-                Box::new(res * -1.0)
+                let mut res = expected_matrix.dot_multiply(&actual_matrix);
+                Box::new(res.transpose() * -1.0)
             }
         }
     }
