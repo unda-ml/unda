@@ -1,6 +1,6 @@
  <img align="left" src="https://raw.githubusercontent.com/BradenEverson/triton/master/triton-logo.svg" width="80px" height="80px" alt="triton mascot icon">
 
-# triton
+# Triton
 
 ### General purpose neural network crate for rust
 
