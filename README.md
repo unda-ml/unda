@@ -31,6 +31,7 @@ triton_grow = "{version}"
 use triton_grow::core::network::Network;
 use triton_grow::core::layer::{methods::activations::Activations, layers::LayerTypes};
 use triton_grow::core::data::input::Input;
+use triton_grow::core::layer::{methods::errors::ErrorTypes};
 
 fn main() {
     let inputs = vec![vec![0.0,0.0],vec![1.0,0.0],vec![0.0,1.0], vec![1.0,1.0]];
@@ -44,7 +45,7 @@ fn main() {
 
     new_net.compile();
 
-    new_net.fit(&inputs, &outputs, 2);
+    new_net.fit(&inputs, &outputs, 2, ErrorTypes::MeanAbsolute);
 
     println!("1 and 0: {:?}", new_net.predict(vec![1.0,0.0])[0]);
     println!("0 and 1: {:?}", new_net.predict(vec![0.0,1.0])[0]);
