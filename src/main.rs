@@ -17,15 +17,14 @@ async fn main() {
     println!("Done Generating MNIST");
 
     outputs = to_categorical(outputs_uncat);
-    for i in 0..50{
+    for i in 0..6000{
         inputs.push(&inputs_undyn[i]);
         true_outputs.push(outputs[i].clone());
     }
     loop{
-        let mut network = Network::new(50);
+        let mut network = Network::new(128);
 
         network.add_layer(LayerTypes::DENSE(784, Activations::SIGMOID, 0.001));
-        network.add_layer(LayerTypes::DENSE(128, Activations::SIGMOID, 0.001));
         network.add_layer(LayerTypes::DENSE(32, Activations::SIGMOID, 0.001));
         network.add_layer(LayerTypes::DENSE(10, Activations::SOFTMAX, 0.001));
 
@@ -40,7 +39,6 @@ async fn main() {
     }
     */
     //Dense Example
-    //
     let mut inputs: Vec<&dyn Input> = vec![];
     let input_1 = vec![1.0,1.0];
     let input_2 = vec![vec![0.0], vec![1.0]];
@@ -75,6 +73,5 @@ async fn main() {
         println!("0 and 1: {:?}", new_net.predict(&vec![0.0,1.0])[0]);
         println!("1 and 1: {:?}", new_net.predict(&vec![1.0,1.0])[0]);
         println!("0 and 0: {:?}\n", new_net.predict(&vec![0.0,0.0])[0]);
-
     }
 }

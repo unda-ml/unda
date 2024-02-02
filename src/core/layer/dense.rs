@@ -169,7 +169,7 @@ impl Layer for Dense{
         let mut errors_mat = Matrix::from(errors.to_param_2d());
         let data_mat = Matrix::from(data.to_param_2d());
 
-        gradients_mat = gradients_mat.dot_multiply(&errors_mat) * self.learning_rate;
+        gradients_mat = gradients_mat.dot_multiply(&errors_mat);
         errors_mat = self.weights.clone().transpose() * &errors_mat;
 
         self.loss = 0.0;
@@ -181,7 +181,8 @@ impl Layer for Dense{
 
         self.time += 1;
 
-        let weight_gradient = gradients_mat.clone() * &(data_mat.clone().transpose());
+        let weight_gradient = gradients_mat.clone() * &(data_mat.clone().transpose()) * self.learning_rate;
+        gradients_mat = gradients_mat * self.learning_rate;
 
         self.m_weights = self.m_weights.clone() * self.beta1 + &(weight_gradient.clone() * (1.0 - self.beta1));
         self.v_weights = self.v_weights.clone() * self.beta2 + &((weight_gradient^2) * (1.0 - self.beta2));
