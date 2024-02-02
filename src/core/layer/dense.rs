@@ -60,7 +60,7 @@ impl Dense{
         let mut res = Dense { 
             loss: 1.0,
             weights: Matrix::new_random(cols, rows, rng, &distribution),
-            biases: Matrix::new_empty(cols, 1),
+            biases: Matrix::new_random(cols, 1, rng, &Distributions::Ranged(-1.0..1.0)),
 
             m_weights: Matrix::new_empty(cols, rows),
             v_weights: Matrix::new_empty(cols, rows),
