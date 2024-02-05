@@ -1158,6 +1158,7 @@ dependencies = [
 name = "triton_grow"
 version = "2.3.14"
 dependencies = [
+ "cc",
  "csv",
  "flate2",
  "futures",
