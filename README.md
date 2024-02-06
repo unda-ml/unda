@@ -3,7 +3,6 @@
 # Triton
 
 ### General purpose neural network crate for rust
-# Triton has been renamed to Unda! Please check out https://crates.io/crates/unda for the neural network crate you're looking for :)
 
 [![crates.io](https://img.shields.io/crates/v/triton_grow.svg)](https://crates.io/crates/triton_grow)
 [![Documentation](https://docs.rs/triton_grow/badge.svg)](https://docs.rs/triton_grow)
