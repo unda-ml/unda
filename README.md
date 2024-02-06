@@ -12,7 +12,7 @@ Unda aims to bring the future of deep learning to the world of rust. With dynami
 
 ## Installation
 
-Use the package manager [cargo](https://crates.io/) to add [triton](https://crates.io/crates/unda) to your rust project.
+Use the package manager [cargo](https://crates.io/) to add [unda](https://crates.io/crates/unda) to your rust project.
 
 ```bash
 cargo add unda
