@@ -3,7 +3,9 @@
 # Triton
 
 ### General purpose neural network crate for rust
+# Triton has been renamed to Unda! Please check out https://crates.io/crates/unda for the neural network crate you're looking for :)
 
+<!--
 [![crates.io](https://img.shields.io/crates/v/triton_grow.svg)](https://crates.io/crates/triton_grow)
 [![Documentation](https://docs.rs/triton_grow/badge.svg)](https://docs.rs/triton_grow)
 [![Unit Tests](https://github.com/BradenEverson/triton/actions/workflows/rust.yml/badge.svg)](https://github.com/BradenEverson/triton/actions/workflows/rust.yml)
@@ -116,3 +118,4 @@ Currently, triton is in a very beta stage, the following features are still in d
 
 # License
 Licensed under the Apache License, Version 2.0 http://www.apache.org/licenses/LICENSE-2.0 or the MIT license http://opensource.org/licenses/MIT, at your option. This file may not be copied, modified, or distributed except according to those terms.
+-->
