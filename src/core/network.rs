@@ -47,7 +47,7 @@ impl Network{
     ///
     ///Example:
     ///```
-    ///use triton_grow::core::network::Network;
+    ///use unda::core::network::Network;
     ///let mut new_net = Network::new(10);
     ///```
     pub fn new(batch_size: usize) -> Network{
@@ -82,9 +82,9 @@ impl Network{
     ///# Example
     ///
     ///```
-    ///use triton_grow::core::network::Network;
-    ///use triton_grow::core::layer::layers::LayerTypes;
-    ///use triton_grow::core::layer::methods::activations::Activations;
+    ///use unda::core::network::Network;
+    ///use unda::core::layer::layers::LayerTypes;
+    ///use unda::core::layer::methods::activations::Activations;
     ///
     ///let mut new_net = Network::new(2);
     ///new_net.add_layer(LayerTypes::DENSE(4, Activations::SIGMOID, 0.01));
@@ -161,9 +161,9 @@ impl Network{
     ///# Examples
     ///
     ///```
-    ///use triton_grow::core::network::Network;
-    ///use triton_grow::core::layer::layers::LayerTypes;
-    ///use triton_grow::core::layer::methods::activations::Activations;
+    ///use unda::core::network::Network;
+    ///use unda::core::layer::layers::LayerTypes;
+    ///use unda::core::layer::methods::activations::Activations;
 
     ///let mut new_net = Network::new(4);
     ///new_net.add_layer(LayerTypes::DENSE(2, Activations::SIGMOID, 0.01));
@@ -409,7 +409,7 @@ impl Network{
         serde_cbor::from_slice(&data[..])
     }
 
-    pub fn serialize_triton_fmt(&self, path: &str) {
+    pub fn serialize_unda_fmt(&self, path: &str) {
         let mut str_fmt: Vec<String> = vec![];
         for i in 0..self.layers.len() {
             let layer_serialized: SerializedLayer = SerializedLayer::new(&self.layers[i], &self.uncompiled_layers[i]);
@@ -417,7 +417,7 @@ impl Network{
         }
         fs::write(path, str_fmt.join("#")).expect("Error writing to file");
     }
-    pub fn deserialize_triton_fmt_string(format_string: String) -> Network {
+    pub fn deserialize_unda_fmt_string(format_string: String) -> Network {
         let mut net: Network = Network::new(0);
         let parse_triton = format_string.split("#");
         for layer in parse_triton {
