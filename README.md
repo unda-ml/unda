@@ -2,7 +2,7 @@
 
 # Unda
 
-### General purpose neural network crate for rust
+### General purpose neural network crate
 
 [![crates.io](https://img.shields.io/crates/v/unda.svg)](https://crates.io/crates/unda)
 [![Documentation](https://docs.rs/unda/badge.svg)](https://docs.rs/unda)
