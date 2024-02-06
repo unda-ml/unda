@@ -1,6 +1,6 @@
 [package]
 name = "unda"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["BradenEverson"]
 description = "General purpose machine learning crate for neural network development and analysis"
 edition = "2021"
