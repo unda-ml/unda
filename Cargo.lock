@@ -673,7 +673,7 @@ dependencies = [
 
 [[package]]
 name = "unda"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "csv",
  "flate2",
