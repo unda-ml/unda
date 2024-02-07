@@ -60,41 +60,6 @@ Using the built in **Input** trait, practically any data type can be mapped to a
 
 Gradient descent currently can happen both syncronously as stochastic gradient descent or asynchronously through minibatch gradient descent. 
 
-### Data Visualization
-
-Using the unda::helper::data_vis extension, you can use the plotters library to visualize aspects of your neural network!
-
-Currently the following visualizations exist:
-
-- Loss history
-- Error per layer
-
-```rust
-use std::error::Error;
-
-use unda::network::{network::Network, activations::Activations, layer::layers::LayerTypes, input::Input};
-use unda::helper::data_vis;
-
-fn main() -> Result<(), Box<dyn Error>> {
-    let inputs = vec![vec![0.0,0.0],vec![1.0,0.0],vec![0.0,1.0], vec![1.0,1.0]];
-    let outputs = vec![vec![0.0],vec![1.0],vec![1.0], vec![0.0]];
-
-    let mut new_net = Network::new(4);
-
-    new_net.add_layer(LayerTypes::DENSE(2, Activations::SIGMOID, 0.1));
-    new_net.add_layer(LayerTypes::DENSE(3, Activations::SIGMOID, 0.1));
-    new_net.add_layer(LayerTypes::DENSE(1, Activations::SIGMOID, 0.1));
-
-    new_net.compile();
-
-    new_net.fit(&inputs, &outputs, 40);
-
-    new_net.plot_loss_history("loss_history.png")?;
-    new_net.plot_layer_loss("layer_loss.png")?;
-    Ok(())
-}
-```
-
 ## TODO
 
 Currently, Unda is in a very beta stage, the following features are still in development:
