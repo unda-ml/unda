@@ -1,6 +1,6 @@
 [package]
 name = "unda"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["BradenEverson"]
 description = "General purpose machine learning crate for neural network development and analysis"
 edition = "2021"
@@ -14,9 +14,6 @@ keywords = [
     "convolutional",
     "data-visualization"
 ]
-
-[build-dependencies]
-cc = "1.0.83"
 
 [dependencies]
 csv = "1.3.0"

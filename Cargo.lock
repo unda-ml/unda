@@ -1188,7 +1188,6 @@ dependencies = [
 name = "unda"
 version = "0.1.3"
 dependencies = [
- "cc",
  "csv",
  "flate2",
  "futures",
