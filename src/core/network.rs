@@ -94,9 +94,14 @@ impl Network{
         self.layer_sizes.push(layer.get_size());
         self.uncompiled_layers.push(layer);
     }
-    pub fn add_input(&mut self, input: InputTypes){
-        self.layer_sizes.push(input.get_size());
-        self.uncompiled_layers.push(input.to_layer());
+    pub fn set_input(&mut self, input: InputTypes){
+        if self.layer_sizes.len() > 0 {
+            self.layer_sizes[0] = input.get_size();
+            self.uncompiled_layers[0] = input.to_layer();
+        } else {
+            self.layer_sizes.push(input.get_size());
+            self.uncompiled_layers.push(input.to_layer());
+        }
     }
     ///Compiles a network by constructing each of its layers accordingly
     ///Must be done after all layers are added as the sizes of layer rows depends on the columns of
