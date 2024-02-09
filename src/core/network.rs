@@ -97,6 +97,8 @@ impl Network{
     ///Compiles a network by constructing each of its layers accordingly
     ///Must be done after all layers are added as the sizes of layer rows depends on the columns of
     ///the next layer
+    ///
+    ///Start at 1 and don't use activation function on input
     pub fn compile(&mut self){
         for i in 0..self.uncompiled_layers.len() - 1 {
             let layer = self.uncompiled_layers[i].to_layer(self.layer_sizes[i+1], &mut self.rng);

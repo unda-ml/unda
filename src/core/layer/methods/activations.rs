@@ -1,4 +1,5 @@
 use std::f32::consts::E;
+use rand_distr::num_traits::{Zero, Signed};
 use serde::{Deserialize, Serialize};
 
 use crate::core::data::{matrix::Matrix, input::Input};
@@ -95,10 +96,7 @@ const RELU: Activation = Activation {
         return res;
     },
     derivative: &|x| {
-        if x.max(0.0) == x {
-            return 1.0;
-        }
-        return 0.0;
+        !x.is_negative() as i32 as f32
     }
 };
 
