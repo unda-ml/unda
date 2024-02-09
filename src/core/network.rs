@@ -94,6 +94,10 @@ impl Network{
         self.layer_sizes.push(layer.get_size());
         self.uncompiled_layers.push(layer);
     }
+    ///Sets the input layer from a selectable type from InputTypes enum
+    ///InputTypes provides wrappers for all layer types, just doesn't require 
+    ///On the backend, all this is really doing is creating a LayerTypes enum with 
+    ///dummy Activation and LearningRate values
     pub fn set_input(&mut self, input: InputTypes){
         if self.layer_sizes.len() > 0 {
             self.layer_sizes[0] = input.get_size();
@@ -441,5 +445,20 @@ impl Network{
         }
 
         net
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::core::layer::layers::InputTypes;
+
+    use super::Network;
+
+    #[test]
+    fn check_set_input() {
+        let mut net: Network = Network::new(10);
+        net.set_input(InputTypes::DENSE(10));
+        net.set_input(InputTypes::DENSE(20));
+        assert_eq!(net.layer_sizes[0], 20);
     }
 }
