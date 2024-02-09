@@ -61,25 +61,21 @@ async fn main() {
         //new_net.add_layer(LayerTypes::DENSE(1, Activations::SIGMOID, 0.001));
         
         new_net.add_layer(LayerTypes::DENSE(2, Activations::RELU, 0.001));
-        new_net.add_layer(LayerTypes::DENSE(15, Activations::SIGMOID, 0.001));
+        new_net.add_layer(LayerTypes::DENSE(10, Activations::RELU, 0.001));
         new_net.add_layer(LayerTypes::DENSE(1, Activations::SIGMOID, 0.001));
 
 
 
         new_net.compile();
 
-        //println!("1 and 0: {:?}", new_net.predict(&vec![1.0,0.0])[0]);
-        //println!("0 and 1: {:?}", new_net.predict(&vec![0.0,1.0])[0]);
-        //println!("1 and 1: {:?}", new_net.predict(&vec![1.0,1.0])[0]);
-        //println!("0 and 0: {:?}", new_net.predict(&vec![0.0,0.0])[0]);
-        
+        new_net.fit(&inputs, &outputs, 2, ErrorTypes::MeanAbsolute);
+
         println!("1 and 0: {:?}", new_net.predict(&vec![1.0,0.0])[0]);
         println!("0 and 1: {:?}", new_net.predict(&vec![0.0,1.0])[0]);
         println!("1 and 1: {:?}", new_net.predict(&vec![1.0,1.0])[0]);
         println!("0 and 0: {:?}\n", new_net.predict(&vec![0.0,0.0])[0]);
 
 
-        new_net.fit(&inputs, &outputs, 2, ErrorTypes::MeanAbsolute);
         //println!("1 and 0: {:?}", new_net.predict(&vec![1.0,0.0])[0]);
         //println!("0 and 1: {:?}", new_net.predict(&vec![0.0,1.0])[0]);
         //println!("1 and 1: {:?}", new_net.predict(&vec![1.0,1.0])[0]);

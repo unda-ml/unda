@@ -100,10 +100,14 @@ impl Network{
     ///
     ///Start at 1 and don't use activation function on input
     pub fn compile(&mut self){
-        for i in 0..self.uncompiled_layers.len() - 1 {
+        for i in 1..self.uncompiled_layers.len() {
+            let new_layer = self.uncompiled_layers[i].to_layer(self.layer_sizes[i-1], &mut self.rng);
+            self.layers.push(new_layer);
+        }
+        /*for i in 0..self.uncompiled_layers.len() - 1 {
             let layer = self.uncompiled_layers[i].to_layer(self.layer_sizes[i+1], &mut self.rng);
             self.layers.push(layer);
-        }
+        }*/
         
         //let final_layer = self.uncompiled_layers[self.uncompiled_layers.len()-1].to_layer(self.layer_sizes[self.layer_sizes.len()-1], &mut self.rng);
         //self.layers.push(final_layer);

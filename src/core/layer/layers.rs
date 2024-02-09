@@ -65,7 +65,7 @@ pub enum LayerTypes{
 impl LayerTypes{
     pub fn to_layer(&self, prev_rows: usize, rand: &mut Box<dyn RngCore>) -> Box<dyn Layer> {
         return match self {
-            LayerTypes::DENSE(rows, activation, learning) => Box::new(Dense::new(rows.clone(), prev_rows, activation.clone(), learning.clone(), rand)),
+            LayerTypes::DENSE(rows, activation, learning) => Box::new(Dense::new(prev_rows, *rows, activation.clone(), learning.clone(), rand)),
             /*LayerTypes::NETWORK(layers, batch_size) => {
                 let mut new_net: Network = Network::new(*batch_size);
                 layers.iter().for_each(|layer| {
