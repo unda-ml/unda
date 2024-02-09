@@ -1,4 +1,4 @@
-use std::f32::consts::E;
+use std::f32::{consts::E, NAN};
 use rand_distr::num_traits::{Zero, Signed};
 use serde::{Deserialize, Serialize};
 
@@ -35,11 +35,16 @@ impl Activations{
                 return data.map(self.get_function().unwrap().function);
             },
             Activations::SOFTMAX => { 
+                //println!("{}\n", data);
                 let exp_logits: Vec<f32> = data.to_param()
                     .iter()
-                    .map(|&x| x.exp()).collect();
+                    .map(|&x| {
+                        x.exp()
+                    }).collect();
                 let sum_exp: f32 = exp_logits.iter().sum();
-                return Matrix::from_sized(exp_logits.iter().map(|x| x / sum_exp).collect::<Vec<f32>>(), data.rows, data.columns)
+                let res = Matrix::from_sized(exp_logits.iter().map(|x| x / sum_exp).collect::<Vec<f32>>(), data.rows, data.columns);
+                //println!("{}",res);
+                return res;
             },
             Activations::ELU(alpha) => {
                 let data_elu = data.to_param()
@@ -61,7 +66,8 @@ impl Activations{
                     .zip(data.to_param().iter().map(|&x| 1.0 - x))
                     .map(|(s,ds)| s * ds)
                     .collect();
-                return Matrix::from_sized(softmax_output, data.rows, data.columns);
+                let res =Matrix::from_sized(softmax_output, data.rows, data.columns);
+                return res;
             },
             Activations::ELU(alpha) => {
                 let data_elu = data.to_param()

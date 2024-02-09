@@ -57,7 +57,7 @@ async fn main() {
         new_net.set_log(false);
 
         new_net.set_input(InputTypes::DENSE(2));
-        new_net.add_layer(LayerTypes::DENSE(10, Activations::RELU, 0.001));
+        new_net.add_layer(LayerTypes::DENSE(10, Activations::TANH, 0.001));
         new_net.add_layer(LayerTypes::DENSE(1, Activations::SIGMOID, 0.001));
 
         new_net.compile();
@@ -68,6 +68,8 @@ async fn main() {
         println!("0 and 1: {:?}", new_net.predict(&vec![0.0,1.0])[0]);
         println!("1 and 1: {:?}", new_net.predict(&vec![1.0,1.0])[0]);
         println!("0 and 0: {:?}\n", new_net.predict(&vec![0.0,0.0])[0]);
+
+        new_net.save("test.json");
 
 
         //println!("1 and 0: {:?}", new_net.predict(&vec![1.0,0.0])[0]);
