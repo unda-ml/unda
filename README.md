@@ -29,7 +29,7 @@ unda = "{version}"
 ### Dense Network
 ```rust
 use unda::core::network::Network;
-use unda::core::layer::{methods::activations::Activations, layers::LayerTypes};
+use unda::core::layer::{methods::activations::Activations, layers::{LayerTypes, InputTypes}};
 use unda::core::data::input::Input;
 use unda::core::layer::{methods::errors::ErrorTypes};
 
@@ -39,9 +39,9 @@ fn main() {
 
     let mut new_net = Network::new(4);
 
-    new_net.add_layer(LayerTypes::DENSE(2, Activations::SIGMOID, 0.001));
-    new_net.add_layer(LayerTypes::DENSE(3, Activations::SIGMOID, 0.001));
-    new_net.add_layer(LayerTypes::DENSE(1, Activations::SOFTMAX, 0.001));
+    new_net.set_layer(InputTypes::DENSE(2))
+    new_net.add_layer(LayerTypes::DENSE(3, Activations::RELU, 0.001));
+    new_net.add_layer(LayerTypes::DENSE(1, Activations::SIGMOID, 0.001));
 
     new_net.compile();
 
