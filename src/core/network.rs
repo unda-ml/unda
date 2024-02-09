@@ -1,4 +1,4 @@
-use super::layer::layers::{Layer, LayerTypes};
+use super::layer::layers::{Layer, LayerTypes, InputTypes};
 use super::layer::methods::errors::ErrorTypes;
 use super::layer::methods::pair::GradientPair;
 use super::data::matrix::Matrix;
@@ -93,6 +93,10 @@ impl Network{
     pub fn add_layer(&mut self, layer: LayerTypes){
         self.layer_sizes.push(layer.get_size());
         self.uncompiled_layers.push(layer);
+    }
+    pub fn add_input(&mut self, input: InputTypes){
+        self.layer_sizes.push(input.get_size());
+        self.uncompiled_layers.push(input.to_layer());
     }
     ///Compiles a network by constructing each of its layers accordingly
     ///Must be done after all layers are added as the sizes of layer rows depends on the columns of
@@ -267,7 +271,7 @@ impl Network{
 
         if train_in.len() < ITERATIONS_PER_EPOCH {
             let iteration_scale_factor = ITERATIONS_PER_EPOCH / train_in.len();
-            iterations_per_epoch = (iteration_scale_factor as f32 * 25.0).ceil() as usize;
+            iterations_per_epoch = (iteration_scale_factor as f32 * 40.0).ceil() as usize;
         }
         if self.log {
             println!("{}", iterations_per_epoch);

@@ -62,6 +62,11 @@ pub enum LayerTypes{
     //CONV((usize, usize), usize, f32),    
 }
 
+#[derive(Serialize, Deserialize, Clone)]
+pub enum InputTypes{
+    DENSE(usize)
+}
+
 impl LayerTypes{
     pub fn to_layer(&self, prev_rows: usize, rand: &mut Box<dyn RngCore>) -> Box<dyn Layer> {
         return match self {
@@ -80,6 +85,19 @@ impl LayerTypes{
     pub fn get_size(&self) -> usize{
         return match self{
             LayerTypes::DENSE(rows, _, _) => *rows,
+        }
+    }
+}
+
+impl InputTypes {
+    pub fn to_layer(&self) -> LayerTypes {
+        return match self {
+            InputTypes::DENSE(size) => LayerTypes::DENSE(*size, Activations::SIGMOID, 1.0),
+        }
+    }
+    pub fn get_size(&self) -> usize {
+        return match self {
+            InputTypes::DENSE(size) => *size
         }
     }
 }
