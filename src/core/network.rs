@@ -234,10 +234,10 @@ impl Network{
         let actual: Box<dyn Input> = Box::new(outputs.clone());
         let mut errors: Box<dyn Input> = loss.get_error(&actual, target_obj, 1);//Box::new((parsed - &Matrix::from(target_obj.to_param_2d())).transpose());
 
-        for i in (0..self.layers.len() - 1).rev() {
-            gradients = self.layers[i + 1].update_gradient();
-            let data_box: Box<dyn Input> = self.layers[i].get_data();
-            errors = self.layers[i+1].backward(gradients, errors, data_box);
+        for i in (1..self.layers.len()).rev() {
+            gradients = self.layers[i].update_gradient();
+            let data_box: Box<dyn Input> = self.layers[i - 1].get_data();
+            errors = self.layers[i].backward(gradients, errors, data_box);
         }
     }
     async fn back_propegate_async(&self, data: Vec<Box<dyn Input>>, output: Vec<f32>) -> Vec<GradientPair> {

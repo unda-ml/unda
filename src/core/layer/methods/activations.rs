@@ -1,4 +1,4 @@
-use std::f32::consts::E;
+use std::f32::{consts::E, NAN};
 use rand_distr::num_traits::{Zero, Signed};
 use serde::{Deserialize, Serialize};
 
@@ -37,9 +37,14 @@ impl Activations{
             Activations::SOFTMAX => { 
                 let exp_logits: Vec<f32> = data.to_param()
                     .iter()
-                    .map(|&x| x.exp()).collect();
+                    .map(|&x| {
+                        x.exp()
+                    }).collect();
                 let sum_exp: f32 = exp_logits.iter().sum();
-                return Matrix::from_sized(exp_logits.iter().map(|x| x / sum_exp).collect::<Vec<f32>>(), data.rows, data.columns)
+                //println!("{:?}", data.to_param());
+                let res = Matrix::from_sized(exp_logits.iter().map(|x| x / sum_exp).collect::<Vec<f32>>(), data.rows, data.columns);
+                //println!("{}", res);
+                return res;
             },
             Activations::ELU(alpha) => {
                 let data_elu = data.to_param()
@@ -61,7 +66,10 @@ impl Activations{
                     .zip(data.to_param().iter().map(|&x| 1.0 - x))
                     .map(|(s,ds)| s * ds)
                     .collect();
-                return Matrix::from_sized(softmax_output, data.rows, data.columns);
+                //println!("{:?}", data.to_param());
+                let res =Matrix::from_sized(softmax_output, data.rows, data.columns);
+                //println!("{}", res);
+                return res;
             },
             Activations::ELU(alpha) => {
                 let data_elu = data.to_param()
@@ -133,7 +141,9 @@ fn elu(alpha: f32, x: f32) -> f32 {
 #[cfg(test)]
 mod test {
 
-    use super::{SIGMOID, RELU};
+    use crate::core::data::{matrix::Matrix, input::Input};
+
+    use super::{SIGMOID, RELU, Activations};
 
     #[test]
     fn test_sigmoid() {
@@ -174,5 +184,13 @@ mod test {
         assert_eq!(res, 0.0);
         let res = relu_der(5.0);
         assert_eq!(res, 1.0);
+    }
+    #[test]
+    fn test_softmax(){
+        let softmax = Activations::SOFTMAX;
+        let input_mat = Matrix::from_sized(vec![0.7,0.8], 2, 1);
+        let res = softmax.apply_fn(input_mat).to_param();
+
+        assert_eq!(res, vec![0.475020812521, 0.524979187479]);
     }
 }
