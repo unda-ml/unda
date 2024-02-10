@@ -61,13 +61,13 @@ impl Activations{
                 return data.map(self.get_function().unwrap().derivative);
             },
             Activations::SOFTMAX => { 
-                let softmax_output = data.to_param()
-                    .iter()
-                    .zip(data.to_param().iter().map(|&x| 1.0 - x))
-                    .map(|(s,ds)| s * ds)
-                    .collect();
+                //let softmax_output = data.to_param()
+                    //.iter()
+                    //.zip(data.to_param().iter().map(|&x| 1.0 - x))
+                    //.map(|(s,ds)| s * ds)
+                    //.collect();
                 //println!("{:?}", data.to_param());
-                let res =Matrix::from_sized(softmax_output, data.rows, data.columns);
+                let res = Matrix::from_sized(vec![1.0; data.rows * data.columns], data.rows, data.columns);
                 //println!("{}", res);
                 return res;
             },

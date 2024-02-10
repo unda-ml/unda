@@ -31,13 +31,17 @@ impl ErrorTypes{
                 let mut expected_matrix = Matrix::from(expected.to_param_2d());
                 let mut actual_matrix = Matrix::from(actual.to_param_2d());
 
+                let mut res = actual_matrix - &expected_matrix;
+
                 //Small little friend is the MVP of CategoricalCrossEntropy, he prevents doing a
                 //log(0)
-                let small_little_friend: f32 = 1e-9;
+                /*let small_little_friend: f32 = 1e-9;
                 actual_matrix += small_little_friend;
                 actual_matrix.log();
                 let mut res = expected_matrix.dot_multiply(&actual_matrix);
-                Box::new(res.transpose() * -1.0)
+                println!("{}", -1.0 * res.sum());
+                panic!();*/
+                Box::new(res.transpose())
             }
         }
     }

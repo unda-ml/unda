@@ -242,7 +242,7 @@ impl Matrix{
     pub fn log(&mut self) {
         for i in 0..self.rows {
             for j in 0..self.columns {
-                self.data[i][j] = self.data[i][j].log(10.0);
+                self.data[i][j] = self.data[i][j].log(2.0);
             }
         }
     }

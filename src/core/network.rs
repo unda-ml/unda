@@ -232,6 +232,7 @@ impl Network{
         let mut gradients: Box<dyn Input>;
 
         let actual: Box<dyn Input> = Box::new(outputs.clone());
+        //println!("{:?}", actual.to_param());
         let mut errors: Box<dyn Input> = loss.get_error(&actual, target_obj, 1);//Box::new((parsed - &Matrix::from(target_obj.to_param_2d())).transpose());
 
         for i in (1..self.layers.len()).rev() {

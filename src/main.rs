@@ -1,10 +1,9 @@
-use unda::{core::{data::{input::Input, matrix::Matrix, matrix3d::Matrix3D}, network::Network, layer::{layers::{LayerTypes, InputTypes}, methods::{activations::Activations, errors::ErrorTypes}}}};
+use unda::{core::{data::{input::Input, matrix::Matrix, matrix3d::Matrix3D}, network::Network, layer::{layers::{LayerTypes, InputTypes}, methods::{activations::Activations, errors::ErrorTypes}}}, util::{mnist::MnistEntry, categorical::to_categorical}};
 
 
 #[tokio::main]
 async fn main() {
     //Convolutional Example
-    /*
     let mut inputs: Vec<&dyn Input> = vec![];
     let outputs: Vec<Vec<f32>>;
     let mut true_outputs: Vec<Vec<f32>> = vec![];
@@ -17,15 +16,16 @@ async fn main() {
     println!("Done Generating MNIST");
 
     outputs = to_categorical(outputs_uncat);
-    for i in 0..6000{
+    for i in 0..600{
         inputs.push(&inputs_undyn[i]);
         true_outputs.push(outputs[i].clone());
     }
     loop{
         let mut network = Network::new(128);
 
-        network.add_layer(LayerTypes::DENSE(784, Activations::SIGMOID, 0.001));
-        network.add_layer(LayerTypes::DENSE(32, Activations::SIGMOID, 0.001));
+        network.set_input(InputTypes::DENSE(784));
+        network.add_layer(LayerTypes::DENSE(64, Activations::RELU, 0.001));
+        network.add_layer(LayerTypes::DENSE(32, Activations::RELU, 0.001));
         network.add_layer(LayerTypes::DENSE(10, Activations::SOFTMAX, 0.001));
 
 
@@ -37,8 +37,8 @@ async fn main() {
             println!("predicted: {:?} \n\n actual: {:?}\n", network.predict(inputs[i]), true_outputs[i]);
         }
     }
-    */
     //Dense Example
+    /*
     let mut inputs: Vec<&dyn Input> = vec![];
     let input_1 = vec![1.0,1.0];
     let input_2 = vec![vec![0.0], vec![1.0]];
@@ -58,11 +58,11 @@ async fn main() {
 
         new_net.set_input(InputTypes::DENSE(2));
         new_net.add_layer(LayerTypes::DENSE(10, Activations::RELU, 0.001));
-        new_net.add_layer(LayerTypes::DENSE(2, Activations::SIGMOID, 0.001));
+        new_net.add_layer(LayerTypes::DENSE(2, Activations::SOFTMAX, 0.001));
 
         new_net.compile();
 
-        new_net.fit(&inputs, &outputs, 2, ErrorTypes::MeanAbsolute);
+        new_net.fit(&inputs, &outputs, 2, ErrorTypes::CategoricalCrossEntropy);
 
         println!("1 and 0: {:?}", new_net.predict(&vec![1.0,0.0]));
         println!("0 and 1: {:?}", new_net.predict(&vec![0.0,1.0]));
@@ -76,5 +76,5 @@ async fn main() {
         //println!("0 and 1: {:?}", new_net.predict(&vec![0.0,1.0])[0]);
         //println!("1 and 1: {:?}", new_net.predict(&vec![1.0,1.0])[0]);
         //println!("0 and 0: {:?}\n", new_net.predict(&vec![0.0,0.0])[0]);
-    }
+    }*/
 }
