@@ -206,7 +206,7 @@ impl Layer for Dense{
     }
 
     fn update_gradient(&self) -> Box<dyn Input> {
-        Box::new(self.activation_fn.apply_fn(self.data.clone()))
+        Box::new(self.activation_fn.apply_derivative(self.data.clone()))
     }
 
     fn get_activation(&self) -> Option<Activations> {
