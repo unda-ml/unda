@@ -24,7 +24,7 @@ async fn main() {
         let mut network = Network::new(128);
 
         network.set_input(InputTypes::DENSE(784));
-        network.add_layer(LayerTypes::DENSE(128, Activations::RELU, 0.001));
+        network.add_layer(LayerTypes::DENSE(64, Activations::RELU, 0.001));
         network.add_layer(LayerTypes::DENSE(32, Activations::RELU, 0.001));
         network.add_layer(LayerTypes::DENSE(10, Activations::SOFTMAX, 0.001));
 
@@ -33,7 +33,7 @@ async fn main() {
         network.compile();
 
         network.fit(&inputs, &true_outputs, 5, ErrorTypes::CategoricalCrossEntropy);
-        for i in 0..5{
+        for i in 0..10{
             println!("predicted: {:?} \n\n actual: {:?}\n", network.predict(inputs[i]), true_outputs[i]);
         }
     }
