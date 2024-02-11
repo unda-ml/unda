@@ -1,18 +1,18 @@
 [package]
 name = "unda"
-version = "0.1.9"
+version = "0.2.0"
 authors = ["BradenEverson"]
 description = "General purpose machine learning crate for neural network development and analysis"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/BradenEverson/unda"
-categories = ["Science"]
+categories = ["science"]
 keywords = [
     "machine-learning",
     "deep-learning",
     "dense-neural-network",
     "convolutional",
-    "data-visualization"
+    "ai"
 ]
 
 [dependencies]

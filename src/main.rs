@@ -24,11 +24,11 @@ async fn main() {
         let mut network = Network::new(128);
 
         network.set_input(InputTypes::DENSE(784));
-        network.add_layer(LayerTypes::DENSE(64, Activations::RELU, 0.001));
+        network.add_layer(LayerTypes::DENSE(128, Activations::RELU, 0.001));
         network.add_layer(LayerTypes::DENSE(32, Activations::RELU, 0.001));
         network.add_layer(LayerTypes::DENSE(10, Activations::SOFTMAX, 0.001));
 
-
+        //network.set_log(false);
 
         network.compile();
 
@@ -76,5 +76,6 @@ async fn main() {
         //println!("0 and 1: {:?}", new_net.predict(&vec![0.0,1.0])[0]);
         //println!("1 and 1: {:?}", new_net.predict(&vec![1.0,1.0])[0]);
         //println!("0 and 0: {:?}\n", new_net.predict(&vec![0.0,0.0])[0]);
-    }*/
+    }
+    */
 }

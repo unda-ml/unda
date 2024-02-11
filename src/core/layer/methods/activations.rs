@@ -35,13 +35,14 @@ impl Activations{
                 return data.map(self.get_function().unwrap().function);
             },
             Activations::SOFTMAX => { 
+                let max = data.to_param().iter().fold(f32::NAN, |a, &b| a.max(b));
                 let exp_logits: Vec<f32> = data.to_param()
                     .iter()
                     .map(|&x| {
-                        x.exp()
+                        (x - max).exp()
                     }).collect();
                 let sum_exp: f32 = exp_logits.iter().sum();
-                //println!("{:?}", data.to_param());
+                //println!("\n\n{:?}", data.to_param());
                 let res = Matrix::from_sized(exp_logits.iter().map(|x| x / sum_exp).collect::<Vec<f32>>(), data.rows, data.columns);
                 //println!("{}", res);
                 return res;

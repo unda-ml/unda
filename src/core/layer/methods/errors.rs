@@ -28,8 +28,8 @@ impl ErrorTypes{
                 Box::new(res)
             },
             ErrorTypes::CategoricalCrossEntropy => {
-                let mut expected_matrix = Matrix::from(expected.to_param_2d());
-                let mut actual_matrix = Matrix::from(actual.to_param_2d());
+                let expected_matrix = Matrix::from(expected.to_param_2d());
+                let actual_matrix = Matrix::from(actual.to_param_2d());
 
                 let mut res = actual_matrix - &expected_matrix;
 
@@ -41,6 +41,14 @@ impl ErrorTypes{
                 let mut res = expected_matrix.dot_multiply(&actual_matrix);
                 println!("{}", -1.0 * res.sum());
                 panic!();*/
+                //println!("\n{:?}", actual.to_param());
+                //println!("{:?}", expected.to_param());
+                //println!("{:?}", res.to_param());
+                let contains_nan = res.to_param().iter().map(|x| x.is_nan()).collect::<Vec<bool>>().contains(&true);
+                if contains_nan {
+                    panic!()
+                }
+
                 Box::new(res.transpose())
             }
         }
