@@ -192,6 +192,6 @@ mod test {
         let input_mat = Matrix::from_sized(vec![0.7,0.8], 2, 1);
         let res = softmax.apply_fn(input_mat).to_param();
 
-        assert_eq!(res, vec![0.475020812521, 0.524979187479]);
+        assert_eq!(res, vec![0.4750208, 0.5249792]);
     }
 }
