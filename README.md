@@ -68,8 +68,8 @@ Currently, Unda is in a very beta stage, the following features are still in dev
 - [X] Create abstract representation for layers (Layer trait)
     - [X] Dense
     - [ ] Convolutional
-        - [ ] Cateogorical Crossentropy
-        - [ ] SoftMax
+        - [X] Cateogorical Crossentropy
+        - [X] SoftMax
     - [ ] Recurrent
 - [X] Allow for different activation functions and learning rates on each layer
 - [X] Adam Optimization in backprop
