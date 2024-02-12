@@ -140,7 +140,7 @@ impl Layer for Convolutional {
     fn backward(&mut self,gradients:Box<dyn Input> ,errors:Box<dyn Input> ,data:Box<dyn Input>) -> Box<dyn Input> {
         let mut gradients_mat = Matrix3D::from(gradients.to_param_3d());
         let mut errors_mat = Matrix3D::from(errors.to_param_3d());
-        let data_mat = Matrix3D::from(data.to_param_3d());
+        let _data_mat = Matrix3D::from(data.to_param_3d());
 
         gradients_mat = gradients_mat.dot_multiply(&errors_mat) * self.learning_rate;
         errors_mat = self.filter_weights.clone().transpose() * &errors_mat;

@@ -1,5 +1,5 @@
-use std::f32::{consts::E, NAN};
-use rand_distr::num_traits::{Zero, Signed};
+use std::f32::{consts::E};
+use rand_distr::num_traits::{Signed};
 use serde::{Deserialize, Serialize};
 
 use crate::core::data::{matrix::Matrix, input::Input};
