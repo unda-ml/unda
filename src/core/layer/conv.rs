@@ -68,6 +68,8 @@ impl Convolutional{
         
         res.data = Matrix3D::new_empty(res_len, res_width, filters);
         res.output_shape = (res_len, res_width, 1);
+        println!("{:?}", res.output_shape);
+        println!("{}", res.filter_weights);
 
         (res.beta1, res.beta2) = res.get_betas();
         res.epsilon = res.get_epsilon();

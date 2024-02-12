@@ -3,8 +3,12 @@ use unda::{core::{data::{input::Input, matrix::Matrix, matrix3d::Matrix3D}, netw
 
 #[tokio::main]
 async fn main() {
+    let mut network = Network::new(128);
+    network.set_input(InputTypes::CONV((28,28,1), (5,5), 1, 10));
+    network.compile();
+
     //Convolutional Example
-    let mut inputs: Vec<&dyn Input> = vec![];
+    /*let mut inputs: Vec<&dyn Input> = vec![];
     let outputs: Vec<Vec<f32>>;
     let mut true_outputs: Vec<Vec<f32>> = vec![];
 
@@ -37,6 +41,7 @@ async fn main() {
             println!("predicted: {:?} \n\n actual: {:?}\n", network.predict(inputs[i]), true_outputs[i]);
         }
     }
+    */
     //Dense Example
     /*
     let mut inputs: Vec<&dyn Input> = vec![];
