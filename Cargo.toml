@@ -1,6 +1,6 @@
 [package]
 name = "unda"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["BradenEverson"]
 description = "General purpose machine learning crate for neural network development and analysis"
 edition = "2021"
@@ -17,17 +17,13 @@ keywords = [
 
 [dependencies]
 csv = "1.3.0"
-flate2 = "1.0.28"
 futures = "0.3.30"
 itertools = "0.12.0"
 rand = "0.8.5"
 rand_distr = "0.4.3"
 rand_pcg = "0.3.1"
 rand_seeder = "0.2.3"
-rayon = "1.8.1"
 serde = { version = "1.0", features = ["derive"] }
 serde_cbor = "0.11.2"
 serde_json = "1.0"
-tokio = { version = "1.35.1", features = ["rt", "full"] }
 typetag = "0.2.14"
-#xla = { git = "https://github.com/LaurentMazare/xla-rs", version = "0.1.6" }
