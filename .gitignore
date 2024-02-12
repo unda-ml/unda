@@ -2,4 +2,4 @@
 *.idx1-ubyte
 *.idx3-ubyte
 *.Identifier
-main.rs
+/src/main.rs
