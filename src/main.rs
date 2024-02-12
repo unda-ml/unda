@@ -16,7 +16,7 @@ async fn main() {
     println!("Done Generating MNIST");
 
     outputs = to_categorical(outputs_uncat);
-    for i in 0..3000{
+    for i in 0..30000{
         inputs.push(&inputs_undyn[i]);
         true_outputs.push(outputs[i].clone());
     }
