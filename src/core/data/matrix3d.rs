@@ -14,6 +14,27 @@ pub struct Matrix3D {
     pub data: Vec<Vec<Vec<f32>>>
 }
 
+impl std::fmt::Display for Matrix3D{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut resp: String = String::from("");
+        for l in 0..self.layers {
+            resp += &format!("layers: {}\n", l+1);
+            for i in 0..self.rows{
+                resp += "[";
+                for j in 0..self.columns{
+                    if self.data[l][i][j] < 0.0 {
+                        resp += &format!(" {:<03.3} ", self.data[l][i][j]);
+                    } else {
+                        resp += &format!("  {:<03.3} ", self.data[l][i][j]);
+                    }
+                }
+                resp += "]\n";
+            }
+        }
+        write!(f, "{}", resp)
+    }
+}
+
 impl ops::Mul<&Matrix3D> for Matrix3D {
     type Output = Matrix3D;
     fn mul(self, rhs: &Matrix3D) -> Self::Output {
