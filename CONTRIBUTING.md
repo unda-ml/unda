@@ -15,6 +15,11 @@ cd /home/user/unda
 cargo build --release
 ./target/release/unda
 ```
+or run any of the example programs with
+```bash
+cd /home/user/unda
+cargo run --release --example {example_name}
+```
 Once changes are made, please make a new branch and submit a PR :)
 
 ### Running tests
