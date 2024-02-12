@@ -33,10 +33,10 @@ pub struct Convolutional{
 }
 
 impl Convolutional{
-    pub fn new(filters: usize, kernel_size: (usize, usize), input_shape: (usize, usize, usize), stride: usize, activation_fn: Activations, learning_rate: f32, rng: &mut Box<dyn RngCore>, input_size: usize) -> Convolutional {
+    pub fn new(filters: usize, kernel_size: (usize, usize), input_shape: (usize, usize, usize), stride: usize, activation_fn: Activations, learning_rate: f32, rng: &mut Box<dyn RngCore>) -> Convolutional {
         let distribution = match activation_fn {
-            Activations::ELU(_) | Activations::TANH | Activations::SIGMOID | Activations::SOFTMAX => Distributions::Xavier(input_size, kernel_size.0 * kernel_size.1),
-            Activations::RELU | Activations::LEAKYRELU => Distributions::He(input_size)
+            Activations::TANH | Activations::SIGMOID => Distributions::Xavier(input_shape.0, kernel_size.0 * kernel_size.1),
+            Activations::RELU | Activations::LEAKYRELU | Activations::SOFTMAX | Activations::ELU(_) => Distributions::He(input_shape.0)
         };
         let mut res = Convolutional{
             filter_weights: Matrix3D::new_random(kernel_size.0, kernel_size.1, filters, rng, &distribution),
@@ -68,6 +68,8 @@ impl Convolutional{
         
         res.data = Matrix3D::new_empty(res_len, res_width, filters);
         res.output_shape = (res_len, res_width, 1);
+        println!("{:?}", res.output_shape);
+        println!("{}", res.filter_weights);
 
         (res.beta1, res.beta2) = res.get_betas();
         res.epsilon = res.get_epsilon();
@@ -138,7 +140,7 @@ impl Layer for Convolutional {
     fn backward(&mut self,gradients:Box<dyn Input> ,errors:Box<dyn Input> ,data:Box<dyn Input>) -> Box<dyn Input> {
         let mut gradients_mat = Matrix3D::from(gradients.to_param_3d());
         let mut errors_mat = Matrix3D::from(errors.to_param_3d());
-        let _data_mat = Matrix3D::from(data.to_param_3d());
+        let data_mat = Matrix3D::from(data.to_param_3d());
 
         gradients_mat = gradients_mat.dot_multiply(&errors_mat) * self.learning_rate;
         errors_mat = self.filter_weights.clone().transpose() * &errors_mat;
@@ -148,6 +150,8 @@ impl Layer for Convolutional {
             self.loss += error.powi(2);
         });
         self.loss = self.loss / errors_mat.to_param().len() as f32;
+
+        println!("{}", gradients_mat);
 
         panic!();
     }

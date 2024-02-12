@@ -5,7 +5,7 @@ use crate::core::{data::{input::Input, matrix::Matrix}, layer::methods::activati
 use rand::RngCore;
 use serde::{Serialize, Deserialize};
 
-use super::{dense::Dense, methods::pair::GradientPair};
+use super::{dense::Dense, methods::pair::GradientPair, conv::Convolutional};
 
 #[typetag::serde]
 pub trait Layer: Send + Sync{
@@ -58,33 +58,28 @@ pub enum LayerTypes{
     ///DENSE: Nodes, Activation Function, Learning Rate
     DENSE(usize, Activations, f32),
     //NETWORK(Vec<LayerTypes>, usize),
-    //CONV: Kernel Size, stride, Learning Rate
-    //CONV((usize, usize), usize, f32),    
+    ///CONV:In shape, Kernel Size, stride, filters, Learning Rate
+    CONV((usize, usize, usize), (usize, usize), usize, usize, Activations, f32),    
 }
 
 #[derive(Serialize, Deserialize, Clone)]
 pub enum InputTypes{
-    DENSE(usize)
+    DENSE(usize),
+    CONV((usize, usize, usize), (usize, usize), usize, usize),    
 }
 
 impl LayerTypes{
     pub fn to_layer(&self, prev_rows: usize, rand: &mut Box<dyn RngCore>) -> Box<dyn Layer> {
         return match self {
             LayerTypes::DENSE(rows, activation, learning) => Box::new(Dense::new(prev_rows, *rows, activation.clone(), learning.clone(), rand)),
-            /*LayerTypes::NETWORK(layers, batch_size) => {
-                let mut new_net: Network = Network::new(*batch_size);
-                layers.iter().for_each(|layer| {
-                    new_net.add_layer(layer.clone());
-                });
-                new_net.compile();
-                Box::new(new_net)
-            },*/
+            LayerTypes::CONV(shape, kernels, stride, filters, activation, learning) => Box::new(Convolutional::new(*filters, *kernels, *shape, *stride, *activation, *learning, rand))
             //LayerTypes::CONV(shape, stride, learning) => Box::new()
         };
     }
     pub fn get_size(&self) -> usize{
         return match self{
             LayerTypes::DENSE(rows, _, _) => *rows,
+            LayerTypes::CONV(shape, _, _, _, _, _) => shape.0 * shape.1,
         }
     }
 }
@@ -93,11 +88,13 @@ impl InputTypes {
     pub fn to_layer(&self) -> LayerTypes {
         return match self {
             InputTypes::DENSE(size) => LayerTypes::DENSE(*size, Activations::SIGMOID, 1.0),
+            InputTypes::CONV(shape, kernel_shape, stride, filters) => LayerTypes::CONV(*shape, *kernel_shape, *stride, *filters, Activations::SIGMOID, 1.0)
         }
     }
     pub fn get_size(&self) -> usize {
         return match self {
-            InputTypes::DENSE(size) => *size
+            InputTypes::DENSE(size) => *size,
+            InputTypes::CONV(shape, _, _, _) => shape.0 * shape.1,
         }
     }
 }
