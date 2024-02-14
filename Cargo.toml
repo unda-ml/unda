@@ -17,16 +17,16 @@ keywords = [
 
 [dependencies]
 csv = {version = "1.3.0", optional = true}
-futures = "0.3.30"
-itertools = "0.12.0"
-rand = "0.8.5"
-rand_distr = "0.4.3"
-rand_pcg = "0.3.1"
-rand_seeder = "0.2.3"
+futures = "0.3"
+itertools = "0.12"
+rand = "0.8"
+rand_distr = "0.4"
+rand_pcg = "0.3"
+rand_seeder = "0.2"
 serde = { version = "1.0", features = ["derive"] }
-serde_cbor = "0.11.2"
+serde_cbor = "0.11"
 serde_json = "1.0"
-typetag = "0.2.14"
+typetag = "0.2"
 slotmap = "1"
 backtrace = "0.3"
 smallvec = "1.13"
