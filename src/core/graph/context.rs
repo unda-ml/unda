@@ -125,22 +125,30 @@ impl Context {
     }
 
     /// expand all Diff nodes into analytic derivatives
-    fn autodiff<A: Into<NodeIdentifier> + Copy>(&mut self, input: A) {
+    /// return true if there may be further changes needed
+    fn autodiff<A: Into<NodeIdentifier> + Copy>(
+        &mut self,
+        input: A,
+        modification_limit: usize,
+    ) -> bool {
+        if modification_limit == 0 {
+            return true;
+        }
         let input_node = &self.nodes[input.into()];
 
         // traverse nodes until we find a Diff node or a leaf
         match input_node.operation {
             // leaf nodes mean no further processing
-            Operation::Constant(_) => (),
-            Operation::Parameter(_) => (),
+            Operation::Constant(_) => false,
+            Operation::Parameter(_) => false,
             // operations mean we need to go deeper
             Operation::Add(a, b) => {
-                self.autodiff(a);
-                self.autodiff(b);
+                let r = self.autodiff(a, modification_limit);
+                self.autodiff(b, modification_limit - (r as usize)) || r
             }
             Operation::Mul(a, b) => {
-                self.autodiff(a);
-                self.autodiff(b);
+                let r = self.autodiff(a, modification_limit);
+                self.autodiff(b, modification_limit - (r as usize)) || r
             }
             // finally a Diff node, lets distribute it
             Operation::Diff(outer, outer_param) => {
@@ -151,6 +159,7 @@ impl Context {
                         self.nodes[input.into()].operation =
                             Operation::Constant(ConstantBinding { value: vec![] });
                         self.nodes[input.into()].dimension = Dimension::scalar();
+                        true
                     }
                     Operation::Parameter(_) => {
                         // derivative of a parameter with respect to itself is one, and otherwise zero
@@ -158,6 +167,7 @@ impl Context {
                             value: vec![(outer == outer_param.into()) as u32 as f32],
                         });
                         self.nodes[input.into()].dimension = Dimension::scalar();
+                        true
                     }
                     Operation::Add(a, b) => {
                         // derivative of a sum is the sum of derivatives
@@ -180,7 +190,7 @@ impl Context {
                         let diff_b = self.nodes.insert(diff_b_node);
                         self.nodes[input.into()].operation = Operation::Add(diff_a, diff_b);
                         // rerun autodiff on the node we replaced
-                        self.autodiff(input);
+                        self.autodiff(input, modification_limit - 1)
                     }
                     Operation::Mul(a, b) => {
                         // product rule
@@ -217,21 +227,60 @@ impl Context {
                         let prod_b = self.nodes.insert(prod_b_node);
                         self.nodes[input.into()].operation = Operation::Add(prod_a, prod_b);
                         // rerun autodiff on the node we replaced
-                        self.autodiff(input);
+                        self.autodiff(input, modification_limit - 1)
                     }
                     Operation::Diff(inner, _) => {
                         // derivative of a derivative, apply the inner one first then try again on the outer.
-                        self.autodiff(inner);
-                        self.autodiff(outer);
+                        let r = self.autodiff(inner, modification_limit);
+                        self.autodiff(outer, modification_limit - (r as usize)) || r
                     }
                 }
             }
         }
     }
 
+    /// Folds constants in place by replacing any node whose both inputs are Constant
+    /// with a Constant of the result of the operation. All existing references to
+    /// the old node will still point to it once its replaced, and this process is
+    /// repeated until there are no more nodes whose inputs are all constants.
+    fn foldconsts<A: Into<NodeIdentifier> + Copy>(
+        &mut self,
+        _input: A,
+        modification_limit: usize,
+    ) -> bool {
+        if modification_limit == 0 {
+            return true;
+        }
+        // TODO: implement this
+        false
+    }
+
     pub fn compile<A: Into<NodeIdentifier> + Copy>(&mut self, a: A) {
-        self.autodiff(a);
-        // TODO: propagate constants
+        // TODO: gate debug mode behind a feature flag
+
+        //self.autodiff(a, usize::MAX);
+        println!("{}", self.to_string(a));
+        while self.autodiff(a, 1) {
+            println!("{}", self.to_string(a));
+        }
+
+        //self.foldconsts(a, usize::MAX);
+        while self.foldconsts(a, 1) {
+            println!("{}", self.to_string(a));
+        }
+
         // TODO: compile to XLA
+    }
+
+    pub fn to_string<A: Into<NodeIdentifier> + Copy>(&self, input: A) -> String {
+        let input_node = &self.nodes[input.into()];
+
+        match input_node.operation.clone() {
+            Operation::Constant(a) => format!("Constant {} {}", input_node.dimension, a),
+            Operation::Parameter(a) => format!("Parameter {} {}", input_node.dimension, a),
+            Operation::Add(a, b) => format!("Add ({}) ({})", self.to_string(a), self.to_string(b)),
+            Operation::Mul(a, b) => format!("Mul ({}) ({})", self.to_string(a), self.to_string(b)),
+            Operation::Diff(a, b) => format!("Diff ({}) {}", self.to_string(a), self.to_string(b)),
+        }
     }
 }

@@ -11,8 +11,8 @@ pub fn example() {
     let mut ctx = Context::new();
 
     let three = ctx.scalar(3.0);
-    let up = ctx.vector([0.0, 0.0, 1.0]);
-    let id3x3 = ctx.matrix([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]);
+    //let up = ctx.vector([0.0, 0.0, 1.0]);
+    //let id3x3 = ctx.matrix([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]);
     let x = ctx.parameter("x");
     let y = ctx.parameter("y");
 
@@ -29,10 +29,10 @@ pub fn example() {
     // let invalid = ctx.add(up, id3x3);
 
     // issue: this also errors, proper dim check is not implemented. see context.rs line 116
-    let matmul = ctx.mul(up, id3x3);
+    //let matmul = ctx.mul(up, id3x3);
 
-    let result = ctx.mul(diff_x, matmul);
+    //let result = ctx.mul(diff_x, matmul);
 
     // output XLA
-    ctx.compile(result);
+    ctx.compile(diff_x);
 }

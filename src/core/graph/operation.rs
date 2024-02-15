@@ -1,6 +1,6 @@
 use super::{Callsite, Dimension};
 use slotmap::new_key_type;
-use std::fmt::{Display, Error, Formatter, Result};
+use std::fmt::{Display, Formatter, Result};
 use strum_macros::EnumDiscriminants;
 
 /// A node in the compute graph
@@ -41,7 +41,8 @@ pub struct ConstantBinding {
 impl Display for ConstantBinding {
     fn fmt(&self, f: &mut Formatter) -> Result {
         if self.value.is_empty() {
-            return Err(Error);
+            write!(f, "0")?;
+            return Ok(());
         }
         write!(f, "{}", self.value[0])?;
         // TODO: proper matrix printing?
