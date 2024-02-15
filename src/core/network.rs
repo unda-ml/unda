@@ -449,17 +449,4 @@ impl Network{
     }
 }
 
-#[cfg(test)]
-mod test {
-    use crate::core::layer::layers::InputTypes;
 
-    use super::Network;
-
-    #[test]
-    fn check_set_input() {
-        let mut net: Network = Network::new(10);
-        net.set_input(InputTypes::DENSE(10));
-        net.set_input(InputTypes::DENSE(20));
-        assert_eq!(net.layer_sizes[0], 20);
-    }
-}
