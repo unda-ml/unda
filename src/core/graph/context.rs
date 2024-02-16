@@ -3,11 +3,14 @@ use self::operation::{
 };
 use super::*;
 use slotmap::SlotMap;
+use std::collections::HashMap;
 
 /// XLA computation graph context.
 // TODO: rename this to something meaningful
 pub struct Context {
     nodes: SlotMap<NodeIdentifier, Node>,
+    param_indices: Vec<NodeIdentifier>,
+    const_indices: Vec<NodeIdentifier>
 }
 
 impl Default for Context {
@@ -20,45 +23,45 @@ impl Context {
     pub fn new() -> Self {
         Self {
             nodes: SlotMap::with_key(),
+            param_indices: Vec::new(),
+            const_indices: Vec::new()
         }
     }
 
-    pub fn scalar(&mut self, value: f32) -> Parameter {
-        Parameter {
-            node: self.nodes.insert(Node {
+    pub fn scalar(&mut self, value: f32) -> NodeIdentifier {
+        let node_id = self.nodes.insert(Node {
                 callsite: callsite!(1),
                 dimension: Dimension::new(),
                 operation: Operation::Constant(ConstantBinding { value: vec![value] }),
-            }),
-        }
+        });
+        self.const_indices.push(node_id);
+        node_id
     }
 
-    pub fn vector<const N: usize>(&mut self, values: [f32; N]) -> Parameter {
-        Parameter {
-            node: self.nodes.insert(Node {
+    pub fn vector<const N: usize>(&mut self, values: [f32; N]) -> NodeIdentifier {
+        let node_id = self.nodes.insert(Node {
                 callsite: callsite!(1),
-                dimension: Dimension::of(N as u32),
-                operation: Operation::Constant(ConstantBinding {
-                    value: values.to_vec(),
-                }),
-            }),
-        }
+                dimension: Dimension::new(),
+                operation: Operation::Constant(ConstantBinding { value: values.to_vec() }),
+        });
+        self.const_indices.push(node_id);
+        node_id
     }
 
-    pub fn matrix<const N: usize, const M: usize>(&mut self, values: [[f32; M]; N]) -> Parameter {
-        Parameter {
-            node: self.nodes.insert(Node {
-                callsite: callsite!(1),
-                dimension: Dimension::of(N as u32).by(M as u32),
-                operation: Operation::Constant(ConstantBinding {
-                    value: values.iter().flat_map(|f| f.iter()).copied().collect(),
-                }),
+    pub fn matrix<const N: usize, const M: usize>(&mut self, values: [[f32; M]; N]) -> NodeIdentifier {
+        let node_id = self.nodes.insert(Node {
+            callsite: callsite!(1),
+            dimension: Dimension::of(N as u32).by(M as u32),
+            operation: Operation::Constant(ConstantBinding {
+                value: values.iter().flat_map(|f| f.iter()).copied().collect(),
             }),
-        }
+        });
+        self.const_indices.push(node_id);
+        node_id
     }
 
     pub fn parameter<S: AsRef<str>>(&mut self, name: S) -> Parameter {
-        Parameter {
+        let param = Parameter {
             node: self.nodes.insert(Node {
                 callsite: callsite!(1),
                 // TODO: proper dimension here
@@ -67,7 +70,9 @@ impl Context {
                     name: name.as_ref().to_string(),
                 }),
             }),
-        }
+        };
+        self.param_indices.push(param.node);
+        param
     }
 
     pub fn diff(&mut self, node: NodeIdentifier, with_respect_to: Parameter) -> NodeIdentifier {
@@ -255,7 +260,46 @@ impl Context {
         false
     }
 
-    pub fn compile<A: Into<NodeIdentifier> + Copy>(&mut self, a: A) {
+    fn get_dependent_nodes<A: Into<NodeIdentifier> + Copy>(&self, a: A, dep_nodes: &mut HashMap<NodeIdentifier, Vec<NodeIdentifier>>) -> Result<(), String> {
+        let this_node_id = a.into();
+        let input_node = &self.nodes[this_node_id];
+        match input_node.operation {
+            Operation::Constant(_) => Ok(()),
+            Operation::Parameter(_) => Ok(()),
+            Operation::Diff(_, _) => Err("Found Diff Node during XLA conversion!".to_string()),
+            Operation::Add(node1, node2) => {
+                if dep_nodes.contains_key(&node1) {
+                    dep_nodes.get(&node1).unwrap().push(this_node_id);
+                } else {
+                    dep_nodes.insert(node1, vec![this_node_id]);
+                }
+                if dep_nodes.contains_key(&node2) {
+                    dep_nodes.get(&node2).unwrap().push(this_node_id);
+                } else {
+                    dep_nodes.insert(node2, vec![this_node_id]);
+                }
+                self.get_dependent_nodes(node1, dep_nodes);
+                self.get_dependent_nodes(node2, dep_nodes)
+            },
+            Operation::Mul(node1, node2) => {
+                if dep_nodes.contains_key(&node1) {
+                    dep_nodes.get(&node1).unwrap().push(this_node_id);
+                } else {
+                    dep_nodes.insert(node1, vec![this_node_id]);
+                }
+                if dep_nodes.contains_key(&node2) {
+                    dep_nodes.get(&node2).unwrap().push(this_node_id);
+                } else {
+                    dep_nodes.insert(node2, vec![this_node_id]);
+                }
+                self.get_dependent_nodes(node1, dep_nodes);
+                self.get_dependent_nodes(node2, dep_nodes)
+            }
+        }
+
+    }
+
+    pub fn compile<A: Into<NodeIdentifier> + Copy>(&mut self, a: A, builder: xla::XlaBuilder) {
         // TODO: gate debug mode behind a feature flag
 
         //self.autodiff(a, usize::MAX);
@@ -270,6 +314,8 @@ impl Context {
         }
 
         // TODO: compile to XLA
+        let mut dependent_nodes: HashMap<NodeIdentifier, Vec<NodeIdentifier>> = HashMap::new();
+        self.get_dependent_nodes(a, &mut dependent_nodes);
     }
 
     pub fn to_string<A: Into<NodeIdentifier> + Copy>(&self, input: A) -> String {
