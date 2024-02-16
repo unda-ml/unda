@@ -1,10 +1,10 @@
 mod callsite;
 mod context;
-mod dimension;
+mod shape;
 mod operation;
 use callsite::*;
 pub use context::*;
-pub use dimension::*;
+pub use shape::*;
 
 #[test]
 pub fn example() {

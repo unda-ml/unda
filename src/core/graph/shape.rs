@@ -6,15 +6,13 @@ use std::fmt::{Display, Formatter, Result};
 /// 3d vector would be vec![3]
 /// 4x3 matrix would be vec![4,3]
 #[derive(Debug, Clone, PartialEq)]
-pub struct Dimension {
+pub struct Shape {
     /// smallvec to avoid indirection in the common case of dimension <= 4
     // TODO: is u16 enough here? tune this
-    // 4D arrays are not enough. Batches of video are at least 5D
-    // if there has to be an upper bound on array dimensionality it should be at least 6
-    pub sizes: SmallVec<[u32; 4]>,
+    pub sizes: SmallVec<[i64; 4]>,
 }
 
-impl Dimension {
+impl Shape {
     pub fn new() -> Self {
         Self {
             sizes: SmallVec::new(),
@@ -25,28 +23,28 @@ impl Dimension {
         Self::new()
     }
 
-    /// Allows syntax `Dimension::of(N)`
-    pub fn of(size: u32) -> Self {
+    /// Allows syntax `Shape::of(N)`
+    pub fn of(size: i64) -> Self {
         let mut sizes = SmallVec::new();
         sizes.push(size);
         Self { sizes }
     }
 
-    /// Allows syntax `Dimension::of(N).by(M)`
-    pub fn by(self, size: u32) -> Self {
+    /// Allows syntax `Shape::of(N).by(M)`
+    pub fn by(self, size: i64) -> Self {
         let Self { mut sizes } = self;
         sizes.push(size);
         Self { sizes }
     }
 }
 
-impl Default for Dimension {
+impl Default for Shape {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Display for Dimension {
+impl Display for Shape {
     fn fmt(&self, f: &mut Formatter) -> Result {
         match self.sizes.len() {
             0 => write!(f, "Scalar"),

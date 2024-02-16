@@ -1,4 +1,4 @@
-use super::{Callsite, Dimension};
+use super::{Callsite, Shape};
 use slotmap::new_key_type;
 use std::fmt::{Display, Formatter, Result};
 use strum_macros::EnumDiscriminants;
@@ -8,8 +8,8 @@ pub struct Node {
     /// helps identify where in the user's source code this node originated
     // TODO: gate this so its not present at all in release builds
     pub(crate) callsite: Callsite,
-    /// dimensionality of the output of this node
-    pub(crate) shape: Box<[i64]>,
+    /// shape of the output of this node
+    pub(crate) shape: Shape,
     /// the operation this node performs
     pub(crate) operation: Operation,
 }
