@@ -9,7 +9,7 @@ pub struct Node {
     // TODO: gate this so its not present at all in release builds
     pub(crate) callsite: Callsite,
     /// dimensionality of the output of this node
-    pub(crate) dimension: Dimension,
+    pub(crate) shape: Box<[i64]>,
     /// the operation this node performs
     pub(crate) operation: Operation,
 }

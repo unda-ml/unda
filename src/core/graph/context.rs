@@ -1,10 +1,12 @@
 use self::operation::{
     ConstantBinding, Node, NodeIdentifier, Operation, Parameter, ParameterBinding,
 };
+use self::dimension::Dimension;
 use super::*;
 use slotmap::SlotMap;
+use smallvec::SmallVec;
 use xla::XlaOp;
-use std::collections::{HashMap, VecDequeue};
+use std::collections::{HashMap, VecDeque};
 
 /// XLA computation graph context.
 // TODO: rename this to something meaningful
@@ -32,7 +34,7 @@ impl Context {
     pub fn scalar(&mut self, value: f32) -> NodeIdentifier {
         let node_id = self.nodes.insert(Node {
                 callsite: callsite!(1),
-                dimension: Dimension::new(),
+                shape: &[],
                 operation: Operation::Constant(ConstantBinding { value: vec![value] }),
         });
         self.const_indices.push(node_id);
@@ -42,7 +44,7 @@ impl Context {
     pub fn vector<const N: usize>(&mut self, values: [f32; N]) -> NodeIdentifier {
         let node_id = self.nodes.insert(Node {
                 callsite: callsite!(1),
-                dimension: Dimension::new(),
+                shape: &[N],
                 operation: Operation::Constant(ConstantBinding { value: values.to_vec() }),
         });
         self.const_indices.push(node_id);
@@ -52,7 +54,7 @@ impl Context {
     pub fn matrix<const N: usize, const M: usize>(&mut self, values: [[f32; M]; N]) -> NodeIdentifier {
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
-            dimension: Dimension::of(N as u32).by(M as u32),
+            shape: &[N, M],
             operation: Operation::Constant(ConstantBinding {
                 value: values.iter().flat_map(|f| f.iter()).copied().collect(),
             }),
@@ -61,13 +63,13 @@ impl Context {
         node_id
     }
 
-    pub fn parameter<S: AsRef<str>>(&mut self, name: S, dimension: Dimension) -> Parameter {
+    pub fn parameter<S: AsRef<str>>(&mut self, name: S, shape: &[i64]) -> Parameter {
         let param = Parameter {
             node: self.nodes.insert(Node {
                 callsite: callsite!(1),
                 // TODO: proper dimension here
                 // It makes sense to pass the dimensionality of the parameter to its constructor?
-                dimension: dimension,
+                shape: shape,
                 operation: Operation::Parameter(ParameterBinding {
                     name: name.as_ref().to_string(),
                 }),
@@ -80,7 +82,8 @@ impl Context {
     pub fn diff(&mut self, node: NodeIdentifier, with_respect_to: Parameter) -> NodeIdentifier {
         self.nodes.insert(Node {
             callsite: callsite!(1),
-            dimension: Dimension::new(),
+            // what should go here?
+            shape: &[],
             operation: Operation::Diff(node, with_respect_to),
         })
     }
@@ -96,14 +99,15 @@ impl Context {
         let node_b = &self.nodes[b.into()];
         let node = Node {
             callsite: callsite!(1),
-            dimension: Dimension::new(),
+            // need to implement automatic shape broadcasting
+            shape: &[],
             operation: Operation::Add(a.into(), b.into()),
         };
         // TODO: special case adding const zero
-        if node_a.dimension != node_b.dimension {
+        if node_a.shape != node_b.shape {
             eprintln!(
                 "Dimension mismatch {} vs {} at: {}",
-                node_a.dimension, node_b.dimension, node
+                node_a.shape, node_b.shape, node
             );
         }
         self.nodes.insert(node)
@@ -118,14 +122,15 @@ impl Context {
         let node_b = &self.nodes[b.into()];
         let node = Node {
             callsite: callsite!(1),
-            dimension: Dimension::new(),
+            // need to implement automatic shape broadcasting
+            shape: &[],
             operation: Operation::Mul(a.into(), b.into()),
         };
         // TODO: check dimensional compatibility correctly
-        if node_a.dimension != node_b.dimension {
+        if node_a.shape != node_b.shape {
             eprintln!(
                 "Dimension mismatch {} vs {} at: {}",
-                node_a.dimension, node_b.dimension, node
+                node_a.shape, node_b.shape, node
             );
         }
         self.nodes.insert(node)
@@ -165,7 +170,7 @@ impl Context {
                         // derivative of a constant with respect to anything is 0
                         self.nodes[input.into()].operation =
                             Operation::Constant(ConstantBinding { value: vec![] });
-                        self.nodes[input.into()].dimension = Dimension::scalar();
+                        self.nodes[input.into()].shape = &[];// Dimension::scalar();
                         true
                     }
                     Operation::Parameter(_) => {
@@ -173,7 +178,7 @@ impl Context {
                         self.nodes[input.into()].operation = Operation::Constant(ConstantBinding {
                             value: vec![(outer == outer_param.into()) as u32 as f32],
                         });
-                        self.nodes[input.into()].dimension = Dimension::scalar();
+                        self.nodes[input.into()].shape = Dimension::scalar();
                         true
                     }
                     Operation::Add(a, b) => {
@@ -182,13 +187,13 @@ impl Context {
                         let diff_a_node = Node {
                             // propagate original Diff callsite to the new Diff node
                             callsite: input_node.callsite.clone(),
-                            dimension: self.nodes[a].dimension.clone(),
+                            shape: self.nodes[a].shape.clone(),
                             operation: Operation::Diff(a, outer_param),
                         };
                         let diff_b_node = Node {
                             // propagate original Diff callsite to the new Diff node
                             callsite: input_node.callsite.clone(),
-                            dimension: self.nodes[b].dimension.clone(),
+                            shape: self.nodes[b].shape.clone(),
                             operation: Operation::Diff(b, outer_param),
                         };
                         // propagate original Add callsite to the new Add node
@@ -205,13 +210,13 @@ impl Context {
                         let diff_a_node = Node {
                             // propagate original Diff callsite to the new Diff node
                             callsite: input_node.callsite.clone(),
-                            dimension: self.nodes[a].dimension.clone(),
+                            shape: self.nodes[a].shape.clone(),
                             operation: Operation::Diff(a, outer_param),
                         };
                         let diff_b_node = Node {
                             // propagate original Diff callsite to the new Diff node
                             callsite: input_node.callsite.clone(),
-                            dimension: self.nodes[b].dimension.clone(),
+                            shape: self.nodes[b].shape.clone(),
                             operation: Operation::Diff(b, outer_param),
                         };
                         // propagate original Mul callsite to the new Add node
@@ -221,13 +226,13 @@ impl Context {
                         let prod_a_node = Node {
                             // propagate original Mul callsite to the new Mul node
                             callsite: self.nodes[input.into()].callsite.clone(),
-                            dimension: self.nodes[a].dimension.clone(),
+                            shape: self.nodes[a].shape.clone(),
                             operation: Operation::Mul(diff_a, b),
                         };
                         let prod_b_node = Node {
                             // propagate original Mul callsite to the new Mul node
                             callsite: self.nodes[input.into()].callsite.clone(),
-                            dimension: self.nodes[b].dimension.clone(),
+                            shape: self.nodes[b].shape.clone(),
                             operation: Operation::Mul(a, diff_b),
                         };
                         let prod_a = self.nodes.insert(prod_a_node);
@@ -303,7 +308,8 @@ impl Context {
 
     pub fn compile<A: Into<NodeIdentifier> + Copy>(&mut self, a: A,
         builder: &xla::XlaBuilder,
-        client: &xla::PjRtClient) -> xla::PjRtLoadedExecutable {
+        client: &xla::PjRtClient)
+        -> Result<xla::PjRtLoadedExecutable, xla::Error> {
         // TODO: gate debug mode behind a feature flag
 
         //self.autodiff(a, usize::MAX);
@@ -323,47 +329,47 @@ impl Context {
         self.get_dependent_nodes(a, &mut dependent_nodes);
 
         // Prepare to loop through the unda compute graph and construct the XLA compute graph
-        let mut xla_op_slotmap: SlotMap<NodeIdentifier, xla::XlaOp> = SlotMap::new();
-        let mut unda_op_queue: VecDequeue<NodeIdentifier> = VecDequeue::new();
+        let mut xla_op_slotmap: SlotMap<NodeIdentifier, &xla::XlaOp> = SlotMap::with_key();
+        let mut unda_op_queue: VecDeque<NodeIdentifier> = VecDeque::new();
         let mut unda_xla_map: HashMap<NodeIdentifier, NodeIdentifier> = HashMap::new();
 
-        for (i, unda_id) in self.param_indices.enumerate() {
+        for (i, unda_id) in self.param_indices.iter().enumerate() {
 
             // this is disgusting. there is either a better way to handle this somehow
             // or we should change the datatype representing Dimension
-            let dimension = self.nodes[unda_id].dimension.sizes;
+            let dimension = self.nodes[unda_id].shape.sizes;
             let dims = match dimension.len() {
                 0 => [],
-                1 => [dimension[0] as i64],
-                2 => [dimension[0] as i64, dimension[1] as i64],
-                3 => [dimension[0] as i64, dimension[1] as i64, dimension[2] as i64],
-                4 => [dimension[0] as i64, dimension[1] as i64, dimension[2] as i64, dimension[3] as i64]
+                1 => [dimension[0]],
+                2 => [dimension[0], dimension[1]],
+                3 => [dimension[0], dimension[1], dimension[2]],
+                4 => [dimension[0], dimension[1], dimension[2], dimension[3]]
             };
 
             let param_name: String = match self.nodes[unda_id].operation {
-                Parameter(param_binding) => param_binding.name,
+                Operation::Parameter(param_binding) => param_binding.name,
                 _ => panic!("Parameter indices pointed to a non-parameter node!")
             };
 
-            let xla_id = xla_op_slotmap.insert(builder.parameter(i, f32::TY, &dims, &param_name));
+            let xla_id = xla_op_slotmap.insert(builder.parameter(i as i64, xla::f32::TY, &dims, &param_name));
             unda_xla_map.insert(unda_id, xla_id);
             unda_op_queue.push_back(unda_id);
         }
 
-        for (i, unda_id) in self.const_indices.enumerate() {
+        for (i, unda_id) in self.const_indices.iter().enumerate() {
 
             let node = self.nodes[unda_id];
 
             let const_val: Vec<f32> = match node.operation {
-                Constant(const_binding) => const_binding.value,
+                Operation::Constant(const_binding) => const_binding.value,
                 _ => panic!("Parameter indices pointed to a non-parameter node!")
             };
 
             // this might be necessary?
-            let dimension = node.dimension.sizes;
+            let dimension = node.shape.sizes;
             let xla_id = match dimension.len() {
                 0 => xla_op_slotmap.insert(builder.constant_r0(const_val[0])),
-                1 => xla_slotmap.insert(builder.constant_r1(&const_val)),
+                1 => xla_op_slotmap.insert(builder.constant_r1(&const_val)),
                 _ => panic!("Multidimensional constants not yet implemented!")
             };
             unda_xla_map.insert(unda_id, xla_id);
@@ -372,18 +378,18 @@ impl Context {
 
         while unda_op_queue.len() > 0 {
             let (unda_id, xla_id) = unda_op_queue.pop_front();
-            for dependent_op in dependent_nodes.get(unda_id) {
+            for dependent_op in dependent_nodes.get(unda_id).unwrap() {
                 match self.nodes[dependent_op].operation {
-                    Parameter(_) => panic!("Parameter found as dependent node!"),
-                    Constant(_) => panic!("Constant found as dependent node!"),
-                    Diff(_) => panic!("Diff node found during XLA conversion!"),
-                    Mul(node1, node2) => {
-                        xla_id = xla_slotmap.insert(xla_op_slotmap[unda_xla_map[node1]].mul_(&xla_op_slotmap[unda_xla_map[node2]]));
+                    Operation::Parameter(_) => panic!("Parameter found as dependent node!"),
+                    Operation::Constant(_) => panic!("Constant found as dependent node!"),
+                    Operation::Diff(_, _) => panic!("Diff node found during XLA conversion!"),
+                    Operation::Mul(node1, node2) => {
+                        xla_id = xla_op_slotmap.insert(xla_op_slotmap[unda_xla_map[node1]].mul_(&xla_op_slotmap[unda_xla_map[node2]]));
                         unda_xla_map.insert(dependent_op, xla_id);
                         unda_op_queue.push_back(dependent_op);
                     },
-                    Add(node1, node2) => {
-                        xla_id = xla_slotmap.insert(xla_op_slotmap[unda_xla_map[node1]].add_(&xla_op_slotmap[unda_xla_map[node2]]));
+                    Operation::Add(node1, node2) => {
+                        xla_id = xla_op_slotmap.insert(xla_op_slotmap[unda_xla_map[node1]].add_(&xla_op_slotmap[unda_xla_map[node2]]));
                         unda_xla_map.insert(dependent_op, xla_id);
                         unda_op_queue.push_back(dependent_op);
                     }
@@ -391,7 +397,7 @@ impl Context {
             }
         }
 
-        xla_op_slotmap[unda_xla_map[a.into()]].build()?.compile(&client)?
+        xla_op_slotmap[unda_xla_map[&a.into()]].build()?.compile(&client)
 
     }
 
@@ -399,8 +405,8 @@ impl Context {
         let input_node = &self.nodes[input.into()];
 
         match input_node.operation.clone() {
-            Operation::Constant(a) => format!("Constant {} {}", input_node.dimension, a),
-            Operation::Parameter(a) => format!("Parameter {} {}", input_node.dimension, a),
+            Operation::Constant(a) => format!("Constant {} {}", input_node.shape, a),
+            Operation::Parameter(a) => format!("Parameter {} {}", input_node.shape, a),
             Operation::Add(a, b) => format!("Add ({}) ({})", self.to_string(a), self.to_string(b)),
             Operation::Mul(a, b) => format!("Mul ({}) ({})", self.to_string(a), self.to_string(b)),
             Operation::Diff(a, b) => format!("Diff ({}) {}", self.to_string(a), self.to_string(b)),

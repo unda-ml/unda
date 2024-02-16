@@ -1204,8 +1204,7 @@ checksum = "dff9641d1cd4be8d1a070daf9e3773c5f67e78b4d9d42263020c057706765c04"
 [[package]]
 name = "xla"
 version = "0.1.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7add922915d9fce40aad5f98886fb7193a592c2e8ab1f7b2300abff4819ad334"
+source = "git+https://github.com/LaurentMazare/xla-rs#d3ad0c9eaba914c59c8e8c61155263661fb5686d"
 dependencies = [
  "bindgen",
  "cc",
