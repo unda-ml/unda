@@ -9,6 +9,8 @@ use std::fmt::{Display, Formatter, Result};
 pub struct Dimension {
     /// smallvec to avoid indirection in the common case of dimension <= 4
     // TODO: is u16 enough here? tune this
+    // 4D arrays are not enough. Batches of video are at least 5D
+    // if there has to be an upper bound on array dimensionality it should be at least 6
     pub sizes: SmallVec<[u32; 4]>,
 }
 

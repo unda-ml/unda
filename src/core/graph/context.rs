@@ -3,7 +3,8 @@ use self::operation::{
 };
 use super::*;
 use slotmap::SlotMap;
-use std::collections::HashMap;
+use xla::XlaOp;
+use std::collections::{HashMap, VecDequeue};
 
 /// XLA computation graph context.
 // TODO: rename this to something meaningful
@@ -60,12 +61,13 @@ impl Context {
         node_id
     }
 
-    pub fn parameter<S: AsRef<str>>(&mut self, name: S) -> Parameter {
+    pub fn parameter<S: AsRef<str>>(&mut self, name: S, dimension: Dimension) -> Parameter {
         let param = Parameter {
             node: self.nodes.insert(Node {
                 callsite: callsite!(1),
                 // TODO: proper dimension here
-                dimension: Dimension::new(),
+                // It makes sense to pass the dimensionality of the parameter to its constructor?
+                dimension: dimension,
                 operation: Operation::Parameter(ParameterBinding {
                     name: name.as_ref().to_string(),
                 }),
@@ -299,7 +301,9 @@ impl Context {
 
     }
 
-    pub fn compile<A: Into<NodeIdentifier> + Copy>(&mut self, a: A, builder: xla::XlaBuilder) {
+    pub fn compile<A: Into<NodeIdentifier> + Copy>(&mut self, a: A,
+        builder: &xla::XlaBuilder,
+        client: &xla::PjRtClient) -> xla::PjRtLoadedExecutable {
         // TODO: gate debug mode behind a feature flag
 
         //self.autodiff(a, usize::MAX);
@@ -314,8 +318,81 @@ impl Context {
         }
 
         // TODO: compile to XLA
+        // Get the bottom-up dependencies of the compute graph
         let mut dependent_nodes: HashMap<NodeIdentifier, Vec<NodeIdentifier>> = HashMap::new();
         self.get_dependent_nodes(a, &mut dependent_nodes);
+
+        // Prepare to loop through the unda compute graph and construct the XLA compute graph
+        let mut xla_op_slotmap: SlotMap<NodeIdentifier, xla::XlaOp> = SlotMap::new();
+        let mut unda_op_queue: VecDequeue<NodeIdentifier> = VecDequeue::new();
+        let mut unda_xla_map: HashMap<NodeIdentifier, NodeIdentifier> = HashMap::new();
+
+        for (i, unda_id) in self.param_indices.enumerate() {
+
+            // this is disgusting. there is either a better way to handle this somehow
+            // or we should change the datatype representing Dimension
+            let dimension = self.nodes[unda_id].dimension.sizes;
+            let dims = match dimension.len() {
+                0 => [],
+                1 => [dimension[0] as i64],
+                2 => [dimension[0] as i64, dimension[1] as i64],
+                3 => [dimension[0] as i64, dimension[1] as i64, dimension[2] as i64],
+                4 => [dimension[0] as i64, dimension[1] as i64, dimension[2] as i64, dimension[3] as i64]
+            };
+
+            let param_name: String = match self.nodes[unda_id].operation {
+                Parameter(param_binding) => param_binding.name,
+                _ => panic!("Parameter indices pointed to a non-parameter node!")
+            };
+
+            let xla_id = xla_op_slotmap.insert(builder.parameter(i, f32::TY, &dims, &param_name));
+            unda_xla_map.insert(unda_id, xla_id);
+            unda_op_queue.push_back(unda_id);
+        }
+
+        for (i, unda_id) in self.const_indices.enumerate() {
+
+            let node = self.nodes[unda_id];
+
+            let const_val: Vec<f32> = match node.operation {
+                Constant(const_binding) => const_binding.value,
+                _ => panic!("Parameter indices pointed to a non-parameter node!")
+            };
+
+            // this might be necessary?
+            let dimension = node.dimension.sizes;
+            let xla_id = match dimension.len() {
+                0 => xla_op_slotmap.insert(builder.constant_r0(const_val[0])),
+                1 => xla_slotmap.insert(builder.constant_r1(&const_val)),
+                _ => panic!("Multidimensional constants not yet implemented!")
+            };
+            unda_xla_map.insert(unda_id, xla_id);
+            unda_op_queue.push_back(unda_id);
+        }
+
+        while unda_op_queue.len() > 0 {
+            let (unda_id, xla_id) = unda_op_queue.pop_front();
+            for dependent_op in dependent_nodes.get(unda_id) {
+                match self.nodes[dependent_op].operation {
+                    Parameter(_) => panic!("Parameter found as dependent node!"),
+                    Constant(_) => panic!("Constant found as dependent node!"),
+                    Diff(_) => panic!("Diff node found during XLA conversion!"),
+                    Mul(node1, node2) => {
+                        xla_id = xla_slotmap.insert(xla_op_slotmap[unda_xla_map[node1]].mul_(&xla_op_slotmap[unda_xla_map[node2]]));
+                        unda_xla_map.insert(dependent_op, xla_id);
+                        unda_op_queue.push_back(dependent_op);
+                    },
+                    Add(node1, node2) => {
+                        xla_id = xla_slotmap.insert(xla_op_slotmap[unda_xla_map[node1]].add_(&xla_op_slotmap[unda_xla_map[node2]]));
+                        unda_xla_map.insert(dependent_op, xla_id);
+                        unda_op_queue.push_back(dependent_op);
+                    }
+                }
+            }
+        }
+
+        xla_op_slotmap[unda_xla_map[a.into()]].build()?.compile(&client)?
+
     }
 
     pub fn to_string<A: Into<NodeIdentifier> + Copy>(&self, input: A) -> String {
