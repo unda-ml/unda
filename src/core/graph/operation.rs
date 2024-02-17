@@ -14,6 +14,15 @@ pub struct Node {
     pub(crate) operation: Operation,
 }
 
+impl Node {
+    pub(crate) fn is_const(&self) -> bool {
+        return match self.operation{
+            Operation::Constant(_) => true,
+            _ => false
+        }
+    }
+}
+
 impl Display for Node {
     fn fmt(&self, f: &mut Formatter) -> Result {
         write!(f, "{} {}", self.operation, self.callsite)

@@ -245,19 +245,44 @@ impl Context {
     /// repeated until there are no more nodes whose inputs are all constants.
     fn foldconsts<A: Into<NodeIdentifier> + Copy>(
         &mut self,
-        _input: A,
+        input: A,
         modification_limit: usize,
     ) -> bool {
         if modification_limit == 0 {
             return true;
         }
         // TODO: implement this
-        false
+        let input_node = &self.nodes[input.into()];
+        return match input_node.operation {
+            Operation::Add(a, b) => {
+                let node_a = &self.nodes[a];
+                let node_b = &self.nodes[b];
+
+                if node_a.is_const() && node_b.is_const(){
+                    //TODO: Do replacement
+                }
+                false
+            },
+            Operation::Mul(a, b) => {
+                let node_a = &self.nodes[a];
+                let node_b = &self.nodes[b];
+
+                if node_a.is_const() && node_b.is_const(){
+                    //TODO: Do replacement
+                }
+                false
+            },
+            _ => //TODO: Not fully sure if const folding needs to happen when the 
+                 //operation isn't addition or multiplication, returnign false
+                 //if the operation isn't either of these for now, but definitely
+                 //let me know if this should be other behavior
+                 false
+        }
     }
 
     pub fn compile<A: Into<NodeIdentifier> + Copy>(&mut self, a: A) {
         // TODO: gate debug mode behind a feature flag
-
+        
         //self.autodiff(a, usize::MAX);
         println!("{}", self.to_string(a));
         while self.autodiff(a, 1) {
