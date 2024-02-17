@@ -9,7 +9,7 @@ use std::fmt::{Display, Formatter, Result};
 pub struct Shape {
     /// smallvec to avoid indirection in the common case of dimension <= 4
     // TODO: is u16 enough here? tune this
-    pub sizes: SmallVec<[i64; 4]>,
+    pub sizes: SmallVec<[u16; 4]>,
 }
 
 impl Shape {
@@ -24,14 +24,14 @@ impl Shape {
     }
 
     /// Allows syntax `Shape::of(N)`
-    pub fn of(size: i64) -> Self {
+    pub fn of(size: u16) -> Self {
         let mut sizes = SmallVec::new();
         sizes.push(size);
         Self { sizes }
     }
 
     /// Allows syntax `Shape::of(N).by(M)`
-    pub fn by(self, size: i64) -> Self {
+    pub fn by(self, size: u16) -> Self {
         let Self { mut sizes } = self;
         sizes.push(size);
         Self { sizes }

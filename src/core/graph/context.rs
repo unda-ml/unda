@@ -5,15 +5,15 @@ use self::shape::Shape;
 use super::*;
 use slotmap::SlotMap;
 use smallvec::SmallVec;
-use xla::XlaOp;
 use std::collections::{HashMap, VecDeque};
+use xla::XlaOp;
 
 /// XLA computation graph context.
 // TODO: rename this to something meaningful
 pub struct Context {
     nodes: SlotMap<NodeIdentifier, Node>,
     param_indices: Vec<NodeIdentifier>,
-    const_indices: Vec<NodeIdentifier>
+    const_indices: Vec<NodeIdentifier>,
 }
 
 impl Default for Context {
@@ -27,15 +27,15 @@ impl Context {
         Self {
             nodes: SlotMap::with_key(),
             param_indices: Vec::new(),
-            const_indices: Vec::new()
+            const_indices: Vec::new(),
         }
     }
 
     pub fn scalar(&mut self, value: f32) -> NodeIdentifier {
         let node_id = self.nodes.insert(Node {
-                callsite: callsite!(1),
-                shape: Shape::new(),
-                operation: Operation::Constant(ConstantBinding { value: vec![value] }),
+            callsite: callsite!(1),
+            shape: Shape::new(),
+            operation: Operation::Constant(ConstantBinding { value: vec![value] }),
         });
         self.const_indices.push(node_id);
         node_id
@@ -43,18 +43,23 @@ impl Context {
 
     pub fn vector<const N: usize>(&mut self, values: [f32; N]) -> NodeIdentifier {
         let node_id = self.nodes.insert(Node {
-                callsite: callsite!(1),
-                shape: Shape::of(N as i64),
-                operation: Operation::Constant(ConstantBinding { value: values.to_vec() }),
+            callsite: callsite!(1),
+            shape: Shape::of(N as u16),
+            operation: Operation::Constant(ConstantBinding {
+                value: values.to_vec(),
+            }),
         });
         self.const_indices.push(node_id);
         node_id
     }
 
-    pub fn matrix<const N: usize, const M: usize>(&mut self, values: [[f32; M]; N]) -> NodeIdentifier {
+    pub fn matrix<const N: usize, const M: usize>(
+        &mut self,
+        values: [[f32; M]; N],
+    ) -> NodeIdentifier {
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
-            shape: Shape::of(N as i64).by(M as i64),
+            shape: Shape::of(N as u16).by(M as u16),
             operation: Operation::Constant(ConstantBinding {
                 value: values.iter().flat_map(|f| f.iter()).copied().collect(),
             }),
@@ -63,13 +68,15 @@ impl Context {
         node_id
     }
 
-    pub fn parameter<S: AsRef<str>>(&mut self, name: S, shape: Vec<i64>) -> Parameter {
+    pub fn parameter<S: AsRef<str>>(&mut self, name: S, shape: SmallVec<[u16; 4]>) -> Parameter {
         let param = Parameter {
             node: self.nodes.insert(Node {
                 callsite: callsite!(1),
                 // TODO: proper shape here
                 // It makes sense to pass the shape of the parameter to its constructor
-                shape: Shape{sizes: SmallVec::from_vec(shape)},
+                shape: Shape {
+                    sizes: shape,
+                },
                 operation: Operation::Parameter(ParameterBinding {
                     name: name.as_ref().to_string(),
                 }),
@@ -267,7 +274,11 @@ impl Context {
         false
     }
 
-    fn get_dependent_nodes<A: Into<NodeIdentifier> + Copy>(&self, a: A, dep_nodes: &mut HashMap<NodeIdentifier, Vec<NodeIdentifier>>) -> Result<(), String> {
+    fn get_dependent_nodes<A: Into<NodeIdentifier> + Copy>(
+        &self,
+        a: A,
+        dep_nodes: &mut HashMap<NodeIdentifier, Vec<NodeIdentifier>>,
+    ) -> Result<(), String> {
         let this_node_id = a.into();
         let input_node = &self.nodes[this_node_id];
         match input_node.operation {
@@ -276,26 +287,26 @@ impl Context {
             Operation::Diff(_, _) => Err("Found Diff Node during XLA conversion!".to_string()),
             Operation::Add(node1, node2) => {
                 if dep_nodes.contains_key(&node1) {
-                    dep_nodes.get(&node1).unwrap().push(this_node_id);
+                    dep_nodes.entry(node1).and_modify(|v| v.push(this_node_id));
                 } else {
                     dep_nodes.insert(node1, vec![this_node_id]);
                 }
                 if dep_nodes.contains_key(&node2) {
-                    dep_nodes.get(&node2).unwrap().push(this_node_id);
+                    dep_nodes.entry(node2).and_modify(|v| v.push(this_node_id));
                 } else {
                     dep_nodes.insert(node2, vec![this_node_id]);
                 }
                 self.get_dependent_nodes(node1, dep_nodes);
                 self.get_dependent_nodes(node2, dep_nodes)
-            },
+            }
             Operation::Mul(node1, node2) => {
                 if dep_nodes.contains_key(&node1) {
-                    dep_nodes.get(&node1).unwrap().push(this_node_id);
+                    dep_nodes.entry(node1).and_modify(|v| v.push(this_node_id));
                 } else {
                     dep_nodes.insert(node1, vec![this_node_id]);
                 }
                 if dep_nodes.contains_key(&node2) {
-                    dep_nodes.get(&node2).unwrap().push(this_node_id);
+                    dep_nodes.entry(node2).and_modify(|v| v.push(this_node_id));
                 } else {
                     dep_nodes.insert(node2, vec![this_node_id]);
                 }
@@ -303,13 +314,14 @@ impl Context {
                 self.get_dependent_nodes(node2, dep_nodes)
             }
         }
-
     }
 
-    pub fn compile<A: Into<NodeIdentifier> + Copy>(&mut self, a: A,
+    pub fn compile<A: Into<NodeIdentifier> + Copy>(
+        &mut self,
+        a: A,
         builder: &xla::XlaBuilder,
-        client: &xla::PjRtClient)
-        -> Result<xla::PjRtLoadedExecutable, xla::Error> {
+        client: &xla::PjRtClient,
+    ) -> Result<xla::PjRtLoadedExecutable, xla::Error> {
         // TODO: gate debug mode behind a feature flag
 
         //self.autodiff(a, usize::MAX);
@@ -334,20 +346,25 @@ impl Context {
         let mut unda_xla_map: HashMap<NodeIdentifier, NodeIdentifier> = HashMap::new();
 
         for (i, unda_id) in self.param_indices.iter().enumerate() {
+            let node = &self.nodes[*unda_id];
 
-            let node = self.nodes[*unda_id];
+            let shape = node
+                .shape
+                .sizes
+                .iter()
+                .map(|d| *d as i64)
+                .collect::<SmallVec<[i64; 4]>>();
 
-            let shape: &[i64] = node.shape.sizes.as_slice();
-
-            let param_name: String = match node.operation {
-                Operation::Parameter(param_binding) => param_binding.name,
-                _ => panic!("Parameter indices pointed to a non-parameter node!")
+            let param_name: &String = match &node.operation {
+                Operation::Parameter(param_binding) => &param_binding.name,
+                _ => panic!("Parameter indices pointed to a non-parameter node!"),
             };
 
-            let xla_param = match builder.parameter(i as i64, xla::ElementType::F32, shape, &param_name) {
-                Ok(p) => p,
-                Err(_) => panic!("XLA builder failed to declare parameter.")
-            };
+            let xla_param =
+                match builder.parameter(i as i64, xla::ElementType::F32, &shape.as_slice(), &param_name) {
+                    Ok(p) => p,
+                    Err(_) => panic!("XLA builder failed to declare parameter."),
+                };
 
             let xla_id = xla_op_slotmap.insert(xla_param);
             unda_xla_map.insert(*unda_id, xla_id);
@@ -355,24 +372,23 @@ impl Context {
         }
 
         for (i, unda_id) in self.const_indices.iter().enumerate() {
+            let node = &self.nodes[*unda_id];
 
-            let node = self.nodes[*unda_id];
-
-            let const_val: Vec<f32> = match node.operation {
-                Operation::Constant(const_binding) => const_binding.value,
-                _ => panic!("Parameter indices pointed to a non-parameter node!")
+            let const_val: &Vec<f32> = match &node.operation {
+                Operation::Constant(const_binding) => &const_binding.value,
+                _ => panic!("Parameter indices pointed to a non-parameter node!"),
             };
 
             // this might be necessary?
-            let shape = node.shape.sizes;
-            let maybe_xla_const = match shape.len() {
+            let sizes = &node.shape.sizes;
+            let maybe_xla_const = match sizes.len() {
                 0 => builder.constant_r0(const_val[0]),
                 1 => builder.constant_r1(&const_val),
-                _ => panic!("Multidimensional constants not yet implemented!")
+                _ => panic!("Multidimensional constants not yet implemented!"),
             };
             let xla_const = match maybe_xla_const {
                 Ok(c) => c,
-                Err(_) => panic!("XLA builder failed to declare constant.")
+                Err(_) => panic!("XLA builder failed to declare constant."),
             };
             let xla_id = xla_op_slotmap.insert(xla_const);
             unda_xla_map.insert(*unda_id, xla_id);
@@ -380,47 +396,44 @@ impl Context {
         }
 
         while unda_op_queue.len() > 0 {
-
             let unda_id = unda_op_queue.pop_front().unwrap();
 
             for dependent_op in dependent_nodes.get(&unda_id).unwrap() {
-
                 match self.nodes[*dependent_op].operation {
-
                     Operation::Parameter(_) => panic!("Parameter found as dependent node!"),
                     Operation::Constant(_) => panic!("Constant found as dependent node!"),
                     Operation::Diff(_, _) => panic!("Diff node found during XLA conversion!"),
 
                     Operation::Mul(node1, node2) => {
-                        let maybe_xla_op = xla_op_slotmap[unda_xla_map[&node1]].mul_(&xla_op_slotmap[unda_xla_map[&node2]]);
+                        let maybe_xla_op = xla_op_slotmap[unda_xla_map[&node1]]
+                            .mul_(&xla_op_slotmap[unda_xla_map[&node2]]);
                         let xla_op = match maybe_xla_op {
                             Ok(x) => x,
-                            Err(_) => panic!("Failed on multiplication node.")
-                        };
-                        let xla_id = xla_op_slotmap.insert(xla_op);
-                        unda_xla_map.insert(*dependent_op, xla_id);
-                        unda_op_queue.push_back(*dependent_op);
-                    },
-
-                    Operation::Add(node1, node2) => {
-                        let maybe_xla_op = xla_op_slotmap[unda_xla_map[&node1]].add_(&xla_op_slotmap[unda_xla_map[&node2]]);
-                        let xla_op = match maybe_xla_op {
-                            Ok(x) => x,
-                            Err(_) => panic!("Failed on addition node.")
+                            Err(_) => panic!("Failed on multiplication node."),
                         };
                         let xla_id = xla_op_slotmap.insert(xla_op);
                         unda_xla_map.insert(*dependent_op, xla_id);
                         unda_op_queue.push_back(*dependent_op);
                     }
 
+                    Operation::Add(node1, node2) => {
+                        let maybe_xla_op = xla_op_slotmap[unda_xla_map[&node1]]
+                            .add_(&xla_op_slotmap[unda_xla_map[&node2]]);
+                        let xla_op = match maybe_xla_op {
+                            Ok(x) => x,
+                            Err(_) => panic!("Failed on addition node."),
+                        };
+                        let xla_id = xla_op_slotmap.insert(xla_op);
+                        unda_xla_map.insert(*dependent_op, xla_id);
+                        unda_op_queue.push_back(*dependent_op);
+                    }
                 }
-
             }
-
         }
 
-        xla_op_slotmap[unda_xla_map[&a.into()]].build()?.compile(&client)
-
+        xla_op_slotmap[unda_xla_map[&a.into()]]
+            .build()?
+            .compile(&client)
     }
 
     pub fn to_string<A: Into<NodeIdentifier> + Copy>(&self, input: A) -> String {
