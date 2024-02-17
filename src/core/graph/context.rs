@@ -74,9 +74,7 @@ impl Context {
                 callsite: callsite!(1),
                 // TODO: proper shape here
                 // It makes sense to pass the shape of the parameter to its constructor
-                shape: Shape {
-                    sizes: shape,
-                },
+                shape: Shape { sizes: shape },
                 operation: Operation::Parameter(ParameterBinding {
                     name: name.as_ref().to_string(),
                 }),
@@ -319,9 +317,9 @@ impl Context {
     pub fn compile<A: Into<NodeIdentifier> + Copy>(
         &mut self,
         a: A,
-        builder: &xla::XlaBuilder,
+        name: &str,
         client: &xla::PjRtClient,
-    ) -> Result<xla::PjRtLoadedExecutable, xla::Error> {
+    ) -> xla::PjRtLoadedExecutable {
         // TODO: gate debug mode behind a feature flag
 
         //self.autodiff(a, usize::MAX);
@@ -336,6 +334,7 @@ impl Context {
         }
 
         // TODO: compile to XLA
+        let builder = xla::XlaBuilder::new(name);
         // Get the bottom-up dependencies of the compute graph
         let mut dependent_nodes: HashMap<NodeIdentifier, Vec<NodeIdentifier>> = HashMap::new();
         self.get_dependent_nodes(a, &mut dependent_nodes);
@@ -345,6 +344,7 @@ impl Context {
         let mut unda_op_queue: VecDeque<NodeIdentifier> = VecDeque::new();
         let mut unda_xla_map: HashMap<NodeIdentifier, NodeIdentifier> = HashMap::new();
 
+        // declare parameters with the XLA builder
         for (i, unda_id) in self.param_indices.iter().enumerate() {
             let node = &self.nodes[*unda_id];
 
@@ -360,17 +360,23 @@ impl Context {
                 _ => panic!("Parameter indices pointed to a non-parameter node!"),
             };
 
-            let xla_param =
-                match builder.parameter(i as i64, xla::ElementType::F32, &shape.as_slice(), &param_name) {
-                    Ok(p) => p,
-                    Err(_) => panic!("XLA builder failed to declare parameter."),
-                };
+            let xla_param = match builder.parameter(
+                i as i64,
+                xla::ElementType::F32,
+                &shape.as_slice(),
+                &param_name,
+            ) {
+                Ok(p) => p,
+                Err(_) => panic!("XLA builder failed to declare parameter."),
+            };
 
             let xla_id = xla_op_slotmap.insert(xla_param);
             unda_xla_map.insert(*unda_id, xla_id);
             unda_op_queue.push_back(*unda_id);
         }
 
+        // Initialize constants for the XLA builder
+        // >1 dimensions not yet supported for constants
         for (i, unda_id) in self.const_indices.iter().enumerate() {
             let node = &self.nodes[*unda_id];
 
@@ -395,6 +401,9 @@ impl Context {
             unda_op_queue.push_back(*unda_id);
         }
 
+        // using the set of bottom up dependencies we constructed
+        // loop through a queue of all operations in the context
+        // and add them to the XLA context
         while unda_op_queue.len() > 0 {
             let unda_id = unda_op_queue.pop_front().unwrap();
 
@@ -431,9 +440,15 @@ impl Context {
             }
         }
 
-        xla_op_slotmap[unda_xla_map[&a.into()]]
-            .build()?
-            .compile(&client)
+        let xla_computation = match xla_op_slotmap[unda_xla_map[&a.into()]].build() {
+            Ok(c) => c,
+            Err(_) => panic!("Internal XLA build error")
+        };
+
+        match xla_computation.compile(client) {
+            Ok(e) => e,
+            Err(_) => panic!("XLA internal compile error!")
+        }
     }
 
     pub fn to_string<A: Into<NodeIdentifier> + Copy>(&self, input: A) -> String {

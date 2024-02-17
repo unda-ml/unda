@@ -3,6 +3,7 @@ mod context;
 mod shape;
 mod operation;
 use callsite::*;
+use smallvec::SmallVec;
 pub use context::*;
 pub use shape::*;
 
@@ -13,8 +14,8 @@ pub fn example() {
     let three = ctx.scalar(3.0);
     //let up = ctx.vector([0.0, 0.0, 1.0]);
     //let id3x3 = ctx.matrix([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]);
-    let x = ctx.parameter("x", &[]);
-    let y = ctx.parameter("y", &[]);
+    let x = ctx.parameter("x", SmallVec::new());
+    let y = ctx.parameter("y", SmallVec::new());
 
     let product = ctx.mul(x, three);
     let sum = ctx.add(product, y);
@@ -35,17 +36,30 @@ pub fn example() {
 
     // output XLA
     // client must be exposed to the user, it is very nice to contorl device, memory fraction, and pre-allocation
-    // but maybe builder can be hidden inside compile?
-    let client = xla::PjRtClient::gpu(0.1, True)?;
-    let builder = xla::XlaBuilder::new("test");
-    let executable = ctx.compile(sum, &builder, &client);
+    let maybe_client = xla::PjRtClient::gpu(0.1, true);
+    let client = match maybe_client {
+        Ok(c) => c,
+        Err(_) => panic!("Failed to construct XLA client!")
+    };
+    let name = "test";
+    let executable = ctx.compile(sum, &name, &client);
 
     let x_input = xla::Literal::scalar(2f32);
     let y_input = xla::Literal::scalar(3f32);
     // args are just provided in the order they are defined, would be nice to pass a dict or something
     // a pjrtbuffer is just an array slice on some device
     // but im not sure why its a nested vector instead of just one vector
-    let device_result = executable.execute(&[x_input, y_input])?;
-    let host_result = device_result[0][0].to_literal_sync();
-    println!("{}".format(host_result.to_vec::<f32>()));
+    let device_result = match executable.execute(&[x_input, y_input]) {
+        Ok(r) => r,
+        Err(_) => panic!("XLA internal execution error")
+    };
+    let host_result = match device_result[0][0].to_literal_sync() {
+        Ok(x) => x,
+        Err(_) => panic!("Error while getting literal from XLA buffer")
+    };
+    let rust_result = match host_result.to_vec::<f32>() {
+        Ok(x) => x,
+        Err(_) => panic!("Error while converting XLA literal to Rust vector")
+    };
+    println!("{:?}", rust_result);
 }
