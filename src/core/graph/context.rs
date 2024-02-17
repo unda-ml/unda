@@ -280,6 +280,22 @@ impl Context {
         }
     }
 
+    /// Traverses graph context, building a hashmap of Node -> NodeIdentifier pairs
+    /// If a duplicate Node is found, we can reference the other NodeIdentifier with
+    /// the already existant node instead of having duplicates
+    /// Note from Ro's email:
+    /// make sure to update entry for the modified node, as the hash will change. 
+    /// do not include callsite when calculating the hash.
+    /// Returns a count of how many duplicates were removed, could be used to 
+    /// debug print "removed {n} duplicates during CTE"
+    fn extract_common_terms(&mut self) -> u32 {
+        if self.nodes.len() <= 1 {
+            return 0
+        }
+        //TODO: implement it!
+        0
+    }
+
     pub fn compile<A: Into<NodeIdentifier> + Copy>(&mut self, a: A) {
         // TODO: gate debug mode behind a feature flag
         
@@ -293,6 +309,9 @@ impl Context {
         while self.foldconsts(a, 1) {
             println!("{}", self.to_string(a));
         }
+
+        let cte_count = self.extract_common_terms();
+        println!("Extracted {} common terms", cte_count);
 
         // TODO: compile to XLA
     }
