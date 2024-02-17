@@ -15,6 +15,8 @@ pub struct Node {
 }
 
 impl Node {
+    /// Identifies constant operation node for easier 
+    /// constant folding in context.rs
     pub(crate) fn is_const(&self) -> bool {
         return match self.operation{
             Operation::Constant(_) => true,
