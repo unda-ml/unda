@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use self::operation::{
     ConstantBinding, Node, NodeIdentifier, Operation, Parameter, ParameterBinding,
 };
@@ -245,19 +247,67 @@ impl Context {
     /// repeated until there are no more nodes whose inputs are all constants.
     fn foldconsts<A: Into<NodeIdentifier> + Copy>(
         &mut self,
-        _input: A,
+        input: A,
         modification_limit: usize,
     ) -> bool {
         if modification_limit == 0 {
             return true;
         }
         // TODO: implement this
-        false
+        let input_node = &self.nodes[input.into()];
+        return match input_node.operation {
+            Operation::Add(a, b) => {
+                let node_a = &self.nodes[a];
+                let node_b = &self.nodes[b];
+
+                if node_a.is_const() && node_b.is_const(){
+                    //TODO: Do replacement
+                }
+                false
+            },
+            Operation::Mul(a, b) => {
+                let node_a = &self.nodes[a];
+                let node_b = &self.nodes[b];
+
+                if node_a.is_const() && node_b.is_const(){
+                    //TODO: Do replacement
+                }
+                false
+            },
+            _ => //TODO: Not fully sure if const folding needs to happen when the 
+                 //operation isn't addition or multiplication, returnign false
+                 //if the operation isn't either of these for now, but definitely
+                 //let me know if this should be other behavior
+                 false
+        }
+    }
+
+    /// Traverses graph context, building a hashmap of Node -> NodeIdentifier pairs
+    /// If a duplicate Node is found, we can reference the other NodeIdentifier with
+    /// the already existant node instead of having duplicates
+    /// Note from Ro's email:
+    /// make sure to update entry for the modified node, as the hash will change. 
+    /// do not include callsite when calculating the hash.
+    /// Returns a count of how many duplicates were removed, could be used to 
+    /// debug print "removed {n} duplicates during CTE"
+    /// TODO: Is u8 appropriate here?
+    fn extract_common_terms(&mut self) -> u16 {
+        if self.nodes.len() <= 1 {
+            return 0
+        }
+        let mut node_map: HashMap<String, NodeIdentifier> = HashMap::new();
+        let mut sum: u16 = 0;
+        for (mut identifier, node) in self.nodes.iter_mut() {
+            //TODO: Build a HashMap out of all nodes, check if a node already 'exists'
+            //If node exists, remove all references to its NodeIdentifier and replace with the
+            //prexisting NodeIdentifier
+        }
+        sum
     }
 
     pub fn compile<A: Into<NodeIdentifier> + Copy>(&mut self, a: A) {
         // TODO: gate debug mode behind a feature flag
-
+        
         //self.autodiff(a, usize::MAX);
         println!("{}", self.to_string(a));
         while self.autodiff(a, 1) {
@@ -268,6 +318,9 @@ impl Context {
         while self.foldconsts(a, 1) {
             println!("{}", self.to_string(a));
         }
+
+        let cte_count = self.extract_common_terms();
+        println!("Extracted {} common terms", cte_count);
 
         // TODO: compile to XLA
     }
