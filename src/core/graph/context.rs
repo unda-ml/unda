@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use self::operation::{
     ConstantBinding, Node, NodeIdentifier, Operation, Parameter, ParameterBinding,
 };
@@ -288,12 +290,19 @@ impl Context {
     /// do not include callsite when calculating the hash.
     /// Returns a count of how many duplicates were removed, could be used to 
     /// debug print "removed {n} duplicates during CTE"
-    fn extract_common_terms(&mut self) -> u32 {
+    /// TODO: Is u8 appropriate here?
+    fn extract_common_terms(&mut self) -> u16 {
         if self.nodes.len() <= 1 {
             return 0
         }
-        //TODO: implement it!
-        0
+        let mut node_map: HashMap<String, NodeIdentifier> = HashMap::new();
+        let mut sum: u16 = 0;
+        for (mut identifier, node) in self.nodes.iter_mut() {
+            //TODO: Build a HashMap out of all nodes, check if a node already 'exists'
+            //If node exists, remove all references to its NodeIdentifier and replace with the
+            //prexisting NodeIdentifier
+        }
+        sum
     }
 
     pub fn compile<A: Into<NodeIdentifier> + Copy>(&mut self, a: A) {
