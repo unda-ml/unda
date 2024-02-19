@@ -70,14 +70,14 @@ pub enum InputTypes{
 
 impl LayerTypes{
     pub fn to_layer(&self, prev_rows: usize, rand: &mut Box<dyn RngCore>) -> Box<dyn Layer> {
-        return match self {
-            LayerTypes::DENSE(rows, activation, learning) => Box::new(Dense::new(prev_rows, *rows, activation.clone(), learning.clone(), rand)),
+        match self {
+            LayerTypes::DENSE(rows, activation, learning) => Box::new(Dense::new(prev_rows, *rows, *activation, *learning, rand)),
             LayerTypes::CONV(shape, kernels, stride, filters, activation, learning) => Box::new(Convolutional::new(*filters, *kernels, *shape, *stride, *activation, *learning, rand))
             //LayerTypes::CONV(shape, stride, learning) => Box::new()
-        };
+        }
     }
     pub fn get_size(&self) -> usize{
-        return match self{
+        match self{
             LayerTypes::DENSE(rows, _, _) => *rows,
             LayerTypes::CONV(shape, _, _, _, _, _) => shape.0 * shape.1,
         }
@@ -86,13 +86,13 @@ impl LayerTypes{
 
 impl InputTypes {
     pub fn to_layer(&self) -> LayerTypes {
-        return match self {
+        match self {
             InputTypes::DENSE(size) => LayerTypes::DENSE(*size, Activations::SIGMOID, 1.0),
             InputTypes::CONV(shape, kernel_shape, stride, filters) => LayerTypes::CONV(*shape, *kernel_shape, *stride, *filters, Activations::SIGMOID, 1.0)
         }
     }
     pub fn get_size(&self) -> usize {
-        return match self {
+        match self {
             InputTypes::DENSE(size) => *size,
             InputTypes::CONV(shape, _, _, _) => shape.0 * shape.1,
         }

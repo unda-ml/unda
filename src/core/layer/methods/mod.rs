@@ -15,9 +15,9 @@ mod test {
     fn test_sigmoid() {
         let sigmoid_fn = SIGMOID.function;
         let res = sigmoid_fn(0.8);
-        assert_eq!(res, 0.689974481128);
+        assert_eq!(res, 0.689_974_5);
         let res = sigmoid_fn(1.0);
-        assert_eq!(res, 0.73105857863);
+        assert_eq!(res, 0.731_058_6);
         let res = sigmoid_fn(0.0);
         assert_eq!(res, 0.5);
     }
@@ -25,9 +25,9 @@ mod test {
     fn test_sigmoid_der() {
         let sigmoid_der = SIGMOID.derivative;
         let res = sigmoid_der(0.8);
-        assert_eq!(res, 0.21390969652);
+        assert_eq!(res, 0.213_909_7);
         let res = sigmoid_der(1.0);
-        assert_eq!(res, 0.196611933241);
+        assert_eq!(res, 0.196_611_93);
         let res = sigmoid_der(0.0);
         assert_eq!(res, 0.25);
     }

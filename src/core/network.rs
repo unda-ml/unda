@@ -99,7 +99,7 @@ impl Sequential {
     ///On the backend, all this is really doing is creating a LayerTypes enum with 
     ///dummy Activation and LearningRate values
     pub fn set_input(&mut self, input: InputTypes){
-        if self.layer_sizes.len() > 0 {
+        if !self.layer_sizes.is_empty() {
             self.layer_sizes[0] = input.get_size();
             self.uncompiled_layers[0] = input.to_layer();
         } else {
@@ -245,7 +245,7 @@ impl Sequential {
         let mut res = vec![];
         let parsed = Matrix::from(data[data.len()-1].to_param_2d());
         
-        if let None = self.layers[self.layers.len()-1].get_activation() {
+        if self.layers[self.layers.len()-1].get_activation().is_none() {
             panic!("Output layer is not a dense layer");
         }
         
@@ -362,7 +362,7 @@ impl Sequential {
                 .collect::<FuturesUnordered<_>>();
             let res = all_gradients.await;
             for gradient_pair in res.iter() {
-                self.update_gradients(&gradient_pair);
+                self.update_gradients(gradient_pair);
             }
         }
         println!("]");
@@ -376,7 +376,7 @@ impl Sequential {
         let mut minibatch: Vec<(Box<dyn Input>, Vec<f32>)>;
 
         let mut iterations: usize;
-        while inputs.len() > 0 {
+        while !inputs.is_empty() {
             minibatch = vec![];
             iterations = inputs.len().min(self.batch_size);
             for _ in 0..iterations {
@@ -439,7 +439,7 @@ impl Sequential {
     }
     pub fn deserialize_unda_fmt_string(format_string: String) -> Self {
         let mut net: Self = Self::new(0);
-        let parse_triton = format_string.split("#");
+        let parse_triton = format_string.split('#');
         for layer in parse_triton {
             let new_layer: Box<dyn Layer> = SerializedLayer::from_string(layer.to_string()).from();
             net.layers.push(new_layer);

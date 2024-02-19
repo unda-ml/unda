@@ -310,7 +310,7 @@ impl Matrix{
     }
     pub fn new_empty(rows: usize, cols: usize) -> Matrix{
         Matrix{
-            rows: rows,
+            rows,
             columns: cols,
             data: vec![vec![0.0; cols]; rows]
         }
@@ -329,8 +329,8 @@ impl Matrix{
     pub fn sample_noise(&self, noise: &Range<f32>, rng: &mut Box<dyn RngCore>) -> Matrix {
         let noise_dist: Distributions = Distributions::Ranged(noise.clone());
 
-        let res = self.clone() + noise_dist.sample(rng);
-        res
+        
+        self.clone() + noise_dist.sample(rng)
     }
 
     /*pub fn add(&mut self, other: &Matrix) -> Matrix {
@@ -346,7 +346,7 @@ impl Matrix{
         res
     }*/
     pub fn dot_multiply(&mut self, other: &Matrix) -> Matrix {
-        if self.rows != other.rows || self.columns != self.columns{
+        if self.rows != other.rows || self.columns != other.columns{
             panic!("Invalid matrix dot multiplaction, mismatched dimensions:\n{}x{}\n{}x{}", 
                    self.rows, 
                    self.columns,
@@ -386,7 +386,7 @@ impl Matrix{
                      .into_iter()
                      .map(|row| row
                           .into_iter()
-                          .map(|value| function(value))
+                          .map(function)
                           .collect())
                      .collect())
     }

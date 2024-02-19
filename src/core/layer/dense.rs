@@ -177,7 +177,7 @@ impl Layer for Dense{
             self.loss += error.powi(2);
         });
 
-        self.loss = self.loss / errors_mat.to_param().len() as f32;
+        self.loss /= errors_mat.to_param().len() as f32;
 
         self.time += 1;
 
@@ -210,7 +210,7 @@ impl Layer for Dense{
     }
 
     fn get_activation(&self) -> Option<Activations> {
-        Some(self.activation_fn.clone())
+        Some(self.activation_fn)
     }
     fn shape(&self) -> (usize, usize, usize){
         (self.weights.columns, 1, 1)

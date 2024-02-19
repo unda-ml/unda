@@ -239,7 +239,7 @@ impl Matrix3D{
                             .into_iter()
                             .map(|row| row
                                  .into_iter()
-                                 .map(|value| function(value))
+                                 .map(function)
                                  .collect())
                             .collect())
                        .collect())

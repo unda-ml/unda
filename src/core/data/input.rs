@@ -116,8 +116,8 @@ impl Input for Matrix3D {
     }
 }
 
-impl Into<Box<dyn Input>> for Vec<f32> {
-    fn into(self) -> Box<dyn Input> {
-        Box::new(self)
+impl From<Vec<f32>> for Box<dyn Input> {
+    fn from(val: Vec<f32>) -> Self {
+        Box::new(val)
     }
 }

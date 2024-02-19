@@ -149,7 +149,7 @@ impl Layer for Convolutional {
         errors_mat.to_param().iter().for_each(|error| {
             self.loss += error.powi(2);
         });
-        self.loss = self.loss / errors_mat.to_param().len() as f32;
+        self.loss /= errors_mat.to_param().len() as f32;
 
         println!("{}", gradients_mat);
 
