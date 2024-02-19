@@ -1,4 +1,4 @@
-use unda::core::{data::{input::Input, matrix::Matrix, matrix3d::Matrix3D}, network::Network, layer::{layers::{LayerTypes, InputTypes}, methods::{activations::Activations, errors::ErrorTypes}}};
+use unda::core::{data::{input::Input, matrix::Matrix, matrix3d::Matrix3D}, network::Sequential, layer::{layers::{LayerTypes, InputTypes}, methods::{activations::Activations, errors::ErrorTypes}}};
 
 fn main() {
     let mut inputs: Vec<&dyn Input> = vec![];
@@ -15,7 +15,7 @@ fn main() {
 
     loop{
 
-        let mut new_net = Network::new(4);
+        let mut new_net = Sequential::new(4);
         new_net.set_log(false);
 
         new_net.set_input(InputTypes::DENSE(2));

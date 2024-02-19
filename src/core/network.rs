@@ -20,7 +20,7 @@ use std::{
 };
 
 #[derive(Serialize, Deserialize)]
-pub struct Network {
+pub struct Sequential {
     batch_size: usize,
     pub layer_sizes: Vec<usize>,
     pub loss: f32,
@@ -29,14 +29,14 @@ pub struct Network {
     uncompiled_layers: Vec<LayerTypes>,
     seed: Option<String>,
     #[serde(skip)]
-    #[serde(default = "Network::thread_rng")]
+    #[serde(default = "Sequential::thread_rng")]
     rng: Box<dyn RngCore>,
     log: bool
 }
 
 const ITERATIONS_PER_EPOCH: usize = 1000;
 
-impl Network{
+impl Sequential {
     fn thread_rng() -> Box<dyn RngCore> {
         Box::new(thread_rng())
     }
@@ -47,11 +47,11 @@ impl Network{
     ///
     ///Example:
     ///```
-    ///use unda::core::network::Network;
-    ///let mut new_net = Network::new(10);
+    ///use unda::core::network::Sequential;
+    ///let mut new_net = Sequential::new(10);
     ///```
-    pub fn new(batch_size: usize) -> Network{
-        Network{
+    pub fn new(batch_size: usize) -> Self {
+        Self {
             batch_size,
             layer_sizes: vec![],
             loss: 1.0,
@@ -82,11 +82,11 @@ impl Network{
     ///# Example
     ///
     ///```
-    ///use unda::core::network::Network;
+    ///use unda::core::network::Sequential;
     ///use unda::core::layer::layers::LayerTypes;
     ///use unda::core::layer::methods::activations::Activations;
     ///
-    ///let mut new_net = Network::new(2);
+    ///let mut new_net = Sequential::new(2);
     ///new_net.add_layer(LayerTypes::DENSE(4, Activations::SIGMOID, 0.01));
     ///```
     ///Adds a new Dense layer of 4 nodes with the sigmoid activation and a learning rate of 0.01
@@ -180,11 +180,11 @@ impl Network{
     ///# Examples
     ///
     ///```
-    ///use unda::core::network::Network;
+    ///use unda::core::network::Sequential;
     ///use unda::core::layer::layers::LayerTypes;
     ///use unda::core::layer::methods::activations::Activations;
 
-    ///let mut new_net = Network::new(4);
+    ///let mut new_net = Sequential::new(4);
     ///new_net.add_layer(LayerTypes::DENSE(2, Activations::SIGMOID, 0.01));
     ///new_net.add_layer(LayerTypes::DENSE(3, Activations::SIGMOID, 0.01));
     ///new_net.add_layer(LayerTypes::DENSE(4, Activations::SIGMOID, 0.01));
@@ -406,26 +406,26 @@ impl Network{
         let res_file = File::create(path).expect("Unable to save file");
         serde_cbor::to_writer(res_file, self).expect("Unable to write or compile cbor");
     }
-    pub fn load(path: &str) -> Network{
+    pub fn load(path: &str) -> Self{
         let mut buffer = String::new();
         let mut file = File::open(path).expect("Unable to read file :(");
 
         file.read_to_string(&mut buffer).expect("Unable to read file but even sadder :(");
 
-        let mut net: Network = from_str(&buffer).expect("Json was not formatted well >:(");
+        let mut net: Self = from_str(&buffer).expect("Json was not formatted well >:(");
         net.rng = net.get_rng();
         net
     }
-    pub fn load_cbor(path: &str) -> Result<Network, serde_cbor::Error> {
+    pub fn load_cbor(path: &str) -> Result<Self, serde_cbor::Error> {
         let file = File::open(path).expect("error loading file");
-        let mut network: Network = serde_cbor::from_reader(file)?;
+        let mut network: Self = serde_cbor::from_reader(file)?;
         network.rng = network.get_rng();
         Ok(network)
     }
     pub fn to_vec(&self) -> Result<Vec<u8>, serde_cbor::Error> {
         serde_cbor::to_vec(self)
     }
-    pub fn from_vec(data: Vec<u8>) -> Result<Network, serde_cbor::Error> {
+    pub fn from_vec(data: Vec<u8>) -> Result<Self, serde_cbor::Error> {
         serde_cbor::from_slice(&data[..])
     }
 
@@ -437,8 +437,8 @@ impl Network{
         }
         fs::write(path, str_fmt.join("#")).expect("Error writing to file");
     }
-    pub fn deserialize_unda_fmt_string(format_string: String) -> Network {
-        let mut net: Network = Network::new(0);
+    pub fn deserialize_unda_fmt_string(format_string: String) -> Self {
+        let mut net: Self = Self::new(0);
         let parse_triton = format_string.split("#");
         for layer in parse_triton {
             let new_layer: Box<dyn Layer> = SerializedLayer::from_string(layer.to_string()).from();
