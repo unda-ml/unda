@@ -346,7 +346,7 @@ impl Matrix{
         res
     }*/
     pub fn dot_multiply(&mut self, other: &Matrix) -> Matrix {
-        if self.rows != other.rows || self.columns != self.columns{
+        if self.rows != other.rows || self.columns != other.columns{
             panic!("Invalid matrix dot multiplaction, mismatched dimensions:\n{}x{}\n{}x{}", 
                    self.rows, 
                    self.columns,
