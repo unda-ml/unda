@@ -1,5 +1,5 @@
 use std::error::Error;
-use unda::core::{data::input::Input, network::Network, layer::{layers::{LayerTypes, InputTypes}, methods::{activations::Activations, errors::ErrorTypes}}};
+use unda::core::{data::input::Input, network::Sequential, layer::{layers::{LayerTypes, InputTypes}, methods::{activations::Activations, errors::ErrorTypes}}};
 
 
 use rand::seq::SliceRandom;
@@ -20,7 +20,7 @@ fn main() -> Result<(), Box<dyn Error>>{
         inputs.push(&model.0);
     });
 
-    let mut network = Network::new(128);
+    let mut network = Sequential::new(128);
     network.set_input(InputTypes::DENSE(inputs[0].to_param().len()));
     network.add_layer(LayerTypes::DENSE(16, Activations::RELU, 0.001));
     network.add_layer(LayerTypes::DENSE(1, Activations::SIGMOID, 0.001));
