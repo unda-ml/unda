@@ -5,7 +5,7 @@ use self::shape::Shape;
 use super::*;
 use slotmap::SlotMap;
 use smallvec::SmallVec;
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use xla::XlaOp;
 
 /// XLA computation graph context.
@@ -337,15 +337,21 @@ impl Context {
         let builder = xla::XlaBuilder::new(name);
         // Get the bottom-up dependencies of the compute graph
         let mut dependent_nodes: HashMap<NodeIdentifier, Vec<NodeIdentifier>> = HashMap::new();
-        self.get_dependent_nodes(a, &mut dependent_nodes);
+        let dep_node_success = self.get_dependent_nodes(a, &mut dependent_nodes);
+        match dep_node_success {
+            Ok(()) => {}
+            Err(s) => panic!("{}", s),
+        };
 
         // Prepare to loop through the unda compute graph and construct the XLA compute graph
         let mut xla_op_slotmap: SlotMap<NodeIdentifier, xla::XlaOp> = SlotMap::with_key();
         let mut unda_op_queue: VecDeque<NodeIdentifier> = VecDeque::new();
         let mut unda_xla_map: HashMap<NodeIdentifier, NodeIdentifier> = HashMap::new();
+        let mut covered_ops: HashSet<NodeIdentifier> = HashSet::new();
 
         // declare parameters with the XLA builder
         for (i, unda_id) in self.param_indices.iter().enumerate() {
+            println!("Found Parameter node.");
             let node = &self.nodes[*unda_id];
 
             let shape = node
@@ -377,12 +383,13 @@ impl Context {
 
         // Initialize constants for the XLA builder
         // >1 dimensions not yet supported for constants
-        for (i, unda_id) in self.const_indices.iter().enumerate() {
+        for unda_id in self.const_indices.iter() {
+            println!("Found Constant node.");
             let node = &self.nodes[*unda_id];
 
             let const_val: &Vec<f32> = match &node.operation {
                 Operation::Constant(const_binding) => &const_binding.value,
-                _ => panic!("Parameter indices pointed to a non-parameter node!"),
+                _ => panic!("Constant indices pointed to a non-constant node!"),
             };
 
             // this might be necessary?
@@ -407,34 +414,59 @@ impl Context {
         while unda_op_queue.len() > 0 {
             let unda_id = unda_op_queue.pop_front().unwrap();
 
-            for dependent_op in dependent_nodes.get(&unda_id).unwrap() {
-                match self.nodes[*dependent_op].operation {
-                    Operation::Parameter(_) => panic!("Parameter found as dependent node!"),
-                    Operation::Constant(_) => panic!("Constant found as dependent node!"),
-                    Operation::Diff(_, _) => panic!("Diff node found during XLA conversion!"),
+            match dependent_nodes.get(&unda_id) {
+                None => continue,
+                Some(dependent_ops) => {
+                    for dependent_op in dependent_ops {
+                        if !covered_ops.contains(dependent_op) {
+                            match self.nodes[*dependent_op].operation {
+                                Operation::Parameter(_) => {
+                                    panic!("Parameter found as dependent node!")
+                                }
+                                Operation::Constant(_) => {
+                                    panic!("Constant found as dependent node!")
+                                }
+                                Operation::Diff(_, _) => {
+                                    panic!("Diff node found during XLA conversion!")
+                                }
 
-                    Operation::Mul(node1, node2) => {
-                        let maybe_xla_op = xla_op_slotmap[unda_xla_map[&node1]]
-                            .mul_(&xla_op_slotmap[unda_xla_map[&node2]]);
-                        let xla_op = match maybe_xla_op {
-                            Ok(x) => x,
-                            Err(_) => panic!("Failed on multiplication node."),
-                        };
-                        let xla_id = xla_op_slotmap.insert(xla_op);
-                        unda_xla_map.insert(*dependent_op, xla_id);
-                        unda_op_queue.push_back(*dependent_op);
-                    }
+                                Operation::Mul(node1, node2) => {
+                                    if xla_op_slotmap.contains_key(unda_xla_map[&node1])
+                                        && xla_op_slotmap.contains_key(unda_xla_map[&node1])
+                                    {
+                                        println!("Found Mul node!");
+                                        let maybe_xla_op = xla_op_slotmap[unda_xla_map[&node1]]
+                                            .mul_(&xla_op_slotmap[unda_xla_map[&node2]]);
+                                        let xla_op = match maybe_xla_op {
+                                            Ok(x) => x,
+                                            Err(_) => panic!("Failed on multiplication node."),
+                                        };
+                                        let xla_id = xla_op_slotmap.insert(xla_op);
+                                        unda_xla_map.insert(*dependent_op, xla_id);
+                                        unda_op_queue.push_back(*dependent_op);
+                                        covered_ops.insert(*dependent_op);
+                                    }
+                                }
 
-                    Operation::Add(node1, node2) => {
-                        let maybe_xla_op = xla_op_slotmap[unda_xla_map[&node1]]
-                            .add_(&xla_op_slotmap[unda_xla_map[&node2]]);
-                        let xla_op = match maybe_xla_op {
-                            Ok(x) => x,
-                            Err(_) => panic!("Failed on addition node."),
-                        };
-                        let xla_id = xla_op_slotmap.insert(xla_op);
-                        unda_xla_map.insert(*dependent_op, xla_id);
-                        unda_op_queue.push_back(*dependent_op);
+                                Operation::Add(node1, node2) => {
+                                    if xla_op_slotmap.contains_key(unda_xla_map[&node1])
+                                        && xla_op_slotmap.contains_key(unda_xla_map[&node1])
+                                    {
+                                        println!("Found Add node!");
+                                        let maybe_xla_op = xla_op_slotmap[unda_xla_map[&node1]]
+                                            .add_(&xla_op_slotmap[unda_xla_map[&node2]]);
+                                        let xla_op = match maybe_xla_op {
+                                            Ok(x) => x,
+                                            Err(_) => panic!("Failed on addition node."),
+                                        };
+                                        let xla_id = xla_op_slotmap.insert(xla_op);
+                                        unda_xla_map.insert(*dependent_op, xla_id);
+                                        unda_op_queue.push_back(*dependent_op);
+                                        covered_ops.insert(*dependent_op);
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -442,12 +474,14 @@ impl Context {
 
         let xla_computation = match xla_op_slotmap[unda_xla_map[&a.into()]].build() {
             Ok(c) => c,
-            Err(_) => panic!("Internal XLA build error")
+            Err(_) => panic!("XLA internal build error"),
         };
 
         match xla_computation.compile(client) {
             Ok(e) => e,
-            Err(_) => panic!("XLA internal compile error!")
+            Err(e) => {
+                panic!("XLA compilation error: {}", e);
+            }
         }
     }
 

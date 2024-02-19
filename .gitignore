@@ -3,3 +3,4 @@
 *.idx3-ubyte
 *.Identifier
 /src/main.rs
+.vscode

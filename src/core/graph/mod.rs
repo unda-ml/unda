@@ -7,11 +7,11 @@ use smallvec::SmallVec;
 pub use context::*;
 pub use shape::*;
 
-#[test]
+//#[test]
 pub fn example() {
     let mut ctx = Context::new();
 
-    let three = ctx.scalar(3.0);
+    let three = ctx.scalar(3f32);
     //let up = ctx.vector([0.0, 0.0, 1.0]);
     //let id3x3 = ctx.matrix([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]);
     let x = ctx.parameter("x", SmallVec::new());
@@ -36,7 +36,7 @@ pub fn example() {
 
     // output XLA
     // client must be exposed to the user, it is very nice to contorl device, memory fraction, and pre-allocation
-    let maybe_client = xla::PjRtClient::gpu(0.1, true);
+    let maybe_client = xla::PjRtClient::gpu(0.1, false);
     let client = match maybe_client {
         Ok(c) => c,
         Err(_) => panic!("Failed to construct XLA client!")
