@@ -2,7 +2,7 @@ use unda::{core::{data::{input::Input, matrix::Matrix}, network::Sequential, lay
 
 fn main() {
     let mut inputs: Vec<&dyn Input> = vec![];
-    let outputs: Vec<Vec<f32>>;
+    
     let mut true_outputs: Vec<Vec<f32>> = vec![];
 
     let inputs_undyn: Vec<Matrix>;
@@ -12,7 +12,7 @@ fn main() {
     (inputs_undyn, outputs_uncat) = MnistEntry::generate_mnist();
     println!("Done Generating MNIST");
 
-    outputs = to_categorical(outputs_uncat);
+    let outputs: Vec<Vec<f32>> = to_categorical(outputs_uncat);
     for i in 0..600{
         inputs.push(&inputs_undyn[i]);
         true_outputs.push(outputs[i].clone());

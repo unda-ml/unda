@@ -21,13 +21,13 @@ pub enum Activations{
 }
 impl Activations{
     fn get_function(&self) -> Option<Activation>{
-        return match self{
+        match self{
             Activations::SIGMOID => Some(SIGMOID),
             Activations::TANH => Some(TANH),
             Activations::RELU => Some(RELU),
             Activations::LEAKYRELU => Some(LEAKY_RELU),
             _ => None
-        };
+        }
     }
     pub fn apply_fn(&self, mut data: Matrix) -> Matrix {
         match self{
@@ -45,16 +45,16 @@ impl Activations{
                 //println!("\n\n{:?}", data.to_param());
                 let res = Matrix::from_sized(exp_logits.iter().map(|x| x / sum_exp).collect::<Vec<f32>>(), data.rows, data.columns);
                 //println!("{}", res);
-                return res;
+                res
             },
             Activations::ELU(alpha) => {
                 let data_elu = data.to_param()
                     .iter()
                     .map(|&x| elu(*alpha, x)).collect();
-                return Matrix::from_sized(data_elu, data.rows, data.columns);
+                Matrix::from_sized(data_elu, data.rows, data.columns)
             }
 
-        };
+        }
     }
     pub fn apply_derivative(&self, mut data: Matrix) -> Matrix {
         match self{
@@ -68,41 +68,41 @@ impl Activations{
                     //.map(|(s,ds)| s * ds)
                     //.collect();
                 //println!("{:?}", data.to_param());
-                let res = Matrix::from_sized(vec![1.0; data.rows * data.columns], data.rows, data.columns);
+                
                 //println!("{}", res);
-                return res;
+                Matrix::from_sized(vec![1.0; data.rows * data.columns], data.rows, data.columns)
             },
             Activations::ELU(alpha) => {
                 let data_elu = data.to_param()
                     .iter()
                     .map(|&x| d_elu(*alpha, x)).collect();
-                return Matrix::from_sized(data_elu, data.rows, data.columns);
+                Matrix::from_sized(data_elu, data.rows, data.columns)
             }
-        };
+        }
     }
 }
 
 
 pub(super) const SIGMOID: Activation = Activation {
     function: &|x| {
-        let res = 1.0 / (1.0 + E.powf(-x));
-        return res;
+        
+        1.0 / (1.0 + E.powf(-x))
     },
     derivative: &|x| (1.0 / (1.0 + E.powf(-x))) * (1.0 - (1.0 / (1.0 + E.powf(-x))))
 };
 
 pub(super) const TANH: Activation = Activation {
     function: &|x| {
-        let res = f32::tanh(x);
-        return res;
+        
+        f32::tanh(x)
     },
     derivative: &|x| 1.0 - f32::tanh(x).powf(2.0)
 };
 
 pub(super) const RELU: Activation = Activation {
     function: &|x| {
-        let res = x.max(0.0);
-        return res;
+        
+        x.max(0.0)
     },
     derivative: &|x| {
         !x.is_negative() as i32 as f32
@@ -114,13 +114,13 @@ pub(super) const LEAKY_RELU: Activation = Activation{
         if x > 0.0{
             return x;
         }
-        return 0.001 * x;
+        0.001 * x
     },
     derivative: &|x| {
         if x.max(0.0) == x{
             return 1.0
         }
-        return 0.001;
+        0.001
     }
 };
 
@@ -128,7 +128,7 @@ fn d_elu(alpha: f32, x: f32) -> f32 {
      if x > 0.0 {
         return 1.0;
     }
-    return alpha * E.powf(x);
+    alpha * E.powf(x)
    
 }
 
@@ -136,7 +136,7 @@ fn elu(alpha: f32, x: f32) -> f32 {
     if x.max(0.0) == x{
         return x;
     }
-    return alpha * (E.powf(x) - 1.0);
+    alpha * (E.powf(x) - 1.0)
 }
 
 

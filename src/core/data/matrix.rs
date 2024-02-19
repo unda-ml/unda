@@ -310,7 +310,7 @@ impl Matrix{
     }
     pub fn new_empty(rows: usize, cols: usize) -> Matrix{
         Matrix{
-            rows: rows,
+            rows,
             columns: cols,
             data: vec![vec![0.0; cols]; rows]
         }
@@ -329,8 +329,8 @@ impl Matrix{
     pub fn sample_noise(&self, noise: &Range<f32>, rng: &mut Box<dyn RngCore>) -> Matrix {
         let noise_dist: Distributions = Distributions::Ranged(noise.clone());
 
-        let res = self.clone() + noise_dist.sample(rng);
-        res
+        
+        self.clone() + noise_dist.sample(rng)
     }
 
     /*pub fn add(&mut self, other: &Matrix) -> Matrix {
@@ -386,7 +386,7 @@ impl Matrix{
                      .into_iter()
                      .map(|row| row
                           .into_iter()
-                          .map(|value| function(value))
+                          .map(function)
                           .collect())
                      .collect())
     }
