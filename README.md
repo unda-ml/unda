@@ -12,6 +12,14 @@ Unda aims to bring the future of deep learning to the world of rust. With dynami
 
 ## Installation
 
+1) Identify the [latest compatible versions of CUDA and cuDNN](https://www.tensorflow.org/install/source#gpu). Adapt [these instructions](https://medium.com/@gokul.a.krishnan/how-to-install-cuda-cudnn-and-tensorflow-on-ubuntu-22-04-2023-20fdfdb96907) to install the two version of CUDA and cuDNN together.
+
+2) Install `clang` and `libclang1`.
+
+3) Download and extract [xla_extension](https://github.com/elixir-nx/xla/releases/tag/v0.6.0).
+
+4) Make sure `LD_LIBRARY_PATH` includes `/path/to/xla_extension/lib`, and make sure the relevant CUDA paths are also visible to the system.
+
 Use the package manager [cargo](https://crates.io/) to add [unda](https://crates.io/crates/unda) to your rust project.
 
 ```bash
@@ -75,9 +83,9 @@ Here are google drive links to the necessary ubyte files
 
 ## Implications for the future of ML
 
-Using the built in **Input** trait, practically any data type can be mapped to an input for a neural network without the need for cutting corners, and the inner trait for layers allows for a plug and play style to neural network development. Currently, Unda has full support for Dense layers, Adam Optimization for Backprop, Activation functions (Sigmoid, TanH, ReLU and LeakyReLU), and even loss analysis per model and per layer. 
+Using the built in **Input** trait, practically any data type can be mapped to an input for a neural network without the need for cutting corners, and the inner trait for layers allows for a plug and play style to neural network development. Currently, Unda has full support for Dense layers, Adam Optimization for Backprop, Activation functions (Sigmoid, TanH, ReLU and LeakyReLU), and even loss analysis per model and per layer.
 
-Gradient descent currently can happen both syncronously as stochastic gradient descent or asynchronously through minibatch gradient descent. 
+Gradient descent currently can happen both syncronously as stochastic gradient descent or asynchronously through minibatch gradient descent.
 
 ## TODO
 

@@ -36,7 +36,7 @@ pub fn example() {
 
     // output XLA
     // client must be exposed to the user, it is very nice to contorl device, memory fraction, and pre-allocation
-    let maybe_client = xla::PjRtClient::gpu(0.1, false);
+    let maybe_client = xla::PjRtClient::gpu(0.7, false);
     let client = match maybe_client {
         Ok(c) => c,
         Err(_) => panic!("Failed to construct XLA client!")
