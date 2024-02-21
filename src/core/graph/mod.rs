@@ -39,7 +39,7 @@ pub fn example() {
     let maybe_client = xla::PjRtClient::gpu(0.7, false);
     let client = match maybe_client {
         Ok(c) => c,
-        Err(_) => panic!("Failed to construct XLA client!")
+        Err(e) => panic!("Failed to construct XLA client!\n{}", e)
     };
     let name = "test";
     let executable = ctx.compile(sum, &name, &client);

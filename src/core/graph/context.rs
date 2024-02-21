@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use self::operation::{
     ConstantBinding, Node, NodeIdentifier, Operation, Parameter, ParameterBinding,
 };
