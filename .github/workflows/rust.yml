@@ -19,7 +19,7 @@ jobs:
     - name: Install XLA
       run: wget https://github.com/elixir-nx/xla/releases/download/v0.6.0/xla_extension-x86_64-linux-gnu-cpu.tar.gz && tar -xzvf xla_extension-x86_64-linux-gnu-cpu.tar.gz
     - name: export env_vars
-      run: export XLA_EXTENSION_DIR="xla/xla_extension" && export LD_LIBRARY_PATH="xla/xla_extension/lib"
+      run: export XLA_EXTENSION_DIR="xla_extension" && export LD_LIBRARY_PATH="xla_extension/lib"
     - name: Build
       run: cargo build --verbose
     - name: Run tests
