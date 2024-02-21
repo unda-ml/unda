@@ -8,6 +8,8 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  XLA_EXTENSION_DIR: "/home/runner/work/unda/xla_extension"
+  LD_LIBRARY_PATH: "/home/runner/work/unda/xla_extension"
 
 jobs:
   build:
@@ -19,6 +21,6 @@ jobs:
     - name: Install XLA
       run: wget https://github.com/elixir-nx/xla/releases/download/v0.6.0/xla_extension-x86_64-linux-gnu-cpu.tar.gz && tar -xzvf xla_extension-x86_64-linux-gnu-cpu.tar.gz
     - name: Build
-      run: export XLA_EXTENSION_DIR="/home/runner/work/unda/xla_extension" && export LD_LIBRARY_PATH="/home/runner/work/unda/xla_extension/lib" && cargo build --verbose
+      run: cargo build --verbose
     - name: Run tests
       run: cargo test --verbose
