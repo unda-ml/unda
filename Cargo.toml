@@ -32,6 +32,7 @@ backtrace = "0.3"
 smallvec = "1.13"
 strum = "0.26"
 strum_macros = "0.26"
+xla = { git = "https://github.com/Ebanflo42/xla-rs", version = "0.1.6" , branch = "dev" }
 
 [features]
 default = ["util"]
