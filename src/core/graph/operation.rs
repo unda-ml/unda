@@ -12,10 +12,12 @@ pub struct Node {
     pub(crate) shape: Shape,
     /// the operation this node performs
     pub(crate) operation: Operation,
+    //// output type of the operation
+    pub(crate) dtype: xla::ElementType
 }
 
 impl Node {
-    /// Identifies constant operation node for easier 
+    /// Identifies constant operation node for easier
     /// constant folding in context.rs
     pub(crate) fn is_const(&self) -> bool {
         return match self.operation{
@@ -46,7 +48,7 @@ impl Display for ParameterBinding {
 #[derive(Debug, Clone)]
 pub struct ConstantBinding {
     /// unstructured float data. only makes sense combined with Node::dimension
-    pub(crate) value: Vec<f32>,
+    pub(crate) value: xla::Literal,
 }
 
 impl Display for ConstantBinding {
@@ -55,7 +57,7 @@ impl Display for ConstantBinding {
             write!(f, "0")?;
             return Ok(());
         }
-        write!(f, "{}", self.value[0])?;
+        write!(f, "{}", self.value.get_first_element())?;
         // TODO: proper matrix printing?
         if self.value.len() > 1 {
             write!(f, "..")?;

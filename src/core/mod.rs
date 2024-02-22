@@ -3,6 +3,7 @@ pub mod graph;
 pub mod layer;
 pub mod network;
 pub mod serialize;
+pub mod error;
 
 #[cfg(test)]
 mod test {

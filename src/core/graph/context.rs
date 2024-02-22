@@ -1,3 +1,5 @@
+use crate::core::error::Result;
+use crate::core::error::Error::*;
 use self::operation::{
     ConstantBinding, Node, NodeIdentifier, Operation, Parameter, ParameterBinding,
 };
@@ -6,7 +8,8 @@ use super::*;
 use slotmap::SlotMap;
 use smallvec::SmallVec;
 use std::collections::{HashMap, HashSet, VecDeque};
-use xla::XlaOp;
+use std::path::Path;
+use xla::{FromRawBytes, XlaOp};
 
 /// XLA computation graph context.
 // TODO: rename this to something meaningful
@@ -31,29 +34,31 @@ impl Context {
         }
     }
 
-    pub fn scalar(&mut self, value: f32) -> NodeIdentifier {
+    pub fn scalar<T: xla::ArrayElement + xla::NativeType>(&mut self, value: T) -> NodeIdentifier {
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: Shape::new(),
-            operation: Operation::Constant(ConstantBinding { value: vec![value] }),
+            operation: Operation::Constant(ConstantBinding { value: xla::Literal::scalar(value) }),
+            dtype: T::TY
         });
         self.const_indices.push(node_id);
         node_id
     }
 
-    pub fn vector<const N: usize>(&mut self, values: [f32; N]) -> NodeIdentifier {
+    pub fn vector<T: xla::ArrayElement + xla::NativeType, const N: usize>(&mut self, values: [T; N]) -> NodeIdentifier {
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: Shape::of(N as u16),
             operation: Operation::Constant(ConstantBinding {
-                value: values.to_vec(),
+                value: xla::Literal::vec1(&values),
             }),
+            dtype: T::TY
         });
         self.const_indices.push(node_id);
         node_id
     }
 
-    pub fn matrix<const N: usize, const M: usize>(
+    pub fn matrix<T: xla::ArrayElement + xla::NativeType, const N: usize, const M: usize>(
         &mut self,
         values: [[f32; M]; N],
     ) -> NodeIdentifier {
@@ -61,14 +66,45 @@ impl Context {
             callsite: callsite!(1),
             shape: Shape::of(N as u16).by(M as u16),
             operation: Operation::Constant(ConstantBinding {
-                value: values.iter().flat_map(|f| f.iter()).copied().collect(),
+                value: values.iter().flat_map(|f| f.iter().map(|&f| xla::Literal::from(f))).collect(),
             }),
+            dtype: T::TY
         });
         self.const_indices.push(node_id);
         node_id
     }
 
-    pub fn parameter<S: AsRef<str>>(&mut self, name: S, shape: SmallVec<[u16; 4]>) -> Parameter {
+    pub fn const_from_npy<T: AsRef<Path>>(
+        &mut self,
+        path: T) -> Result<NodeIdentifier> {
+        match xla::Literal::read_npy(path, &()) {
+            xla::Result::Err(e) => Err(XlaError { err: e }),
+            xla::Result::Ok(l) => {
+                match l.shape() {
+                    Err(e) => Err(XlaError { err: e }),
+                    Ok(s) => {
+                        match l.ty() {
+                            Err(e) => Err(XlaError { err: e }),
+                            Ok(t) => {
+                                let node_id = self.nodes.insert(Node {
+                                    callsite: callsite!(1),
+                                    shape: s,
+                                    operation: Operation::Constant(ConstantBinding {
+                                        value: l
+                                    }),
+                                    dtype: t
+                                });
+                                self.const_indices.push(node_id);
+                                Ok(node_id)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn parameter<S: AsRef<str>>(&mut self, name: S, shape: SmallVec<[u16; 4]>, dtype: xla::ElementType) -> Parameter {
         let param = Parameter {
             node: self.nodes.insert(Node {
                 callsite: callsite!(1),
@@ -78,6 +114,7 @@ impl Context {
                 operation: Operation::Parameter(ParameterBinding {
                     name: name.as_ref().to_string(),
                 }),
+                dtype: dtype
             }),
         };
         self.param_indices.push(param.node);
@@ -90,6 +127,7 @@ impl Context {
             // what should go here?
             shape: Shape::new(),
             operation: Operation::Diff(node, with_respect_to),
+            dtype: self.nodes[with_respect_to.node].dtype
         })
     }
 
@@ -99,46 +137,56 @@ impl Context {
         &mut self,
         a: A,
         b: B,
-    ) -> NodeIdentifier {
+    ) -> Result<NodeIdentifier> {
         let node_a = &self.nodes[a.into()];
         let node_b = &self.nodes[b.into()];
-        let node = Node {
-            callsite: callsite!(1),
-            // need to implement automatic shape broadcasting
-            shape: Shape::new(),
-            operation: Operation::Add(a.into(), b.into()),
-        };
-        // TODO: special case adding const zero
-        if node_a.shape != node_b.shape {
-            eprintln!(
-                "Shape mismatch {} vs {} at: {}",
-                node_a.shape, node_b.shape, node
-            );
+
+        if node_a.dtype != node_b.dtype {
+            Err(TypeError{ type1: node_a.dtype, type2: node_b.dtype })
+        } else {
+            let node = Node {
+                callsite: callsite!(1),
+                // need to implement automatic shape broadcasting
+                shape: Shape::new(),
+                operation: Operation::Add(a.into(), b.into()),
+                dtype: node_a.dtype
+            };
+            // TODO: special case adding const zero
+            // TODO: support broadcastable shapes
+            if node_a.shape.sizes.len() > 0 && node_b.shape.sizes.len() > 0 && node_a.shape != node_b.shape {
+                Err(ShapeError{ shape1: node_a.shape, shape2: node_b.shape })
+            } else {
+                Ok(self.nodes.insert(node))
+            }
         }
-        self.nodes.insert(node)
     }
 
     pub fn mul<A: Into<NodeIdentifier> + Copy, B: Into<NodeIdentifier> + Copy>(
         &mut self,
         a: A,
         b: B,
-    ) -> NodeIdentifier {
+    ) -> Result<NodeIdentifier> {
         let node_a = &self.nodes[a.into()];
         let node_b = &self.nodes[b.into()];
-        let node = Node {
-            callsite: callsite!(1),
-            // need to implement automatic shape broadcasting
-            shape: Shape::new(),
-            operation: Operation::Mul(a.into(), b.into()),
-        };
-        // TODO: check shapeal compatibility correctly
-        if node_a.shape != node_b.shape {
-            eprintln!(
-                "Shape mismatch {} vs {} at: {}",
-                node_a.shape, node_b.shape, node
-            );
+
+        if node_a.dtype != node_b.dtype {
+            Err(TypeError{ type1: node_a.dtype, type2: node_b.dtype })
+        } else {
+            let node = Node {
+                callsite: callsite!(1),
+                // need to implement automatic shape broadcasting
+                shape: Shape::new(),
+                operation: Operation::Add(a.into(), b.into()),
+                dtype: node_a.dtype
+            };
+            // TODO: special case adding const zero
+            // TODO: support broadcastable shapes
+            if node_a.shape.sizes.len() > 0 && node_b.shape.sizes.len() > 0 && node_a.shape != node_b.shape {
+                Err(ShapeError{ shape1: node_a.shape, shape2: node_b.shape })
+            } else {
+                Ok(self.nodes.insert(node))
+            }
         }
-        self.nodes.insert(node)
     }
 
     /// expand all Diff nodes into analytic derivatives
@@ -194,12 +242,14 @@ impl Context {
                             callsite: input_node.callsite.clone(),
                             shape: self.nodes[a].shape.clone(),
                             operation: Operation::Diff(a, outer_param),
+                            dtype: self.nodes[a].dtype
                         };
                         let diff_b_node = Node {
                             // propagate original Diff callsite to the new Diff node
                             callsite: input_node.callsite.clone(),
                             shape: self.nodes[b].shape.clone(),
                             operation: Operation::Diff(b, outer_param),
+                            dtype: self.nodes[b].dtype
                         };
                         // propagate original Add callsite to the new Add node
                         self.nodes[input.into()].callsite = outer_node.callsite.clone();
@@ -217,12 +267,14 @@ impl Context {
                             callsite: input_node.callsite.clone(),
                             shape: self.nodes[a].shape.clone(),
                             operation: Operation::Diff(a, outer_param),
+                            dtype: self.nodes[a].dtype
                         };
                         let diff_b_node = Node {
                             // propagate original Diff callsite to the new Diff node
                             callsite: input_node.callsite.clone(),
                             shape: self.nodes[b].shape.clone(),
                             operation: Operation::Diff(b, outer_param),
+                            dtype: self.nodes[b].dtype
                         };
                         // propagate original Mul callsite to the new Add node
                         self.nodes[input.into()].callsite = outer_node.callsite.clone();
@@ -233,12 +285,14 @@ impl Context {
                             callsite: self.nodes[input.into()].callsite.clone(),
                             shape: self.nodes[a].shape.clone(),
                             operation: Operation::Mul(diff_a, b),
+                            dtype: self.nodes[a].dtype
                         };
                         let prod_b_node = Node {
                             // propagate original Mul callsite to the new Mul node
                             callsite: self.nodes[input.into()].callsite.clone(),
                             shape: self.nodes[b].shape.clone(),
                             operation: Operation::Mul(a, diff_b),
+                            dtype: self.nodes[b].dtype
                         };
                         let prod_a = self.nodes.insert(prod_a_node);
                         let prod_b = self.nodes.insert(prod_b_node);
@@ -289,7 +343,7 @@ impl Context {
                 }
                 false
             },
-            _ => //TODO: Not fully sure if const folding needs to happen when the 
+            _ => //TODO: Not fully sure if const folding needs to happen when the
                  //operation isn't addition or multiplication, returnign false
                  //if the operation isn't either of these for now, but definitely
                  //let me know if this should be other behavior
@@ -301,9 +355,9 @@ impl Context {
     /// If a duplicate Node is found, we can reference the other NodeIdentifier with
     /// the already existant node instead of having duplicates
     /// Note from Ro's email:
-    /// make sure to update entry for the modified node, as the hash will change. 
+    /// make sure to update entry for the modified node, as the hash will change.
     /// do not include callsite when calculating the hash.
-    /// Returns a count of how many duplicates were removed, could be used to 
+    /// Returns a count of how many duplicates were removed, could be used to
     /// debug print "removed {n} duplicates during CTE"
     /// TODO: Is u8 appropriate here?
     fn extract_common_terms(&mut self) -> u16 {
@@ -324,13 +378,13 @@ impl Context {
         &self,
         a: A,
         dep_nodes: &mut HashMap<NodeIdentifier, Vec<NodeIdentifier>>,
-    ) -> Result<(), String> {
+    ) -> Result<()> {
         let this_node_id = a.into();
         let input_node = &self.nodes[this_node_id];
         match input_node.operation {
             Operation::Constant(_) => Ok(()),
             Operation::Parameter(_) => Ok(()),
-            Operation::Diff(_, _) => Err("Found Diff Node during XLA conversion!".to_string()),
+            Operation::Diff(_, _) => Err(GraphError{ msg: "Found Diff Node during XLA conversion!".to_string() }),
             Operation::Add(node1, node2) => {
                 if dep_nodes.contains_key(&node1) {
                     dep_nodes.entry(node1).and_modify(|v| v.push(this_node_id));
@@ -367,9 +421,9 @@ impl Context {
         a: A,
         name: &str,
         client: &xla::PjRtClient,
-    ) -> xla::PjRtLoadedExecutable {
+    ) -> Result<xla::PjRtLoadedExecutable> {
         // TODO: gate debug mode behind a feature flag
-        
+
         //self.autodiff(a, usize::MAX);
         println!("{}", self.to_string(a));
         while self.autodiff(a, 1) {
@@ -388,11 +442,7 @@ impl Context {
         let builder = xla::XlaBuilder::new(name);
         // Get the bottom-up dependencies of the compute graph
         let mut dependent_nodes: HashMap<NodeIdentifier, Vec<NodeIdentifier>> = HashMap::new();
-        let dep_node_success = self.get_dependent_nodes(a, &mut dependent_nodes);
-        match dep_node_success {
-            Ok(()) => {}
-            Err(s) => panic!("{}", s),
-        };
+        self.get_dependent_nodes(a, &mut dependent_nodes)?;
 
         // Prepare to loop through the unda compute graph and construct the XLA compute graph
         let mut xla_op_slotmap: SlotMap<NodeIdentifier, xla::XlaOp> = SlotMap::with_key();
