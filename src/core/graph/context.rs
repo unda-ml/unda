@@ -66,7 +66,7 @@ impl Context {
             callsite: callsite!(1),
             shape: Shape::of(N as u16),
             operation: Operation::Constant(ConstantBinding {
-                value: xla::Literal::vec1(&values),
+                value: value,
             }),
             dtype: T::TY
         });
@@ -79,7 +79,8 @@ impl Context {
         values: [[T; M]; N],
         dtype: xla::ElementType
     ) -> Result<NodeIdentifier> {
-        let slice = values.iter().flat_map(|f| f.iter()).collect::<Vec<&T>>().as_slice();
+        let vec = values.into_iter().flat_map(|f| f.into_iter()).collect::<Vec<T>>();
+        let slice = vec.as_slice();
         let value = match xla::Literal::vec1(slice).convert(dtype.primitive_type()) {
             Ok(v) => v,
             Err(e) => return Err(XlaError { err: e } )
@@ -181,7 +182,7 @@ impl Context {
             // TODO: special case adding const zero
             // TODO: support broadcastable shapes
             if node_a.shape.sizes.len() > 0 && node_b.shape.sizes.len() > 0 && node_a.shape != node_b.shape {
-                Err(ShapeError{ shape1: node_a.shape, shape2: node_b.shape })
+                Err(ShapeError{ shape1: node_a.shape.clone(), shape2: node_b.shape.clone() })
             } else {
                 Ok(self.nodes.insert(node))
             }
@@ -209,7 +210,7 @@ impl Context {
             // TODO: special case adding const zero
             // TODO: support broadcastable shapes
             if node_a.shape.sizes.len() > 0 && node_b.shape.sizes.len() > 0 && node_a.shape != node_b.shape {
-                Err(ShapeError{ shape1: node_a.shape, shape2: node_b.shape })
+                Err(ShapeError{ shape1: node_a.shape.clone(), shape2: node_b.shape.clone() })
             } else {
                 Ok(self.nodes.insert(node))
             }

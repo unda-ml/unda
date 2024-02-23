@@ -64,28 +64,28 @@ impl Display for ConstantBinding {
                     xla::ElementType::F32 => {
                         match self.value.get_first_element::<f32>() {
                             Ok(x) => write!(f, "{}", x),
-                            Err(e) =>  write!(f, "Unknown error getting first element of literal.")
+                            Err(_) =>  write!(f, "Unknown error getting first element of literal.")
                         }
                     },
                     xla::ElementType::F64 => {
                         match self.value.get_first_element::<f64>() {
                             Ok(x) => write!(f, "{}", x),
-                            Err(e) =>  write!(f, "Unknown error getting first element of literal.")
+                            Err(_) =>  write!(f, "Unknown error getting first element of literal.")
                         }
                     },
                     xla::ElementType::S32 => {
                         match self.value.get_first_element::<i32>() {
                             Ok(x) => write!(f, "{}", x),
-                            Err(e) =>  write!(f, "Unknown error getting first element of literal.")
+                            Err(_) =>  write!(f, "Unknown error getting first element of literal.")
                         }
                     },
                     xla::ElementType::S64 => {
                         match self.value.get_first_element::<i64>() {
                             Ok(x) => write!(f, "{}", x),
-                            Err(e) =>  write!(f, "Unknown error getting first element of literal.")
+                            Err(_) =>  write!(f, "Unknown error getting first element of literal.")
                         }
                     }
-                    unsupported => write!(f, "{} type not yet supported for Display", unsupported)
+                    unsupported => write!(f, "{:?} type not yet supported for Display", unsupported)
                 }
             }
         };
