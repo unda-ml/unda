@@ -6,6 +6,7 @@ use self::operation::{
 use self::shape::Shape;
 use super::*;
 use slotmap::SlotMap;
+use smallvec::smallvec;
 use smallvec::SmallVec;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::Path;
@@ -132,13 +133,57 @@ impl Context {
         }
     }
 
-    pub fn parameter<S: AsRef<str>>(&mut self, name: S, shape: SmallVec<[u16; 4]>, dtype: xla::ElementType) -> Parameter {
+    pub fn reshape_const(&mut self, const_id: NodeIdentifier, new_shape: &[u16]) -> Result<NodeIdentifier> {
+        let value = match &self.nodes[const_id].operation {
+            Operation::Constant(b) => &b.value,
+            _ => return Err( GraphError { msg: "Tried to call reshape_const on non-constant node.".to_string() })
+        };
+        let i64_vec = new_shape.into_iter().map(|d| *d as i64).collect::<Vec<i64>>();
+        let i64_slice = i64_vec.as_slice();
+        let new_value = match value.reshape(&i64_slice) {
+            Ok(nv) => nv,
+            Err(e) => return Err(XlaError { err: e })
+        };
+        let node_id = self.nodes.insert(Node {
+            callsite: callsite!(1),
+            shape: Shape{ sizes: SmallVec::from_slice(new_shape) },
+            operation: Operation::Constant(ConstantBinding {
+                value: new_value
+            }),
+            dtype: self.nodes[const_id].dtype
+        });
+        self.const_indices.push(node_id);
+        Ok(node_id)
+    }
+
+    pub fn typecast_const(&mut self, const_id: NodeIdentifier, new_type: xla::ElementType) -> Result<NodeIdentifier> {
+        let value = match &self.nodes[const_id].operation {
+            Operation::Constant(b) => &b.value,
+            _ => return Err( GraphError { msg: "Tried to call typecast_const on non-constant node.".to_string() })
+        };
+        let new_value = match value.convert(new_type.primitive_type()) {
+            Ok(nv) => nv,
+            Err(e) => return Err(XlaError { err: e })
+        };
+        let node_id = self.nodes.insert(Node {
+            callsite: callsite!(1),
+            shape: self.nodes[const_id].shape.clone(),
+            operation: Operation::Constant(ConstantBinding {
+                value: new_value
+            }),
+            dtype: new_type
+        });
+        self.const_indices.push(node_id);
+        Ok(node_id)
+    }
+
+    pub fn parameter<S: AsRef<str>>(&mut self, name: S, shape: &[u16], dtype: xla::ElementType) -> Parameter {
         let param = Parameter {
             node: self.nodes.insert(Node {
                 callsite: callsite!(1),
                 // TODO: proper shape here
                 // It makes sense to pass the shape of the parameter to its constructor
-                shape: Shape { sizes: shape },
+                shape: Shape { sizes: SmallVec::from_slice(shape) },
                 operation: Operation::Parameter(ParameterBinding {
                     name: name.as_ref().to_string(),
                 }),

@@ -17,8 +17,8 @@ pub fn example() {
     let three = ctx.scalar(3f32, F32).expect("three");
     //let up = ctx.vector([0.0, 0.0, 1.0]);
     //let id3x3 = ctx.matrix([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]);
-    let x = ctx.parameter("x", SmallVec::new(), xla::ElementType::F32);
-    let y = ctx.parameter("y", SmallVec::new(), xla::ElementType::F32);
+    let x = ctx.parameter("x", &[], xla::ElementType::F32);
+    let y = ctx.parameter("y", &[], xla::ElementType::F32);
 
     let product = ctx.mul(x, three).expect("product");
     let sum = ctx.add(product, y).expect("sum");
