@@ -88,7 +88,7 @@ impl Display for ConstantBinding {
                     unsupported => write!(f, "{:?} type not yet supported for Display", unsupported)
                 }
             }
-        };
+        }?;
         //write!(f, "{}", self.value.get_first_element())?;
         // TODO: proper matrix printing?
         if self.value.element_count() > 1 {

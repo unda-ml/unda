@@ -20,7 +20,11 @@ pub enum Error {
 
     /// Expected array shape but got tuple or unsupported
     #[error("Expected ArrayShape but got {msg}")]
-    ShapeConversionError { msg: String }
+    ShapeConversionError { msg: String },
+
+    /// Duplicate parameter names
+    #[error("Parameter name {name} already exists in the context.")]
+    NameError { name: String },
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

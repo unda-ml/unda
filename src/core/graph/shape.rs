@@ -1,6 +1,6 @@
+use crate::core::error::{Error, Result};
 use smallvec::SmallVec;
 use std::fmt::{Display, Formatter};
-use crate::core::error::{Error, Result};
 
 /// array of sizes along each axis
 /// scalar would be an vec![]
@@ -41,9 +41,34 @@ impl Shape {
     /// Convert from xla-rs shape
     pub fn from_xla_shape(shape: xla::Shape) -> Result<Shape> {
         match shape {
-            xla::Shape::Tuple(_) => Err(Error::ShapeConversionError { msg: "Tuple".to_string() } ),
-            xla::Shape::Unsupported(_) => Err(Error::ShapeConversionError { msg: "Unsupported".to_string() } ),
-            xla::Shape::Array(s) => Ok(Shape { sizes: s.dims().iter().map(|d| *d as u16).collect::<SmallVec<[u16; 4]>>() } ),
+            xla::Shape::Tuple(_) => Err(Error::ShapeConversionError {
+                msg: "Tuple".to_string(),
+            }),
+            xla::Shape::Unsupported(_) => Err(Error::ShapeConversionError {
+                msg: "Unsupported".to_string(),
+            }),
+            xla::Shape::Array(s) => Ok(Shape {
+                sizes: s
+                    .dims()
+                    .iter()
+                    .map(|d| *d as u16)
+                    .collect::<SmallVec<[u16; 4]>>(),
+            }),
+        }
+    }
+
+    pub fn broadcastable(&self, shape: &Shape) -> bool {
+        if self.sizes.len() == 0 || shape.sizes.len() == 0 {
+            true
+        } else if self.sizes.len() != shape.sizes.len() {
+            false
+        } else {
+            for i in 0..self.sizes.len() {
+                if self.sizes[i] != shape.sizes[i] && self.sizes[i] != 1 && shape.sizes[i] != 1 {
+                    return false;
+                }
+            }
+            true
         }
     }
 }
