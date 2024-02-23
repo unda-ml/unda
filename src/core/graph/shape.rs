@@ -1,5 +1,6 @@
 use smallvec::SmallVec;
-use std::fmt::{Display, Formatter, Result};
+use std::fmt::{Display, Formatter};
+use crate::core::error::{Error, Result};
 
 /// array of sizes along each axis
 /// scalar would be an vec![]
@@ -36,6 +37,15 @@ impl Shape {
         sizes.push(size);
         Self { sizes }
     }
+
+    /// Convert from xla-rs shape
+    pub fn from_xla_shape(shape: xla::Shape) -> Result<Shape> {
+        match shape {
+            xla::Shape::Tuple(_) => Err(Error::ShapeConversionError { msg: "Tuple".to_string() } ),
+            xla::Shape::Unsupported(_) => Err(Error::ShapeConversionError { msg: "Unsupported".to_string() } ),
+            xla::Shape::Array(s) => Ok(Shape { sizes: s.dims().iter().map(|d| *d as u16).collect::<SmallVec<[u16; 4]>>() } ),
+        }
+    }
 }
 
 impl Default for Shape {
@@ -45,7 +55,7 @@ impl Default for Shape {
 }
 
 impl Display for Shape {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         match self.sizes.len() {
             0 => write!(f, "Scalar"),
             1 => write!(f, "Vector"),

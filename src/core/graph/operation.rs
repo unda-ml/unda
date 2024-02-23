@@ -13,17 +13,17 @@ pub struct Node {
     /// the operation this node performs
     pub(crate) operation: Operation,
     //// output type of the operation
-    pub(crate) dtype: xla::ElementType
+    pub(crate) dtype: xla::ElementType,
 }
 
 impl Node {
     /// Identifies constant operation node for easier
     /// constant folding in context.rs
     pub(crate) fn is_const(&self) -> bool {
-        return match self.operation{
+        return match self.operation {
             Operation::Constant(_) => true,
-            _ => false
-        }
+            _ => false,
+        };
     }
 }
 
@@ -53,13 +53,45 @@ pub struct ConstantBinding {
 
 impl Display for ConstantBinding {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        if self.value.is_empty() {
+        if self.value.element_count() == 0 {
             write!(f, "0")?;
             return Ok(());
         }
-        write!(f, "{}", self.value.get_first_element())?;
+        match self.value.ty() {
+            xla::Result::Err(e) => write!(f, "XLA error: {}", e),
+            xla::Result::Ok(t) => {
+                match t {
+                    xla::ElementType::F32 => {
+                        match self.value.get_first_element::<f32>() {
+                            Ok(x) => write!(f, "{}", x),
+                            Err(e) =>  write!(f, "Unknown error getting first element of literal.")
+                        }
+                    },
+                    xla::ElementType::F64 => {
+                        match self.value.get_first_element::<f64>() {
+                            Ok(x) => write!(f, "{}", x),
+                            Err(e) =>  write!(f, "Unknown error getting first element of literal.")
+                        }
+                    },
+                    xla::ElementType::S32 => {
+                        match self.value.get_first_element::<i32>() {
+                            Ok(x) => write!(f, "{}", x),
+                            Err(e) =>  write!(f, "Unknown error getting first element of literal.")
+                        }
+                    },
+                    xla::ElementType::S64 => {
+                        match self.value.get_first_element::<i64>() {
+                            Ok(x) => write!(f, "{}", x),
+                            Err(e) =>  write!(f, "Unknown error getting first element of literal.")
+                        }
+                    }
+                    unsupported => write!(f, "{} type not yet supported for Display", unsupported)
+                }
+            }
+        };
+        //write!(f, "{}", self.value.get_first_element())?;
         // TODO: proper matrix printing?
-        if self.value.len() > 1 {
+        if self.value.element_count() > 1 {
             write!(f, "..")?;
         }
         Ok(())

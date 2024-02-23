@@ -9,7 +9,7 @@ use slotmap::SlotMap;
 use smallvec::SmallVec;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::Path;
-use xla::{FromRawBytes, XlaOp};
+use xla::FromRawBytes;
 
 /// XLA computation graph context.
 // TODO: rename this to something meaningful
@@ -34,18 +34,34 @@ impl Context {
         }
     }
 
-    pub fn scalar<T: xla::ArrayElement + xla::NativeType>(&mut self, value: T) -> NodeIdentifier {
+    pub fn scalar<T: xla::ArrayElement + xla::NativeType>(
+        &mut self,
+        value: T,
+        dtype: xla::ElementType
+    ) -> Result<NodeIdentifier> {
+        let value = match xla::Literal::scalar(value).convert(dtype.primitive_type()) {
+            Ok(v) => v,
+            Err(e) => return Err(XlaError { err: e } )
+        };
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: Shape::new(),
-            operation: Operation::Constant(ConstantBinding { value: xla::Literal::scalar(value) }),
-            dtype: T::TY
+            operation: Operation::Constant(ConstantBinding { value: value }),
+            dtype: dtype
         });
         self.const_indices.push(node_id);
-        node_id
+        Ok(node_id)
     }
 
-    pub fn vector<T: xla::ArrayElement + xla::NativeType, const N: usize>(&mut self, values: [T; N]) -> NodeIdentifier {
+    pub fn vector<T: xla::ArrayElement + xla::NativeType, const N: usize>(
+        &mut self,
+        values: [T; N],
+        dtype: xla::ElementType
+    ) -> Result<NodeIdentifier> {
+        let value = match xla::Literal::vec1(&values).convert(dtype.primitive_type()) {
+            Ok(v) => v,
+            Err(e) => return Err(XlaError { err: e } )
+        };
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: Shape::of(N as u16),
@@ -55,23 +71,33 @@ impl Context {
             dtype: T::TY
         });
         self.const_indices.push(node_id);
-        node_id
+        Ok(node_id)
     }
 
     pub fn matrix<T: xla::ArrayElement + xla::NativeType, const N: usize, const M: usize>(
         &mut self,
-        values: [[f32; M]; N],
-    ) -> NodeIdentifier {
+        values: [[T; M]; N],
+        dtype: xla::ElementType
+    ) -> Result<NodeIdentifier> {
+        let slice = values.iter().flat_map(|f| f.iter()).collect::<Vec<&T>>().as_slice();
+        let value = match xla::Literal::vec1(slice).convert(dtype.primitive_type()) {
+            Ok(v) => v,
+            Err(e) => return Err(XlaError { err: e } )
+        };
+        let reshaped = match value.reshape(&[N as i64, M as i64]) {
+            Ok(r) => r,
+            Err(e) => return Err(XlaError { err: e } )
+        };
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: Shape::of(N as u16).by(M as u16),
             operation: Operation::Constant(ConstantBinding {
-                value: values.iter().flat_map(|f| f.iter().map(|&f| xla::Literal::from(f))).collect(),
+                value: reshaped,
             }),
             dtype: T::TY
         });
         self.const_indices.push(node_id);
-        node_id
+        Ok(node_id)
     }
 
     pub fn const_from_npy<T: AsRef<Path>>(
@@ -86,6 +112,7 @@ impl Context {
                         match l.ty() {
                             Err(e) => Err(XlaError { err: e }),
                             Ok(t) => {
+                                let s = Shape::from_xla_shape(s)?;
                                 let node_id = self.nodes.insert(Node {
                                     callsite: callsite!(1),
                                     shape: s,
@@ -218,18 +245,22 @@ impl Context {
             // finally a Diff node, lets distribute it
             Operation::Diff(outer, outer_param) => {
                 let outer_node = &self.nodes[outer];
+                let outer_dtype = outer_node.dtype.primitive_type();
                 match outer_node.operation.clone() {
                     Operation::Constant(_) => {
                         // derivative of a constant with respect to anything is 0
                         self.nodes[input.into()].operation =
-                            Operation::Constant(ConstantBinding { value: vec![] });
+                            Operation::Constant(ConstantBinding { value: xla::Literal::create_from_shape(outer_dtype, &[]) });
                         self.nodes[input.into()].shape = Shape::scalar();
                         true
                     }
                     Operation::Parameter(_) => {
                         // derivative of a parameter with respect to itself is one, and otherwise zero
                         self.nodes[input.into()].operation = Operation::Constant(ConstantBinding {
-                            value: vec![(outer == outer_param.into()) as u32 as f32],
+                            value: match xla::Literal::scalar((outer == outer_param.into()) as u32 as f32).convert(outer_dtype) {
+                                Ok(x) => x,
+                                Err(e) => panic!("Error converting type of scalar literal.")
+                            },
                         });
                         self.nodes[input.into()].shape = Shape::scalar();
                         true
@@ -488,21 +519,17 @@ impl Context {
             println!("Found Constant node.");
             let node = &self.nodes[*unda_id];
 
-            let const_val: &Vec<f32> = match &node.operation {
+            let const_val: &xla::Literal = match &node.operation {
                 Operation::Constant(const_binding) => &const_binding.value,
                 _ => panic!("Constant indices pointed to a non-constant node!"),
             };
 
             // this might be necessary?
             let sizes = &node.shape.sizes;
-            let maybe_xla_const = match sizes.len() {
-                0 => builder.constant_r0(const_val[0]),
-                1 => builder.constant_r1(&const_val),
-                _ => panic!("Multidimensional constants not yet implemented!"),
-            };
+            let maybe_xla_const = builder.constant_literal(const_val);
             let xla_const = match maybe_xla_const {
                 Ok(c) => c,
-                Err(_) => panic!("XLA builder failed to declare constant."),
+                Err(e) => return Err(XlaError { err: e } ),
             };
             let xla_id = xla_op_slotmap.insert(xla_const);
             unda_xla_map.insert(*unda_id, xla_id);
@@ -522,25 +549,24 @@ impl Context {
                         if !covered_ops.contains(dependent_op) {
                             match self.nodes[*dependent_op].operation {
                                 Operation::Parameter(_) => {
-                                    panic!("Parameter found as dependent node!")
+                                    return Err(GraphError{ msg : "Parameter found as dependent node!".to_string() })
                                 }
                                 Operation::Constant(_) => {
-                                    panic!("Constant found as dependent node!")
+                                    return Err(GraphError{ msg : "Constant found as dependent node!".to_string() })
                                 }
                                 Operation::Diff(_, _) => {
-                                    panic!("Diff node found during XLA conversion!")
+                                    return Err(GraphError{ msg : "Diff node found during XLA conversion!".to_string() })
                                 }
 
                                 Operation::Mul(node1, node2) => {
                                     if xla_op_slotmap.contains_key(unda_xla_map[&node1])
                                         && xla_op_slotmap.contains_key(unda_xla_map[&node1])
                                     {
-                                        println!("Found Mul node!");
                                         let maybe_xla_op = xla_op_slotmap[unda_xla_map[&node1]]
                                             .mul_(&xla_op_slotmap[unda_xla_map[&node2]]);
                                         let xla_op = match maybe_xla_op {
                                             Ok(x) => x,
-                                            Err(_) => panic!("Failed on multiplication node."),
+                                            Err(_) => return Err(GraphError{ msg : "Failed on multiplication node.".to_string() }),
                                         };
                                         let xla_id = xla_op_slotmap.insert(xla_op);
                                         unda_xla_map.insert(*dependent_op, xla_id);
@@ -553,12 +579,11 @@ impl Context {
                                     if xla_op_slotmap.contains_key(unda_xla_map[&node1])
                                         && xla_op_slotmap.contains_key(unda_xla_map[&node1])
                                     {
-                                        println!("Found Add node!");
                                         let maybe_xla_op = xla_op_slotmap[unda_xla_map[&node1]]
                                             .add_(&xla_op_slotmap[unda_xla_map[&node2]]);
                                         let xla_op = match maybe_xla_op {
                                             Ok(x) => x,
-                                            Err(_) => panic!("Failed on addition node."),
+                                            Err(_) => return Err(GraphError{ msg : "Failed on addition node.".to_string() }),
                                         };
                                         let xla_id = xla_op_slotmap.insert(xla_op);
                                         unda_xla_map.insert(*dependent_op, xla_id);
@@ -579,10 +604,8 @@ impl Context {
         };
 
         match xla_computation.compile(client) {
-            Ok(e) => e,
-            Err(e) => {
-                panic!("XLA compilation error: {}", e);
-            }
+            Ok(e) => Ok(e),
+            Err(e) => Err(XlaError { err: e } )
         }
     }
 
