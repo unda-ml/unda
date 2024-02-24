@@ -3,11 +3,10 @@ pub mod graph;
 pub mod layer;
 pub mod network;
 pub mod serialize;
-pub mod error;
 
 #[cfg(test)]
 mod test {
-    use crate::core::{network::Sequential, layer::layers::InputTypes};
+    use crate::core::{layer::layers::InputTypes, network::Sequential};
 
     #[test]
     fn check_set_input() {

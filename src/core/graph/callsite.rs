@@ -4,7 +4,7 @@ use std::fmt::{Display, Formatter, Result};
 
 /// keeps track of where a call originated in the user's source for better error messages
 #[derive(Debug, Clone)]
-pub(crate) struct Callsite {
+pub struct Callsite {
     /// value of file!() macro at callsite
     pub(crate) file: &'static str,
     /// value of line!() macro at callsite
