@@ -1,7 +1,21 @@
+mod autodiff;
 mod callsite;
+mod compile;
+mod constant;
+mod consteval;
 mod context;
-mod shape;
+mod math;
+mod node;
 mod operation;
-use callsite::*;
-pub use context::*;
-pub use shape::*;
+mod parameter;
+mod shape;
+mod subterm;
+
+use callsite::{callsite, Callsite};
+pub use compile::CompileError;
+pub use constant::ConstantBinding;
+pub use context::{Context, ContextError, Result};
+pub use node::{Node, NodeIdentifier};
+pub use operation::Operation;
+pub use parameter::{Parameter, ParameterBinding};
+pub use shape::{Shape, ShapeConversionError};

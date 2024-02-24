@@ -1,0 +1,141 @@
+use super::*;
+
+impl Context {
+    pub fn diff(&mut self, node: NodeIdentifier, with_respect_to: Parameter) -> NodeIdentifier {
+        self.nodes.insert(Node {
+            callsite: callsite!(1),
+            shape: self.nodes[node].shape.clone(),
+            operation: Operation::Diff(node, with_respect_to),
+            dtype: self.nodes[with_respect_to.node].dtype,
+        })
+    }
+
+    /// expand all Diff nodes into analytic derivatives
+    /// return true if there may be further changes needed
+    pub(crate) fn autodiff<A: Into<NodeIdentifier> + Copy>(
+        &mut self,
+        input: A,
+        modification_limit: usize,
+    ) -> Result<bool> {
+        if modification_limit == 0 {
+            return Ok(true);
+        }
+        let input_node = &self.nodes[input.into()];
+
+        // traverse nodes until we find a Diff node or a leaf
+        match input_node.operation {
+            // leaf nodes mean no further processing
+            Operation::Constant(_) => Ok(false),
+            Operation::Parameter(_) => Ok(false),
+            // operations mean we need to go deeper
+            Operation::Add(a, b) => {
+                let r = self.autodiff(a, modification_limit)?;
+                self.autodiff(b, modification_limit - (r as usize))
+                    .map(|v| v || r)
+            }
+            Operation::Mul(a, b) => {
+                let r = self.autodiff(a, modification_limit)?;
+                self.autodiff(b, modification_limit - (r as usize))
+                    .map(|v| v || r)
+            }
+            // finally a Diff node, lets distribute it
+            Operation::Diff(outer, outer_param) => {
+                let outer_node = &self.nodes[outer];
+                let outer_dtype = outer_node.dtype.primitive_type();
+                match outer_node.operation.clone() {
+                    Operation::Constant(_) => {
+                        // derivative of a constant with respect to anything is 0
+                        self.nodes[input.into()].operation = Operation::Constant(ConstantBinding {
+                            value: xla::Literal::create_from_shape(outer_dtype, &[]),
+                        });
+                        self.nodes[input.into()].shape = [].into();
+                        Ok(true)
+                    }
+                    Operation::Parameter(_) => {
+                        // derivative of a parameter with respect to itself is one, and otherwise zero
+                        self.nodes[input.into()].operation = Operation::Constant(ConstantBinding {
+                            value: xla::Literal::scalar(
+                                (outer == outer_param.into()) as u32 as f32,
+                            )
+                            .convert(outer_dtype)?,
+                        });
+                        self.nodes[input.into()].shape = [].into();
+                        Ok(true)
+                    }
+                    Operation::Add(a, b) => {
+                        // derivative of a sum is the sum of derivatives
+                        // Diff (Sum a b) x = Sum (Diff a x) (Diff b x)
+                        let diff_a_node = Node {
+                            // propagate original Diff callsite to the new Diff node
+                            callsite: input_node.callsite.clone(),
+                            shape: self.nodes[a].shape.clone(),
+                            operation: Operation::Diff(a, outer_param),
+                            dtype: self.nodes[a].dtype,
+                        };
+                        let diff_b_node = Node {
+                            // propagate original Diff callsite to the new Diff node
+                            callsite: input_node.callsite.clone(),
+                            shape: self.nodes[b].shape.clone(),
+                            operation: Operation::Diff(b, outer_param),
+                            dtype: self.nodes[b].dtype,
+                        };
+                        // propagate original Add callsite to the new Add node
+                        self.nodes[input.into()].callsite = outer_node.callsite.clone();
+                        let diff_a = self.nodes.insert(diff_a_node);
+                        let diff_b = self.nodes.insert(diff_b_node);
+                        self.nodes[input.into()].operation = Operation::Add(diff_a, diff_b);
+                        // rerun autodiff on the node we replaced
+                        self.autodiff(input, modification_limit - 1)
+                    }
+                    Operation::Mul(a, b) => {
+                        // product rule
+                        // Diff (Mul a b) x = Sum (Mul (Diff a x) b) (Mul a (Diff b x))
+                        let diff_a_node = Node {
+                            // propagate original Diff callsite to the new Diff node
+                            callsite: input_node.callsite.clone(),
+                            shape: self.nodes[a].shape.clone(),
+                            operation: Operation::Diff(a, outer_param),
+                            dtype: self.nodes[a].dtype,
+                        };
+                        let diff_b_node = Node {
+                            // propagate original Diff callsite to the new Diff node
+                            callsite: input_node.callsite.clone(),
+                            shape: self.nodes[b].shape.clone(),
+                            operation: Operation::Diff(b, outer_param),
+                            dtype: self.nodes[b].dtype,
+                        };
+                        // propagate original Mul callsite to the new Add node
+                        self.nodes[input.into()].callsite = outer_node.callsite.clone();
+                        let diff_a = self.nodes.insert(diff_a_node);
+                        let diff_b = self.nodes.insert(diff_b_node);
+                        let prod_a_node = Node {
+                            // propagate original Mul callsite to the new Mul node
+                            callsite: self.nodes[input.into()].callsite.clone(),
+                            shape: self.nodes[a].shape.clone(),
+                            operation: Operation::Mul(diff_a, b),
+                            dtype: self.nodes[a].dtype,
+                        };
+                        let prod_b_node = Node {
+                            // propagate original Mul callsite to the new Mul node
+                            callsite: self.nodes[input.into()].callsite.clone(),
+                            shape: self.nodes[b].shape.clone(),
+                            operation: Operation::Mul(a, diff_b),
+                            dtype: self.nodes[b].dtype,
+                        };
+                        let prod_a = self.nodes.insert(prod_a_node);
+                        let prod_b = self.nodes.insert(prod_b_node);
+                        self.nodes[input.into()].operation = Operation::Add(prod_a, prod_b);
+                        // rerun autodiff on the node we replaced
+                        self.autodiff(input, modification_limit - 1)
+                    }
+                    Operation::Diff(inner, _) => {
+                        // derivative of a derivative, apply the inner one first then try again on the outer.
+                        let r = self.autodiff(inner, modification_limit)?;
+                        self.autodiff(outer, modification_limit - (r as usize))
+                            .map(|v| v || r)
+                    }
+                }
+            }
+        }
+    }
+}
