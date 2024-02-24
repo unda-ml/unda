@@ -8,8 +8,10 @@ impl Context {
         a: A,
         b: B,
     ) -> Result<NodeIdentifier> {
-        let node_a = &self.nodes[a.into()];
-        let node_b = &self.nodes[b.into()];
+        let a = a.into();
+        let b = b.into();
+        let node_a = &self.nodes[a];
+        let node_b = &self.nodes[b];
 
         if node_a.dtype != node_b.dtype {
             Err(ContextError::IncompatibleOperandTypes(
@@ -22,7 +24,7 @@ impl Context {
                 callsite: callsite!(1),
                 // need to implement automatic shape broadcasting
                 shape: Shape::new(),
-                operation: Operation::Add(a.into(), b.into()),
+                operation: Operation::Add(a, b),
                 dtype: node_a.dtype,
             };
             // TODO: special case adding const zero
@@ -43,8 +45,10 @@ impl Context {
         a: A,
         b: B,
     ) -> Result<NodeIdentifier> {
-        let node_a = &self.nodes[a.into()];
-        let node_b = &self.nodes[b.into()];
+        let a = a.into();
+        let b = b.into();
+        let node_a = &self.nodes[a];
+        let node_b = &self.nodes[b];
 
         if node_a.dtype != node_b.dtype {
             Err(ContextError::IncompatibleOperandTypes(
@@ -57,7 +61,7 @@ impl Context {
                 callsite: callsite!(1),
                 // need to implement automatic shape broadcasting
                 shape: Shape::new(),
-                operation: Operation::Mul(a.into(), b.into()),
+                operation: Operation::Mul(a, b),
                 dtype: node_a.dtype,
             };
             // TODO: special case adding const zero

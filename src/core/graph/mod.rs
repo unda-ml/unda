@@ -10,6 +10,7 @@ mod operation;
 mod parameter;
 mod shape;
 mod subterm;
+mod tests;
 
 use callsite::{callsite, Callsite};
 pub use compile::CompileError;

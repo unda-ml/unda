@@ -20,7 +20,8 @@ impl Context {
         if modification_limit == 0 {
             return Ok(true);
         }
-        let input_node = &self.nodes[input.into()];
+        let input = input.into();
+        let input_node = &self.nodes[input];
 
         // traverse nodes until we find a Diff node or a leaf
         match input_node.operation {
@@ -45,21 +46,21 @@ impl Context {
                 match outer_node.operation.clone() {
                     Operation::Constant(_) => {
                         // derivative of a constant with respect to anything is 0
-                        self.nodes[input.into()].operation = Operation::Constant(ConstantBinding {
+                        self.nodes[input].operation = Operation::Constant(ConstantBinding {
                             value: xla::Literal::create_from_shape(outer_dtype, &[]),
                         });
-                        self.nodes[input.into()].shape = [].into();
+                        self.nodes[input].shape = [].into();
                         Ok(true)
                     }
                     Operation::Parameter(_) => {
                         // derivative of a parameter with respect to itself is one, and otherwise zero
-                        self.nodes[input.into()].operation = Operation::Constant(ConstantBinding {
+                        self.nodes[input].operation = Operation::Constant(ConstantBinding {
                             value: xla::Literal::scalar(
                                 (outer == outer_param.into()) as u32 as f32,
                             )
                             .convert(outer_dtype)?,
                         });
-                        self.nodes[input.into()].shape = [].into();
+                        self.nodes[input].shape = [].into();
                         Ok(true)
                     }
                     Operation::Add(a, b) => {
@@ -80,10 +81,10 @@ impl Context {
                             dtype: self.nodes[b].dtype,
                         };
                         // propagate original Add callsite to the new Add node
-                        self.nodes[input.into()].callsite = outer_node.callsite.clone();
+                        self.nodes[input].callsite = outer_node.callsite.clone();
                         let diff_a = self.nodes.insert(diff_a_node);
                         let diff_b = self.nodes.insert(diff_b_node);
-                        self.nodes[input.into()].operation = Operation::Add(diff_a, diff_b);
+                        self.nodes[input].operation = Operation::Add(diff_a, diff_b);
                         // rerun autodiff on the node we replaced
                         self.autodiff(input, modification_limit - 1)
                     }
@@ -105,26 +106,26 @@ impl Context {
                             dtype: self.nodes[b].dtype,
                         };
                         // propagate original Mul callsite to the new Add node
-                        self.nodes[input.into()].callsite = outer_node.callsite.clone();
+                        self.nodes[input].callsite = outer_node.callsite.clone();
                         let diff_a = self.nodes.insert(diff_a_node);
                         let diff_b = self.nodes.insert(diff_b_node);
                         let prod_a_node = Node {
                             // propagate original Mul callsite to the new Mul node
-                            callsite: self.nodes[input.into()].callsite.clone(),
+                            callsite: self.nodes[input].callsite.clone(),
                             shape: self.nodes[a].shape.clone(),
                             operation: Operation::Mul(diff_a, b),
                             dtype: self.nodes[a].dtype,
                         };
                         let prod_b_node = Node {
                             // propagate original Mul callsite to the new Mul node
-                            callsite: self.nodes[input.into()].callsite.clone(),
+                            callsite: self.nodes[input].callsite.clone(),
                             shape: self.nodes[b].shape.clone(),
                             operation: Operation::Mul(a, diff_b),
                             dtype: self.nodes[b].dtype,
                         };
                         let prod_a = self.nodes.insert(prod_a_node);
                         let prod_b = self.nodes.insert(prod_b_node);
-                        self.nodes[input.into()].operation = Operation::Add(prod_a, prod_b);
+                        self.nodes[input].operation = Operation::Add(prod_a, prod_b);
                         // rerun autodiff on the node we replaced
                         self.autodiff(input, modification_limit - 1)
                     }

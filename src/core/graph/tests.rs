@@ -1,9 +1,11 @@
 #[cfg(test)]
 mod tests {
+    use crate::core::graph::Context;
     use xla::FromRawBytes;
+
     #[test]
     fn test_mul_add_scalar_consts_and_params() {
-        let mut ctx = super::Context::new();
+        let mut ctx = Context::new();
 
         let three = ctx.scalar(3, xla::ElementType::F32).expect("three");
 
@@ -36,7 +38,7 @@ mod tests {
 
     #[test]
     fn test_vector_matrix_bf16() {
-        let mut ctx = super::Context::new();
+        let mut ctx = Context::new();
 
         let foo = ctx.vector([1, 2, 3], xla::ElementType::Bf16).expect("foo");
         let bar = ctx
@@ -66,7 +68,7 @@ mod tests {
 
     #[test]
     fn test_npy_loading() {
-        let mut ctx = super::Context::new();
+        let mut ctx = Context::new();
 
         let my_const = ctx.const_from_npy("test.npy").expect("my_const");
         println!("{}", ctx.nodes[my_const].dtype);
