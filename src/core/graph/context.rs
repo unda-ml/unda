@@ -39,6 +39,9 @@ pub enum ContextError {
 
     #[error("Parameter \"{0}\" {1} already exists in the context at {2}")]
     DuplicateParameter(String, Callsite, Callsite),
+
+    #[error("Tried to call Context::return more than once.")]
+    MultipleReturns(),
 }
 
 pub type Result<T> = std::result::Result<T, ContextError>;

@@ -136,9 +136,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.0.86"
+version = "1.0.88"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f9fa1897e4325be0d68d48df6aa1a71ac2ed4d27723887e7754192705350730"
+checksum = "02f341c093d19155a6e41631ce5971aac4e9a868262212153124c15fa22d1cdc"
 dependencies = [
  "libc",
 ]
@@ -1195,7 +1195,7 @@ checksum = "0770833d60a970638e989b3fa9fd2bb1aaadcf88963d1659fd7d9990196ed2d6"
 [[package]]
 name = "xla"
 version = "0.1.6"
-source = "git+https://github.com/Ebanflo42/xla-rs?branch=dev#a1b250fd0cf8f613449f793dc261fa0c22da0bf4"
+source = "git+https://github.com/Ebanflo42/xla-rs?branch=dev#4293f038ee1b8466da4bb0e0859413d6ea8a1aca"
 dependencies = [
  "bindgen",
  "cc",
