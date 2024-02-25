@@ -11,6 +11,9 @@ pub enum CompileError {
     #[error("Found an unused Parameter in the compute graph {0}")]
     UnusedParameter(Callsite),
 
+    #[error("Unable to compile a context that does not return")]
+    NoReturn,
+
     #[error("XLA error: {0}")]
     Xla(#[from] xla::Error),
 }
@@ -50,42 +53,55 @@ impl Context {
         }
     }
 
-    pub fn compile<A: Into<NodeIdentifier> + Copy>(
+    pub fn compile<A: Into<NodeIdentifier> + Copy, const N: usize>(
         &mut self,
-        a: A,
         name: &str,
+        returns: [A; N],
         client: &xla::PjRtClient,
     ) -> Result<xla::PjRtLoadedExecutable> {
         // TODO: gate debug mode behind a feature flag
 
-        //self.autodiff(a, usize::MAX);
-        println!("{}", self.to_string(a));
-        while self.autodiff(a, 1)? {
-            println!("{}", self.to_string(a));
+        if returns.is_empty() {
+            Err(CompileError::NoReturn)?;
         }
 
-        //self.foldconsts(a, usize::MAX);
-        while self.foldconsts(a, 1)? {
-            println!("{}", self.to_string(a));
+        for a in returns.iter() {
+            self.autodiff(*a, usize::MAX)?;
         }
+        //println!("{}", self.to_string(a));
+        //while self.autodiff(a, 1)? {
+        //    println!("{}", self.to_string(a));
+        //}
 
-        //self.extract_subterms(a, usize::MAX);
-        while self.extract_subterms(a, 1)? {
-            println!("{}", self.to_string(a));
+        for a in returns.iter() {
+            self.foldconsts(*a, usize::MAX)?;
         }
+        //while self.foldconsts(a, 1)? {
+        //    println!("{}", self.to_string(a));
+        //}
 
-        let builder = xla::XlaBuilder::new(name);
+        for a in returns.iter() {
+            self.extract_subterms(*a, usize::MAX)?;
+        }
+        //while self.extract_subterms(a, 1)? {
+        //    println!("{}", self.to_string(a));
+        //}
+
         // Get the bottom-up dependencies of the compute graph
         let mut dependent_nodes = HashMap::new();
         let mut constants = HashSet::new();
         let mut parameters = HashSet::new();
-        self.get_dependent_nodes(a, &mut dependent_nodes, &mut constants, &mut parameters)?;
+        for a in returns.iter() {
+            self.get_dependent_nodes(*a, &mut dependent_nodes, &mut constants, &mut parameters)?;
+        }
 
         // Prepare to loop through the unda compute graph and construct the XLA compute graph
         let mut xla_op_slotmap: SlotMap<NodeIdentifier, xla::XlaOp> = SlotMap::with_key();
         let mut unda_op_queue: VecDeque<NodeIdentifier> = VecDeque::new();
         let mut unda_xla_map: HashMap<NodeIdentifier, NodeIdentifier> = HashMap::new();
         let mut covered_ops: HashSet<NodeIdentifier> = HashSet::new();
+
+        let builder = xla::XlaBuilder::new(name);
 
         // declare parameters with the XLA builder
         for (i, unda_id) in self.param_indices.iter().enumerate() {
@@ -116,7 +132,6 @@ impl Context {
         }
 
         // Initialize constants for the XLA builder
-        // >1 dimensions not yet supported for constants
         for unda_id in constants.iter() {
             let node = &self.nodes[*unda_id];
 
@@ -182,7 +197,10 @@ impl Context {
             }
         }
 
-        let xla_computation = xla_op_slotmap[unda_xla_map[&a.into()]].build()?;
+        let xla_return_vec: Vec<&xla::XlaOp> = returns.into_iter().map(|i| &xla_op_slotmap[unda_xla_map[&i.into()]]).collect();
+        let xla_return_tuple = builder.tuple(&xla_return_vec.as_slice())?;
+
+        let xla_computation = xla_return_tuple.build()?;
 
         Ok(xla_computation.compile(client)?)
     }
