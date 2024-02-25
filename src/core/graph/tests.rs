@@ -95,6 +95,7 @@ mod tests {
         assert_eq!(rust_result.as_slice(), &[0, 2, 2, 0]);
     }
 
+    #[test]
     fn test_multiple_outputs() {
         let mut ctx = Context::new();
 
