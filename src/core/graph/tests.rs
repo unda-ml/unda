@@ -1,7 +1,34 @@
 #[cfg(test)]
 mod tests {
-    use crate::core::graph::Context;
-    use xla::FromRawBytes;
+    use crate::core::graph::{Context, Node, callsite::callsite, ConstantBinding};
+    use xla::{FromRawBytes, Literal, Shape};
+
+    #[test]
+    fn ensure_is_zero_scalar(){
+        let mut ctx = Context::new();
+        let zeroes = ctx.scalar(0, xla::ElementType::F32).expect("zero scalar");
+        let node = ctx.nodes.get(zeroes).expect("node of zero");
+
+        assert!(node.is_zero().expect("is zero"));
+    }
+
+    #[test]
+    fn ensure_is_zero_vector(){
+        let mut ctx = Context::new();
+        let zeroes = ctx.vector([0;10], xla::ElementType::F32).expect("zero scalar");
+        let node = ctx.nodes.get(zeroes).expect("node of zero");
+
+        assert!(node.is_zero().expect("is zero"));
+    }
+
+    #[test]
+    fn ensure_is_const(){
+        let mut ctx = Context::new();
+        let scalar_const = ctx.scalar(15, xla::ElementType::F32).expect("fifteen");
+        let node = ctx.nodes.get(scalar_const).expect("node of 15");
+
+        assert!(node.is_const());
+    }
 
     #[test]
     fn test_mul_add_scalar_consts_and_params() {
