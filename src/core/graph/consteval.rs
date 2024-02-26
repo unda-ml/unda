@@ -22,8 +22,6 @@ impl Context {
 
                 if node_a.is_const() && node_b.is_const() {
                     //TODO: Do replacement
-                } else if node_a.is_zero()? || node_b.is_zero()? {
-                    //TODO: x * 0 situation, make it zero
                 }
                 Ok(false)
             }
@@ -33,7 +31,11 @@ impl Context {
 
                 if node_a.is_const() && node_b.is_const() {
                     //TODO: Do replacement
+                    //
+                } else if node_a.is_zero()? || node_b.is_zero()? {
+                    //TODO: x * 0 situation, make it zero
                 }
+
                 Ok(false)
             }
             _ =>

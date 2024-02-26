@@ -15,8 +15,17 @@ mod tests {
     #[test]
     fn ensure_is_zero_vector(){
         let mut ctx = Context::new();
-        let zeroes = ctx.vector([0;10], xla::ElementType::F32).expect("zero scalar");
-        let node = ctx.nodes.get(zeroes).expect("node of zero");
+        let zeroes = ctx.vector([0.0,0.0,0.0,0.0], xla::ElementType::F64).expect("zero vector");
+        let node = ctx.nodes.get(zeroes).expect("node of zeroes");
+
+        assert!(node.is_zero().expect("is zero"));
+    }
+
+    #[test]
+    fn ensure_is_zero_unique_types(){
+        let mut ctx = Context::new();
+        let zeroes = ctx.matrix([[0u64,0u64],[0u64,0u64],[0u64,0u64]], xla::ElementType::U64).expect("zero matrix u64");
+        let node = ctx.nodes.get(zeroes).expect("node of zeroes");
 
         assert!(node.is_zero().expect("is zero"));
     }
