@@ -1,3 +1,5 @@
+use crate::core::data;
+
 use super::*;
 use rand_distr::num_traits::Zero;
 use slotmap::new_key_type;
@@ -26,8 +28,8 @@ impl Node {
     /// Identifies constant operation node for easier
     /// constant folding in context.rs
     pub(crate) fn is_const(&self) -> Option<Literal> {
-        return match self.operation {
-            Operation::Constant(a) => Some(a.value),
+        return match &self.operation {
+            Operation::Constant(a) => Some(a.value.clone()),
             _ => None,
         };
     }

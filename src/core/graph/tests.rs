@@ -36,7 +36,7 @@ mod tests {
         let scalar_const = ctx.scalar(15, xla::ElementType::F32).expect("fifteen");
         let node = ctx.nodes.get(scalar_const).expect("node of 15");
 
-        assert!(node.is_const());
+        assert!(node.is_const().is_some());
     }
 
     #[test]

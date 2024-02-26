@@ -26,7 +26,7 @@ impl Context {
                 if a_const.is_some() && b_const.is_some() {
                     let (a,b) = (a_const.unwrap(), b_const.unwrap());
                     //TODO: Do replacement
-
+                    
                 }
                 Ok(false)
             }
