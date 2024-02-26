@@ -20,8 +20,13 @@ impl Context {
                 let node_a = &self.nodes[a];
                 let node_b = &self.nodes[b];
 
-                if node_a.is_const() && node_b.is_const() {
+                let a_const = node_a.is_const();
+                let b_const = node_b.is_const();
+
+                if a_const.is_some() && b_const.is_some() {
+                    let (a,b) = (a_const.unwrap(), b_const.unwrap());
                     //TODO: Do replacement
+
                 }
                 Ok(false)
             }
@@ -29,11 +34,15 @@ impl Context {
                 let node_a = &self.nodes[a];
                 let node_b = &self.nodes[b];
 
-                if node_a.is_const() && node_b.is_const() {
+                let a_const = node_a.is_const();
+                let b_const = node_b.is_const();
+
+                if a_const.is_some() && b_const.is_some() {
                     //TODO: Do replacement
-                    //
+                    
                 } else if node_a.is_zero()? || node_b.is_zero()? {
                     //TODO: x * 0 situation, make it zero
+                    
                 }
 
                 Ok(false)

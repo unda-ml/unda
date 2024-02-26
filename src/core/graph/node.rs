@@ -1,6 +1,7 @@
 use super::*;
 use rand_distr::num_traits::Zero;
 use slotmap::new_key_type;
+use xla::Literal;
 use std::{fmt::{Display, Formatter, Result}, error::Error};
 
 /// A node in the compute graph
@@ -24,10 +25,10 @@ new_key_type! {
 impl Node {
     /// Identifies constant operation node for easier
     /// constant folding in context.rs
-    pub(crate) fn is_const(&self) -> bool {
+    pub(crate) fn is_const(&self) -> Option<Literal> {
         return match self.operation {
-            Operation::Constant(_) => true,
-            _ => false,
+            Operation::Constant(a) => Some(a.value),
+            _ => None,
         };
     }
     pub(crate) fn is_zero(&self) -> super::Result<bool> {
