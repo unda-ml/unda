@@ -6,9 +6,17 @@ use strum_macros::EnumDiscriminants;
 pub enum Operation {
     Constant(ConstantBinding),
     Parameter(ParameterBinding),
+    StopGradient(NodeIdentifier),
+    Diff(NodeIdentifier, Parameter),
     Add(NodeIdentifier, NodeIdentifier),
     Mul(NodeIdentifier, NodeIdentifier),
-    Diff(NodeIdentifier, Parameter),
+
+    LessThan(NodeIdentifier, NodeIdentifier),
+    GreaterThan(NodeIdentifier, NodeIdentifier),
+    LessThanEq(NodeIdentifier, NodeIdentifier),
+    GreaterThanEq(NodeIdentifier, NodeIdentifier),
+
+    Select{ pred: NodeIdentifier, on_true: NodeIdentifier, on_false: NodeIdentifier },
 }
 
 impl Display for Operation {

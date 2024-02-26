@@ -1,6 +1,15 @@
 use super::*;
 
 impl Context {
+    pub fn stop_gradient(&mut self, node: NodeIdentifier) -> NodeIdentifier {
+        self.nodes.insert(Node {
+            callsite: callsite!(1),
+            shape: self.nodes[node].shape.clone(),
+            operation: Operation::StopGradient(node),
+            dtype: self.nodes[node].dtype,
+        })
+    }
+
     pub fn diff(&mut self, node: NodeIdentifier, with_respect_to: Parameter) -> NodeIdentifier {
         self.nodes.insert(Node {
             callsite: callsite!(1),
@@ -28,15 +37,21 @@ impl Context {
             // leaf nodes mean no further processing
             Operation::Constant(_) => Ok(false),
             Operation::Parameter(_) => Ok(false),
+            Operation::StopGradient(_) => Ok(false),
             // operations mean we need to go deeper
-            Operation::Add(a, b) => {
+            Operation::Add(a, b)
+            | Operation::Mul(a, b)
+            | Operation::LessThan(a, b)
+            | Operation::GreaterThan(a, b)
+            | Operation::LessThanEq(a, b)
+            | Operation::GreaterThanEq(a, b) => {
                 let r = self.autodiff(a, modification_limit)?;
                 self.autodiff(b, modification_limit - (r as usize))
                     .map(|v| v || r)
             }
-            Operation::Mul(a, b) => {
-                let r = self.autodiff(a, modification_limit)?;
-                self.autodiff(b, modification_limit - (r as usize))
+            Operation::Select{ pred: _, on_true, on_false } => {
+                let r = self.autodiff(on_true, modification_limit)?;
+                self.autodiff(on_false, modification_limit - (r as usize))
                     .map(|v| v || r)
             }
             // finally a Diff node, lets distribute it
@@ -56,13 +71,14 @@ impl Context {
                         // derivative of a parameter with respect to itself is one, and otherwise zero
                         self.nodes[input].operation = Operation::Constant(ConstantBinding {
                             value: xla::Literal::scalar(
-                                (outer == outer_param.into()) as u32 as f32,
+                                (outer == outer_param.into()) as u32,
                             )
                             .convert(outer_dtype)?,
                         });
                         self.nodes[input].shape = [].into();
                         Ok(true)
                     }
+                    Operation::StopGradient(_) => Ok(false),
                     Operation::Add(a, b) => {
                         // derivative of a sum is the sum of derivatives
                         // Diff (Sum a b) x = Sum (Diff a x) (Diff b x)
@@ -126,6 +142,45 @@ impl Context {
                         let prod_a = self.nodes.insert(prod_a_node);
                         let prod_b = self.nodes.insert(prod_b_node);
                         self.nodes[input].operation = Operation::Add(prod_a, prod_b);
+                        // rerun autodiff on the node we replaced
+                        self.autodiff(input, modification_limit - 1)
+                    }
+
+                    Operation::LessThan(_, _)
+                    | Operation::GreaterThan(_, _)
+                    | Operation::LessThanEq(_, _)
+                    | Operation::GreaterThanEq(_, _) => Err(ContextError::NonDifferentiableError(callsite!(1))),
+
+                    Operation::Select {
+                        pred,
+                        on_true,
+                        on_false,
+                    } => {
+                        // derivative of select is select of derivatives
+                        let diff_true_node = Node {
+                            // propagate original Diff callsite to the new Diff node
+                            callsite: input_node.callsite.clone(),
+                            shape: self.nodes[on_true].shape.clone(),
+                            operation: Operation::Diff(on_true, outer_param),
+                            dtype: self.nodes[on_true].dtype,
+                        };
+                        let diff_false_node = Node {
+                            // propagate original Diff callsite to the new Diff node
+                            callsite: input_node.callsite.clone(),
+                            shape: self.nodes[on_false].shape.clone(),
+                            operation: Operation::Diff(on_false, outer_param),
+                            dtype: self.nodes[on_false].dtype,
+                        };
+                        // propagate original Mul callsite to the new Add node
+                        self.nodes[input].callsite = outer_node.callsite.clone();
+                        let diff_true = self.nodes.insert(diff_true_node);
+                        let diff_false = self.nodes.insert(diff_false_node);
+
+                        self.nodes[input].operation = Operation::Select {
+                            pred: pred,
+                            on_true: diff_true,
+                            on_false: diff_false,
+                        };
                         // rerun autodiff on the node we replaced
                         self.autodiff(input, modification_limit - 1)
                     }

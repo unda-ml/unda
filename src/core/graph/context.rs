@@ -42,6 +42,9 @@ pub enum ContextError {
 
     #[error("Tried to call Context::return more than once.")]
     MultipleReturns(),
+
+    #[error("Operation is not differentiable, to use it as a constant in a differentiable computation, wrap it with Context::stop_gradient.")]
+    NonDifferentiableError(Callsite),
 }
 
 pub type Result<T> = std::result::Result<T, ContextError>;
@@ -60,9 +63,26 @@ impl Context {
         match input_node.operation.clone() {
             Operation::Constant(a) => format!("Constant {} {}", input_node.shape, a),
             Operation::Parameter(a) => format!("Parameter {} {}", input_node.shape, a),
+            Operation::StopGradient(a) => {
+                format!("StopGradient {} {}", input_node.shape, self.to_string(a))
+            }
+            Operation::Diff(a, b) => format!("Diff ({}) {}", self.to_string(a), self.to_string(b)),
             Operation::Add(a, b) => format!("Add ({}) ({})", self.to_string(a), self.to_string(b)),
             Operation::Mul(a, b) => format!("Mul ({}) ({})", self.to_string(a), self.to_string(b)),
-            Operation::Diff(a, b) => format!("Diff ({}) {}", self.to_string(a), self.to_string(b)),
+            Operation::LessThan(a, b) => format!("LessThan ({}) ({})", self.to_string(a), self.to_string(b)),
+            Operation::GreaterThan(a, b) => format!("GreaterThan ({}) ({})", self.to_string(a), self.to_string(b)),
+            Operation::LessThanEq(a, b) => format!("LessThanEq ({}) ({})", self.to_string(a), self.to_string(b)),
+            Operation::GreaterThanEq(a, b) => format!("GreaterThanEq ({}) ({})", self.to_string(a), self.to_string(b)),
+            Operation::Select {
+                pred,
+                on_true,
+                on_false,
+            } => format!(
+                "Select ({}) ({}) ({})",
+                self.to_string(pred),
+                self.to_string(on_true),
+                self.to_string(on_false)
+            ),
         }
     }
 }
