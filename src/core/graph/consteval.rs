@@ -45,11 +45,22 @@ impl Context {
                             modifications += 1;
                             //Enqueue the dependent nodes to check both of them for constant
                             //mul/adding
-                            to_visit.push(a.into());
-                            to_visit.push(b.into());
+                            if a_node.is_const().is_none() {
+                                to_visit.push(a.into());
+                            } 
+                            if b_node.is_const().is_none() {
+                                to_visit.push(b.into());
+                            }
                         }
                     },
-                    _ => {},
+                    Operation::Diff(a, _) => {
+                        if let Some(node) = self.nodes.get(a) {
+                            if node.is_const().is_none() {
+                                to_visit.push(a);
+                            }
+                        }
+                    },
+                    _ => {}
                 }
             }
             
