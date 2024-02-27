@@ -149,7 +149,7 @@ impl Context {
                     Operation::LessThan(_, _)
                     | Operation::GreaterThan(_, _)
                     | Operation::LessThanEq(_, _)
-                    | Operation::GreaterThanEq(_, _) => Err(ContextError::NonDifferentiableError(callsite!(1))),
+                    | Operation::GreaterThanEq(_, _) => Err(ContextError::NonDifferentiableError(outer_node.callsite.clone())),
 
                     Operation::Select {
                         pred,

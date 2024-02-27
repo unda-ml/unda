@@ -41,6 +41,14 @@ impl Shape {
         }
     }
 
+    pub fn ndims(&self) -> usize {
+        self.sizes.len()
+    }
+
+    pub fn size(&self) -> usize {
+        self.sizes.iter().fold(1, |x, y| x*(*y as usize))
+    }
+
     /// Convert from xla-rs shape
     pub fn from_xla_shape(shape: xla::Shape) -> Result<Shape, ShapeConversionError> {
         match shape {
@@ -52,18 +60,25 @@ impl Shape {
         }
     }
 
-    pub fn broadcastable(&self, shape: &Shape) -> bool {
+    pub fn broadcast(&self, shape: &Shape) -> Option<Shape> {
         if self.sizes.len() == 0 || shape.sizes.len() == 0 {
-            true
+            Some(Shape::new())
         } else if self.sizes.len() != shape.sizes.len() {
-            false
+            None
         } else {
-            for i in 0..self.sizes.len() {
-                if self.sizes[i] != shape.sizes[i] && self.sizes[i] != 1 && shape.sizes[i] != 1 {
-                    return false;
+            let (large_shape, small_shape) = {
+                if self.size() > shape.size() {
+                    (&self.sizes, &shape.sizes)
+                } else {
+                    (&shape.sizes, &self.sizes)
+                }
+            };
+            for i in 0..self.ndims() {
+                if small_shape[i] != large_shape[i] && small_shape[i] != 1 {
+                    return None;
                 }
             }
-            true
+            Some(Shape{ sizes: large_shape.clone() })
         }
     }
 }

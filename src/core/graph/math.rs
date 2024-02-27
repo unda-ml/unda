@@ -20,22 +20,21 @@ impl Context {
                 callsite!(1),
             ))
         } else {
-            let node = Node {
-                callsite: callsite!(1),
-                // need to implement automatic shape broadcasting
-                shape: Shape::new(),
-                operation: Operation::Add(a, b),
-                dtype: node_a.dtype,
-            };
-            // TODO: special case adding const zero
-            if !node_a.shape.broadcastable(&node_b.shape) {
-                Err(ContextError::IncompatibleOperandShapes(
+            match node_a.shape.broadcast(&node_b.shape) {
+                None => Err(ContextError::IncompatibleOperandShapes(
                     node_a.shape.clone(),
                     node_b.shape.clone(),
-                    node.callsite,
-                ))
-            } else {
-                Ok(self.nodes.insert(node))
+                    callsite!(1),
+                )),
+                Some(s) => {
+                    let node = Node {
+                        callsite: callsite!(1),
+                        shape: s,
+                        operation: Operation::Add(a, b),
+                        dtype: node_a.dtype,
+                    };
+                    Ok(self.nodes.insert(node))
+                }
             }
         }
     }
@@ -57,23 +56,21 @@ impl Context {
                 callsite!(1),
             ))
         } else {
-            let node = Node {
-                callsite: callsite!(1),
-                // need to implement automatic shape broadcasting
-                shape: Shape::new(),
-                operation: Operation::Mul(a, b),
-                dtype: node_a.dtype,
-            };
-            // TODO: special case adding const zero
-            // TODO: support broadcastable shapes
-            if !node_a.shape.broadcastable(&node_b.shape) {
-                Err(ContextError::IncompatibleOperandShapes(
+            match node_a.shape.broadcast(&node_b.shape) {
+                None => Err(ContextError::IncompatibleOperandShapes(
                     node_a.shape.clone(),
                     node_b.shape.clone(),
-                    node.callsite,
-                ))
-            } else {
-                Ok(self.nodes.insert(node))
+                    callsite!(1),
+                )),
+                Some(s) => {
+                    let node = Node {
+                        callsite: callsite!(1),
+                        shape: s,
+                        operation: Operation::Add(a, b),
+                        dtype: node_a.dtype,
+                    };
+                    Ok(self.nodes.insert(node))
+                }
             }
         }
     }
@@ -95,22 +92,21 @@ impl Context {
                 callsite!(1),
             ))
         } else {
-            let node = Node {
-                callsite: callsite!(1),
-                // need to implement automatic shape broadcasting
-                shape: Shape::new(),
-                operation: Operation::LessThan(a, b),
-                dtype: xla::ElementType::Pred,
-            };
-            // TODO: special case adding const zero
-            if !node_a.shape.broadcastable(&node_b.shape) {
-                Err(ContextError::IncompatibleOperandShapes(
+            match node_a.shape.broadcast(&node_b.shape) {
+                None => Err(ContextError::IncompatibleOperandShapes(
                     node_a.shape.clone(),
                     node_b.shape.clone(),
-                    node.callsite,
-                ))
-            } else {
-                Ok(self.nodes.insert(node))
+                    callsite!(1),
+                )),
+                Some(s) => {
+                    let node = Node {
+                        callsite: callsite!(1),
+                        shape: s,
+                        operation: Operation::LessThan(a, b),
+                        dtype: xla::ElementType::Pred,
+                    };
+                    Ok(self.nodes.insert(node))
+                }
             }
         }
     }
@@ -132,22 +128,21 @@ impl Context {
                 callsite!(1),
             ))
         } else {
-            let node = Node {
-                callsite: callsite!(1),
-                // need to implement automatic shape broadcasting
-                shape: Shape::new(),
-                operation: Operation::GreaterThan(a, b),
-                dtype: xla::ElementType::Pred,
-            };
-            // TODO: special case adding const zero
-            if !node_a.shape.broadcastable(&node_b.shape) {
-                Err(ContextError::IncompatibleOperandShapes(
+            match node_a.shape.broadcast(&node_b.shape) {
+                None => Err(ContextError::IncompatibleOperandShapes(
                     node_a.shape.clone(),
                     node_b.shape.clone(),
-                    node.callsite,
-                ))
-            } else {
-                Ok(self.nodes.insert(node))
+                    callsite!(1),
+                )),
+                Some(s) => {
+                    let node = Node {
+                        callsite: callsite!(1),
+                        shape: s,
+                        operation: Operation::GreaterThan(a, b),
+                        dtype: xla::ElementType::Pred,
+                    };
+                    Ok(self.nodes.insert(node))
+                }
             }
         }
     }
@@ -169,22 +164,21 @@ impl Context {
                 callsite!(1),
             ))
         } else {
-            let node = Node {
-                callsite: callsite!(1),
-                // need to implement automatic shape broadcasting
-                shape: Shape::new(),
-                operation: Operation::LessThanEq(a, b),
-                dtype: xla::ElementType::Pred,
-            };
-            // TODO: special case adding const zero
-            if !node_a.shape.broadcastable(&node_b.shape) {
-                Err(ContextError::IncompatibleOperandShapes(
+            match node_a.shape.broadcast(&node_b.shape) {
+                None => Err(ContextError::IncompatibleOperandShapes(
                     node_a.shape.clone(),
                     node_b.shape.clone(),
-                    node.callsite,
-                ))
-            } else {
-                Ok(self.nodes.insert(node))
+                    callsite!(1),
+                )),
+                Some(s) => {
+                    let node = Node {
+                        callsite: callsite!(1),
+                        shape: s,
+                        operation: Operation::LessThanEq(a, b),
+                        dtype: xla::ElementType::Pred,
+                    };
+                    Ok(self.nodes.insert(node))
+                }
             }
         }
     }
@@ -206,22 +200,21 @@ impl Context {
                 callsite!(1),
             ))
         } else {
-            let node = Node {
-                callsite: callsite!(1),
-                // need to implement automatic shape broadcasting
-                shape: Shape::new(),
-                operation: Operation::GreaterThanEq(a, b),
-                dtype: xla::ElementType::Pred,
-            };
-            // TODO: special case adding const zero
-            if !node_a.shape.broadcastable(&node_b.shape) {
-                Err(ContextError::IncompatibleOperandShapes(
+            match node_a.shape.broadcast(&node_b.shape) {
+                None => Err(ContextError::IncompatibleOperandShapes(
                     node_a.shape.clone(),
                     node_b.shape.clone(),
-                    node.callsite,
-                ))
-            } else {
-                Ok(self.nodes.insert(node))
+                    callsite!(1),
+                )),
+                Some(s) => {
+                    let node = Node {
+                        callsite: callsite!(1),
+                        shape: s,
+                        operation: Operation::GreaterThanEq(a, b),
+                        dtype: xla::ElementType::Pred,
+                    };
+                    Ok(self.nodes.insert(node))
+                }
             }
         }
     }
@@ -233,42 +226,8 @@ impl Context {
     ) -> Result<NodeIdentifier> {
         let a = a.into();
         let b = b.into();
-        let node_a = &self.nodes[a];
-        let node_b = &self.nodes[b];
-
-        if node_a.dtype != node_b.dtype {
-            Err(ContextError::IncompatibleOperandTypes(
-                node_a.dtype,
-                node_b.dtype,
-                callsite!(1),
-            ))
-        } else {
-            let pred_node_id = self.nodes.insert(Node {
-                callsite: callsite!(1),
-                // need to implement automatic shape broadcasting
-                shape: Shape::new(),
-                operation: Operation::LessThanEq(a, b),
-                dtype: xla::ElementType::Pred,
-            });
-            let node_a = &self.nodes[a];
-            let node_b = &self.nodes[b];
-            let node = Node {
-                callsite: callsite!(1),
-                /// TODO: this is not general enough
-                shape: Shape::new(),
-                operation: Operation::Select { pred: pred_node_id, on_true: a, on_false: b },
-                dtype: node_a.dtype,
-            };
-            if !node_a.shape.broadcastable(&node_b.shape) {
-                Err(ContextError::IncompatibleOperandShapes(
-                    node_a.shape.clone(),
-                    node_b.shape.clone(),
-                    node.callsite,
-                ))
-            } else {
-                Ok(self.nodes.insert(node))
-            }
-        }
+        let pred = self.lt(a, b)?;
+        self.select(pred, a, b)
     }
 
     pub fn maximum<A: Into<NodeIdentifier> + Copy, B: Into<NodeIdentifier> + Copy>(
@@ -278,42 +237,8 @@ impl Context {
     ) -> Result<NodeIdentifier> {
         let a = a.into();
         let b = b.into();
-        let node_a = &self.nodes[a];
-        let node_b = &self.nodes[b];
-
-        if node_a.dtype != node_b.dtype {
-            Err(ContextError::IncompatibleOperandTypes(
-                node_a.dtype,
-                node_b.dtype,
-                callsite!(1),
-            ))
-        } else {
-            let pred_node_id = self.nodes.insert(Node {
-                callsite: callsite!(1),
-                // need to implement automatic shape broadcasting
-                shape: Shape::new(),
-                operation: Operation::GreaterThanEq(a, b),
-                dtype: xla::ElementType::Pred,
-            });
-            let node_a = &self.nodes[a];
-            let node_b = &self.nodes[b];
-            let node = Node {
-                callsite: callsite!(1),
-                /// TODO: this is not general enough
-                shape: node_a.shape,
-                operation: Operation::Select { pred: pred_node_id, on_true: a, on_false: b },
-                dtype: node_a.dtype,
-            };
-            if !node_a.shape.broadcastable(&node_b.shape) {
-                Err(ContextError::IncompatibleOperandShapes(
-                    node_a.shape.clone(),
-                    node_b.shape.clone(),
-                    node.callsite,
-                ))
-            } else {
-                Ok(self.nodes.insert(node))
-            }
-        }
+        let pred = self.gt(a, b)?;
+        self.select(pred, a, b)
     }
 
     pub fn relu<A: Into<NodeIdentifier> + Copy, B: Into<NodeIdentifier> + Copy>(
@@ -326,11 +251,12 @@ impl Context {
         let const_zero = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: Shape::new(),
-            operation: Operation::Constant(ConstantBinding{ value: xla::Literal::scalar(0).convert(a_dtype.primitive_type())? }),
+            operation: Operation::Constant(ConstantBinding {
+                value: xla::Literal::scalar(0).convert(a_dtype.primitive_type())?,
+            }),
             dtype: a_dtype,
         });
 
-        self.maximum(a, b)
-
+        self.maximum(const_zero, a)
     }
 }
