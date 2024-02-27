@@ -11,12 +11,15 @@ pub enum Operation {
     Add(NodeIdentifier, NodeIdentifier),
     Mul(NodeIdentifier, NodeIdentifier),
 
+    Equal(NodeIdentifier, NodeIdentifier),
     LessThan(NodeIdentifier, NodeIdentifier),
     GreaterThan(NodeIdentifier, NodeIdentifier),
     LessThanEq(NodeIdentifier, NodeIdentifier),
     GreaterThanEq(NodeIdentifier, NodeIdentifier),
 
     Select{ pred: NodeIdentifier, on_true: NodeIdentifier, on_false: NodeIdentifier },
+
+    TypeCast(NodeIdentifier, xla::ElementType),
 }
 
 impl Display for Operation {

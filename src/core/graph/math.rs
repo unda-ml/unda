@@ -75,6 +75,42 @@ impl Context {
         }
     }
 
+    pub fn eq<A: Into<NodeIdentifier> + Copy, B: Into<NodeIdentifier> + Copy>(
+        &mut self,
+        a: A,
+        b: B,
+    ) -> Result<NodeIdentifier> {
+        let a = a.into();
+        let b = b.into();
+        let node_a = &self.nodes[a];
+        let node_b = &self.nodes[b];
+
+        if node_a.dtype != node_b.dtype {
+            Err(ContextError::IncompatibleOperandTypes(
+                node_a.dtype,
+                node_b.dtype,
+                callsite!(1),
+            ))
+        } else {
+            match node_a.shape.broadcast(&node_b.shape) {
+                None => Err(ContextError::IncompatibleOperandShapes(
+                    node_a.shape.clone(),
+                    node_b.shape.clone(),
+                    callsite!(1),
+                )),
+                Some(s) => {
+                    let node = Node {
+                        callsite: callsite!(1),
+                        shape: s,
+                        operation: Operation::Equal(a, b),
+                        dtype: xla::ElementType::Pred,
+                    };
+                    Ok(self.nodes.insert(node))
+                }
+            }
+        }
+    }
+
     pub fn lt<A: Into<NodeIdentifier> + Copy, B: Into<NodeIdentifier> + Copy>(
         &mut self,
         a: A,
@@ -258,5 +294,16 @@ impl Context {
         });
 
         self.maximum(const_zero, a)
+    }
+
+    pub fn type_cast<A: Into<NodeIdentifier> + Copy>(&mut self, a: A, dtype: xla::ElementType) -> NodeIdentifier {
+        let a = a.into();
+        let a_shape = self.nodes[a].shape.clone();
+        self.nodes.insert(Node {
+            callsite: callsite!(1),
+            shape: a_shape,
+            operation: Operation::TypeCast(a, dtype),
+            dtype: dtype
+        })
     }
 }

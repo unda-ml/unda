@@ -41,6 +41,7 @@ impl Context {
             // operations mean we need to go deeper
             Operation::Add(a, b)
             | Operation::Mul(a, b)
+            | Operation::Equal(a, b)
             | Operation::LessThan(a, b)
             | Operation::GreaterThan(a, b)
             | Operation::LessThanEq(a, b)
@@ -53,6 +54,9 @@ impl Context {
                 let r = self.autodiff(on_true, modification_limit)?;
                 self.autodiff(on_false, modification_limit - (r as usize))
                     .map(|v| v || r)
+            }
+            Operation::TypeCast(node, ty) => {
+                self.autodiff(node, modification_limit)
             }
             // finally a Diff node, lets distribute it
             Operation::Diff(outer, outer_param) => {
@@ -146,10 +150,12 @@ impl Context {
                         self.autodiff(input, modification_limit - 1)
                     }
 
-                    Operation::LessThan(_, _)
+                    Operation::Equal(_, _)
+                    | Operation::LessThan(_, _)
                     | Operation::GreaterThan(_, _)
                     | Operation::LessThanEq(_, _)
                     | Operation::GreaterThanEq(_, _) => Err(ContextError::NonDifferentiableError(outer_node.callsite.clone())),
+                    Operation::TypeCast(_, _) => Err(ContextError::NonDifferentiableError(outer_node.callsite.clone())),
 
                     Operation::Select {
                         pred,

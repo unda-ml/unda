@@ -1,4 +1,5 @@
 use super::*;
+use serde_json::de;
 use slotmap::SlotMap;
 use smallvec::SmallVec;
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -47,6 +48,7 @@ impl Context {
             Operation::Diff(_, _) => Err(CompileError::DiffNode(input_node.callsite.clone()))?,
             Operation::Mul(node1, node2)
             | Operation::Add(node1, node2)
+            | Operation::Equal(node1, node2)
             | Operation::LessThan(node1, node2)
             | Operation::GreaterThan(node1, node2)
             | Operation::LessThanEq(node1, node2)
@@ -61,6 +63,13 @@ impl Context {
                     .push(this_node_id);
                 self.get_dependent_nodes(node1, dep_nodes, constants, parameters)?;
                 self.get_dependent_nodes(node2, dep_nodes, constants, parameters)
+            }
+            Operation::TypeCast(node, _) => {
+                dep_nodes
+                    .entry(node)
+                    .or_insert(Vec::new())
+                    .push(this_node_id);
+                self.get_dependent_nodes(node, dep_nodes, constants, parameters)
             }
             Operation::Select {
                 pred,
@@ -233,6 +242,19 @@ impl Context {
                         }
                     }
 
+                    Operation::Equal(node1, node2) => {
+                        if xla_op_slotmap.contains_key(unda_xla_map[&node1])
+                            && xla_op_slotmap.contains_key(unda_xla_map[&node1])
+                        {
+                            let xla_op = xla_op_slotmap[unda_xla_map[&node1]]
+                                .eq(&xla_op_slotmap[unda_xla_map[&node2]])?;
+                            let xla_id = xla_op_slotmap.insert(xla_op);
+                            unda_xla_map.insert(*dependent_op, xla_id);
+                            unda_op_queue.push_back(*dependent_op);
+                            covered_ops.insert(*dependent_op);
+                        }
+                    }
+
                     Operation::LessThan(node1, node2) => {
                         if xla_op_slotmap.contains_key(unda_xla_map[&node1])
                             && xla_op_slotmap.contains_key(unda_xla_map[&node1])
@@ -300,6 +322,16 @@ impl Context {
                                 &xla_op_slotmap[unda_xla_map[&on_true]],
                                 &xla_op_slotmap[unda_xla_map[&on_false]],
                             )?;
+                            let xla_id = xla_op_slotmap.insert(xla_op);
+                            unda_xla_map.insert(*dependent_op, xla_id);
+                            unda_op_queue.push_back(*dependent_op);
+                            covered_ops.insert(*dependent_op);
+                        }
+                    }
+                    Operation::TypeCast(node, ty) => {
+                        if xla_op_slotmap.contains_key(unda_xla_map[&node]) {
+                            let xla_op =
+                                xla_op_slotmap[unda_xla_map[&node]].convert(ty.primitive_type())?;
                             let xla_id = xla_op_slotmap.insert(xla_op);
                             unda_xla_map.insert(*dependent_op, xla_id);
                             unda_op_queue.push_back(*dependent_op);

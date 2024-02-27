@@ -69,6 +69,7 @@ impl Context {
             Operation::Diff(a, b) => format!("Diff ({}) {}", self.to_string(a), self.to_string(b)),
             Operation::Add(a, b) => format!("Add ({}) ({})", self.to_string(a), self.to_string(b)),
             Operation::Mul(a, b) => format!("Mul ({}) ({})", self.to_string(a), self.to_string(b)),
+            Operation::Equal(a, b) => format!("LessThan ({}) ({})", self.to_string(a), self.to_string(b)),
             Operation::LessThan(a, b) => format!("LessThan ({}) ({})", self.to_string(a), self.to_string(b)),
             Operation::GreaterThan(a, b) => format!("GreaterThan ({}) ({})", self.to_string(a), self.to_string(b)),
             Operation::LessThanEq(a, b) => format!("LessThanEq ({}) ({})", self.to_string(a), self.to_string(b)),
@@ -83,6 +84,7 @@ impl Context {
                 self.to_string(on_true),
                 self.to_string(on_false)
             ),
+            Operation::TypeCast(a, ty) => format!("TypeCast {} {}", self.to_string(a), ty),
         }
     }
 }
