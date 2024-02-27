@@ -47,9 +47,9 @@ impl Context {
                     Operation::Constant(_) => {
                         // derivative of a constant with respect to anything is 0
                         self.nodes[input].operation = Operation::Constant(ConstantBinding {
-                            value: xla::Literal::create_from_shape(outer_dtype, &[]),
+                            value: xla::Literal::scalar(0).convert(outer_dtype)?,
                         });
-                        self.nodes[input].shape = [].into();
+                        self.nodes[input].shape = [1].into();
                         Ok(true)
                     }
                     Operation::Parameter(_) => {

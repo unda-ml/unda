@@ -21,7 +21,7 @@ impl Context {
         let mut modifications: usize = 0;
         let mut changed = false;
 
-        let mut to_visit = vec![input.into()];
+        let mut to_visit: Vec<NodeIdentifier> = vec![input.into()];
         let mut visitied: HashSet<NodeIdentifier> = HashSet::new();
 
         while let Some(node_id) = to_visit.pop() {
@@ -45,6 +45,9 @@ impl Context {
                             modifications += 1;
                             //Enqueue the dependent nodes to check both of them for constant
                             //mul/adding
+                            
+                            //TODO: Once we create a new Node based on the constant propegation,
+                            //use insert_with_key to 'replace existant node'
                             if a_node.is_const().is_none() {
                                 to_visit.push(a.into());
                             } 
