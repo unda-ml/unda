@@ -1,3 +1,5 @@
+use xla::Literal;
+
 use super::*;
 
 impl Context {
@@ -14,20 +16,34 @@ impl Context {
             return Ok(true);
         }
         // TODO: implement this
-        let input_node = &self.nodes[input.into()];
+        let input_node = &mut self.nodes[input.into()];
         return match input_node.operation {
             Operation::Add(a, b) => {
                 let node_a = &self.nodes[a];
                 let node_b = &self.nodes[b];
+                
 
-                let a_const = node_a.is_const();
-                let b_const = node_b.is_const();
+                if node_a.is_zero()? || node_b.is_zero()? {
 
-                if a_const.is_some() && b_const.is_some() {
+                    let a_val = node_a.is_const();
+                    let b_val = node_b.is_const();
+                    
+                    let new_val: Literal;
+
+                    if b_val.is_some() && node_b.is_zero()? {
+
+                    } else {
+
+                    }
+                }
+ 
+                //TODO at some point possible, for now we're only checkng 
+                //for mul by zero/one and adding by 0
+                /*if a_const.is_some() && b_const.is_some() {
                     let (a,b) = (a_const.unwrap(), b_const.unwrap());
                     //TODO: Do replacement
                     
-                }
+                }*/
                 Ok(false)
             }
             Operation::Mul(a, b) => {
@@ -37,7 +53,7 @@ impl Context {
                 let a_const = node_a.is_const();
                 let b_const = node_b.is_const();
 
-                if a_const.is_some() && b_const.is_some() {
+                if a_const.is_some() || b_const.is_some() {
                     //TODO: Do replacement
                     
                 } else if node_a.is_zero()? || node_b.is_zero()? {
