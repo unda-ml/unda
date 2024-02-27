@@ -66,7 +66,7 @@ impl Context {
                     let node = Node {
                         callsite: callsite!(1),
                         shape: s,
-                        operation: Operation::Add(a, b),
+                        operation: Operation::Mul(a, b),
                         dtype: node_a.dtype,
                     };
                     Ok(self.nodes.insert(node))
@@ -241,7 +241,7 @@ impl Context {
         self.select(pred, a, b)
     }
 
-    pub fn relu<A: Into<NodeIdentifier> + Copy, B: Into<NodeIdentifier> + Copy>(
+    pub fn relu<A: Into<NodeIdentifier> + Copy>(
         &mut self,
         a: A,
     ) -> Result<NodeIdentifier> {

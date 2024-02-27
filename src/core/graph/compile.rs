@@ -289,7 +289,10 @@ impl Context {
                         on_true,
                         on_false,
                     } => {
-                        if xla_op_slotmap.contains_key(unda_xla_map[&pred])
+                        if unda_xla_map.contains_key(&pred)
+                            && unda_xla_map.contains_key(&on_true)
+                            && unda_xla_map.contains_key(&on_false)
+                            && xla_op_slotmap.contains_key(unda_xla_map[&pred])
                             && xla_op_slotmap.contains_key(unda_xla_map[&on_true])
                             && xla_op_slotmap.contains_key(unda_xla_map[&on_false])
                         {
