@@ -306,4 +306,32 @@ impl Context {
             dtype: dtype
         })
     }
+
+    pub fn slice_in_dim<A: Into<NodeIdentifier> + Copy>(&mut self, a: A, start: i64, stop: i64, stride: i64, dim: i64) {
+        let a = a.into();
+        let mut s = Shape::new();
+        for d in (0..self.nodes[a].shape.ndims()).rev() {
+            if d as i64 == dim {
+                s.sizes.push(1)
+            } else {
+                s.sizes.push(self.nodes[a].shape.sizes[d])
+            }
+        }
+        self.nodes.insert(Node {
+            callsite: callsite!(1),
+            shape: s,
+            operation: Operation::SliceInDim { node: a, start: start, stop: stop, stride: stride, dim: dim },
+            dtype: self.nodes[a].dtype
+        });
+    }
+
+    pub fn zeros_like<A: Into<NodeIdentifier> + Copy>(&mut self, a: A) {
+        let a = a.into();
+        self.nodes.insert(Node {
+            callsite: callsite!(1),
+            shape: self.nodes[a].shape.clone(),
+            operation: Operation::ZerosLike(a),
+            dtype: self.nodes[a].dtype
+        });
+    }
 }

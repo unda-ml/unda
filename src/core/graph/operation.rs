@@ -20,6 +20,10 @@ pub enum Operation {
     Select{ pred: NodeIdentifier, on_true: NodeIdentifier, on_false: NodeIdentifier },
 
     TypeCast(NodeIdentifier, xla::ElementType),
+
+    SliceInDim{ node: NodeIdentifier, start: i64, stop: i64, stride: i64, dim: i64 },
+
+    ZerosLike(NodeIdentifier),
 }
 
 impl Display for Operation {

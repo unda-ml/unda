@@ -71,6 +71,13 @@ impl Context {
                     .push(this_node_id);
                 self.get_dependent_nodes(node, dep_nodes, constants, parameters)
             }
+            Operation::SliceInDim{ node, .. } => {
+                dep_nodes
+                    .entry(node)
+                    .or_insert(Vec::new())
+                    .push(this_node_id);
+                self.get_dependent_nodes(node, dep_nodes, constants, parameters)
+            }
             Operation::Select {
                 pred,
                 on_true,
@@ -91,6 +98,13 @@ impl Context {
                 self.get_dependent_nodes(pred, dep_nodes, constants, parameters)?;
                 self.get_dependent_nodes(on_true, dep_nodes, constants, parameters)?;
                 self.get_dependent_nodes(on_false, dep_nodes, constants, parameters)
+            }
+            Operation::ZerosLike(node) => {
+                dep_nodes
+                    .entry(node)
+                    .or_insert(Vec::new())
+                    .push(this_node_id);
+                self.get_dependent_nodes(node, dep_nodes, constants, parameters)
             }
         }
     }
@@ -332,6 +346,26 @@ impl Context {
                         if xla_op_slotmap.contains_key(unda_xla_map[&node]) {
                             let xla_op =
                                 xla_op_slotmap[unda_xla_map[&node]].convert(ty.primitive_type())?;
+                            let xla_id = xla_op_slotmap.insert(xla_op);
+                            unda_xla_map.insert(*dependent_op, xla_id);
+                            unda_op_queue.push_back(*dependent_op);
+                            covered_ops.insert(*dependent_op);
+                        }
+                    }
+                    Operation::SliceInDim{ node, start, stop, stride, dim } => {
+                        if xla_op_slotmap.contains_key(unda_xla_map[&node]) {
+                            let xla_op =
+                                xla_op_slotmap[unda_xla_map[&node]].slice_in_dim(start, stop, stride, dim)?;
+                            let xla_id = xla_op_slotmap.insert(xla_op);
+                            unda_xla_map.insert(*dependent_op, xla_id);
+                            unda_op_queue.push_back(*dependent_op);
+                            covered_ops.insert(*dependent_op);
+                        }
+                    }
+                    Operation::ZerosLike(node) => {
+                        if xla_op_slotmap.contains_key(unda_xla_map[&node]) {
+                            let xla_op =
+                                xla_op_slotmap[unda_xla_map[&node]].zeros_like()?;
                             let xla_id = xla_op_slotmap.insert(xla_op);
                             unda_xla_map.insert(*dependent_op, xla_id);
                             unda_op_queue.push_back(*dependent_op);

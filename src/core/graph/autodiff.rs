@@ -50,14 +50,18 @@ impl Context {
                 self.autodiff(b, modification_limit - (r as usize))
                     .map(|v| v || r)
             }
-            Operation::Select{ pred: _, on_true, on_false } => {
+            Operation::Select {
+                pred: _,
+                on_true,
+                on_false,
+            } => {
                 let r = self.autodiff(on_true, modification_limit)?;
                 self.autodiff(on_false, modification_limit - (r as usize))
                     .map(|v| v || r)
             }
-            Operation::TypeCast(node, ty) => {
-                self.autodiff(node, modification_limit)
-            }
+            Operation::TypeCast(node, ty) => self.autodiff(node, modification_limit),
+            Operation::SliceInDim { node, .. } => self.autodiff(node, modification_limit),
+            Operation::ZerosLike(node) => self.autodiff(node, modification_limit),
             // finally a Diff node, lets distribute it
             Operation::Diff(outer, outer_param) => {
                 let outer_node = &self.nodes[outer];
@@ -190,6 +194,31 @@ impl Context {
                         // rerun autodiff on the node we replaced
                         self.autodiff(input, modification_limit - 1)
                     }
+
+                    /*
+                    Operation::SliceInDim { node, start, stop, stride, dim } => {
+                        let diff_node = Node {
+                            callsite: input_node.callsite.clone(),
+                            shape: self.nodes[node].shape.clone(),
+                            operation: Operation::Diff(node, outer_param),
+                            dtype: self.nodes[node].dtype
+                        };
+                        self.nodes[input].callsite = outer_node.callsite.clone();
+                        let diff_node = self.nodes.insert(diff_node);
+                        let zero_node = self.nodes.insert(Node {
+                            callsite: input_node.callsite.clone(),
+                            shape: node.shape.clone(),
+                            operation: Operation::ZerosLike(node)
+                        });
+                    }
+                    */
+                    Operation::SliceInDim { node, start, stop, stride, dim } => panic!("Differentiating SliceInDim not yet supported, xla-rs must implement scatter operation."),
+
+                    Operation::ZerosLike(node) => {
+                        self.nodes[input].operation = Operation::ZerosLike(node);
+                        self.autodiff(input, modification_limit - 1)
+                    }
+
                     Operation::Diff(inner, _) => {
                         // derivative of a derivative, apply the inner one first then try again on the outer.
                         let r = self.autodiff(inner, modification_limit)?;
