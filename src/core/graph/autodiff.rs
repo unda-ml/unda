@@ -42,6 +42,8 @@ impl Context {
         node: NodeIdentifier,
         with_respect_to: NodeIdentifier,
     ) -> Result<NodeIdentifier> {
+        let wrt_dtype = self.nodes[with_respect_to].dtype;
+
         if ![
             xla::ElementType::F16,
             xla::ElementType::Bf16,
@@ -50,11 +52,15 @@ impl Context {
             xla::ElementType::C64,
             xla::ElementType::C128,
         ]
-        .contains(&self.nodes[with_respect_to].dtype)
+        .contains(&wrt_dtype)
         {
             return Err(ContextError::NonDifferentiableTypeError(
                 self.nodes[with_respect_to].callsite.clone(),
             ));
+        }
+
+        if node == with_respect_to {
+            return self.scalar(1, wrt_dtype);
         }
 
         let mut dependent_pullbacks: SmallVec<[NodeIdentifier; 2]> = SmallVec::new();
@@ -124,7 +130,7 @@ impl Context {
 
                     Operation::Select { pred, on_true, on_false } => {
                         let next_pullback = self.diff(node, dependent_node)?;
-                        let const_zero = self.scalar(0, self.nodes[with_respect_to].dtype)?;
+                        let const_zero = self.scalar(0, wrt_dtype)?;
                         if on_true == with_respect_to {
                             let select = self.select(pred, next_pullback, const_zero)?;
                             dependent_pullbacks.push(select);
@@ -138,6 +144,6 @@ impl Context {
             }
         }
 
-        self.smallvec_add(dependent_pullbacks, self.nodes[with_respect_to].dtype)
+        self.smallvec_add(dependent_pullbacks, wrt_dtype)
     }
 }
