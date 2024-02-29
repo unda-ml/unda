@@ -23,7 +23,7 @@ impl Context {
             let dep_nodes = self.dependent_nodes[&independent].clone();
             for node_id in dep_nodes {
                 match self.nodes[independent].operation {
-                    Operation::StopGradient(_) => return false,
+                    Operation::StopGradient(_) => continue,
                     _ => {
                         if self.gradient_is_dependent(dependent, node_id) {
                             return true;
