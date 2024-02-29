@@ -134,4 +134,68 @@ mod tests {
         assert_eq!(rust_result3[0], 5f32)
 
     }
+
+    #[test]
+    fn test_minimum() {
+        let mut ctx = Context::new();
+
+        let test_const1 = ctx.const_from_npy("test.npy").expect("test_const1");
+        let test_const2 = ctx.const_from_npy("test2.npy").expect("test_const2");
+        let min = ctx.minimum(test_const1, test_const2).expect("min");
+
+        let client = xla::PjRtClient::gpu(0.7, false).expect("client");
+        let name = "test";
+        let executable = ctx.compile(&name, [min], &client).expect("executable");
+
+        let device_result = executable.execute::<xla::Literal>(&[]).expect("execute");
+        let host_result = device_result[0][0]
+            .to_literal_sync()
+            .expect("to_literal_sync");
+        let untupled_result = host_result.to_tuple1().expect("untuple");
+        let rust_result = untupled_result.to_vec::<i64>().expect("to_vec");
+        println!("{:?}", rust_result);
+        assert_eq!(rust_result.as_slice(), &[-2, 1, 1, -2]);
+    }
+
+    #[test]
+    fn test_relu() {
+        let mut ctx = Context::new();
+
+        let test_const = ctx.const_from_npy("test2.npy").expect("test_const");
+        let relu = ctx.relu(test_const).expect("relu");
+
+        let client = xla::PjRtClient::gpu(0.7, false).expect("client");
+        let name = "test";
+        let executable = ctx.compile(&name, [relu], &client).expect("executable");
+
+        let device_result = executable.execute::<xla::Literal>(&[]).expect("execute");
+        let host_result = device_result[0][0]
+            .to_literal_sync()
+            .expect("to_literal_sync");
+        let untupled_result = host_result.to_tuple1().expect("untuple");
+        let rust_result = untupled_result.to_vec::<i64>().expect("to_vec");
+        println!("{:?}", rust_result);
+        assert_eq!(rust_result.as_slice(), &[0, 4, 4, 0]);
+    }
+
+    #[test]
+    fn test_slice_in_dim() {
+        let mut ctx = Context::new();
+
+        let test_const = ctx.const_from_npy("test2.npy").expect("test_const");
+        let relu = ctx.relu(test_const).expect("relu");
+
+        let client = xla::PjRtClient::gpu(0.7, false).expect("client");
+        let name = "test";
+        let executable = ctx.compile(&name, [relu], &client).expect("executable");
+
+        let device_result = executable.execute::<xla::Literal>(&[]).expect("execute");
+        let host_result = device_result[0][0]
+            .to_literal_sync()
+            .expect("to_literal_sync");
+        let untupled_result = host_result.to_tuple1().expect("untuple");
+        let rust_result = untupled_result.to_vec::<i64>().expect("to_vec");
+        println!("{:?}", rust_result);
+        assert_eq!(rust_result.as_slice(), &[0, 4, 4, 0]);
+    }
 }

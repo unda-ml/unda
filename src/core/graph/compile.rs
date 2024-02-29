@@ -1,4 +1,5 @@
 use super::*;
+use serde_json::de;
 use slotmap::SlotMap;
 use smallvec::SmallVec;
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -37,8 +38,21 @@ impl Context {
                 parameters.insert(this_node_id);
                 Ok(())
             }
+            Operation::StopGradient(node) => {
+                dep_nodes
+                    .entry(node)
+                    .or_insert(Vec::new())
+                    .push(this_node_id);
+                self.get_dependent_nodes(node, dep_nodes, constants, parameters)
+            }
             Operation::Diff(_, _) => Err(CompileError::DiffNode(input_node.callsite.clone()))?,
-            Operation::Mul(node1, node2) | Operation::Add(node1, node2) => {
+            Operation::Mul(node1, node2)
+            | Operation::Add(node1, node2)
+            | Operation::Equal(node1, node2)
+            | Operation::LessThan(node1, node2)
+            | Operation::GreaterThan(node1, node2)
+            | Operation::LessThanEq(node1, node2)
+            | Operation::GreaterThanEq(node1, node2) => {
                 dep_nodes
                     .entry(node1)
                     .or_insert(Vec::new())
@@ -49,6 +63,48 @@ impl Context {
                     .push(this_node_id);
                 self.get_dependent_nodes(node1, dep_nodes, constants, parameters)?;
                 self.get_dependent_nodes(node2, dep_nodes, constants, parameters)
+            }
+            Operation::TypeCast(node, _) => {
+                dep_nodes
+                    .entry(node)
+                    .or_insert(Vec::new())
+                    .push(this_node_id);
+                self.get_dependent_nodes(node, dep_nodes, constants, parameters)
+            }
+            Operation::SliceInDim{ node, .. } => {
+                dep_nodes
+                    .entry(node)
+                    .or_insert(Vec::new())
+                    .push(this_node_id);
+                self.get_dependent_nodes(node, dep_nodes, constants, parameters)
+            }
+            Operation::Select {
+                pred,
+                on_true,
+                on_false,
+            } => {
+                dep_nodes
+                    .entry(pred)
+                    .or_insert(Vec::new())
+                    .push(this_node_id);
+                dep_nodes
+                    .entry(on_true)
+                    .or_insert(Vec::new())
+                    .push(this_node_id);
+                dep_nodes
+                    .entry(on_false)
+                    .or_insert(Vec::new())
+                    .push(this_node_id);
+                self.get_dependent_nodes(pred, dep_nodes, constants, parameters)?;
+                self.get_dependent_nodes(on_true, dep_nodes, constants, parameters)?;
+                self.get_dependent_nodes(on_false, dep_nodes, constants, parameters)
+            }
+            Operation::ZerosLike(node) => {
+                dep_nodes
+                    .entry(node)
+                    .or_insert(Vec::new())
+                    .push(this_node_id);
+                self.get_dependent_nodes(node, dep_nodes, constants, parameters)
             }
         }
     }
@@ -167,6 +223,12 @@ impl Context {
                     }
                     Operation::Constant(_) => unreachable!("Constants can't depend on other nodes"),
                     Operation::Diff(_, _) => Err(CompileError::DiffNode(node.callsite.clone()))?,
+                    Operation::StopGradient(node) => {
+                        let xla_id = unda_xla_map[&node];
+                        unda_xla_map.insert(*dependent_op, xla_id);
+                        unda_op_queue.push_back(*dependent_op);
+                        covered_ops.insert(*dependent_op);
+                    }
 
                     Operation::Mul(node1, node2) => {
                         if xla_op_slotmap.contains_key(unda_xla_map[&node1])
@@ -193,11 +255,131 @@ impl Context {
                             covered_ops.insert(*dependent_op);
                         }
                     }
+
+                    Operation::Equal(node1, node2) => {
+                        if xla_op_slotmap.contains_key(unda_xla_map[&node1])
+                            && xla_op_slotmap.contains_key(unda_xla_map[&node1])
+                        {
+                            let xla_op = xla_op_slotmap[unda_xla_map[&node1]]
+                                .eq(&xla_op_slotmap[unda_xla_map[&node2]])?;
+                            let xla_id = xla_op_slotmap.insert(xla_op);
+                            unda_xla_map.insert(*dependent_op, xla_id);
+                            unda_op_queue.push_back(*dependent_op);
+                            covered_ops.insert(*dependent_op);
+                        }
+                    }
+
+                    Operation::LessThan(node1, node2) => {
+                        if xla_op_slotmap.contains_key(unda_xla_map[&node1])
+                            && xla_op_slotmap.contains_key(unda_xla_map[&node1])
+                        {
+                            let xla_op = xla_op_slotmap[unda_xla_map[&node1]]
+                                .lt(&xla_op_slotmap[unda_xla_map[&node2]])?;
+                            let xla_id = xla_op_slotmap.insert(xla_op);
+                            unda_xla_map.insert(*dependent_op, xla_id);
+                            unda_op_queue.push_back(*dependent_op);
+                            covered_ops.insert(*dependent_op);
+                        }
+                    }
+
+                    Operation::GreaterThan(node1, node2) => {
+                        if xla_op_slotmap.contains_key(unda_xla_map[&node1])
+                            && xla_op_slotmap.contains_key(unda_xla_map[&node1])
+                        {
+                            let xla_op = xla_op_slotmap[unda_xla_map[&node1]]
+                                .gt(&xla_op_slotmap[unda_xla_map[&node2]])?;
+                            let xla_id = xla_op_slotmap.insert(xla_op);
+                            unda_xla_map.insert(*dependent_op, xla_id);
+                            unda_op_queue.push_back(*dependent_op);
+                            covered_ops.insert(*dependent_op);
+                        }
+                    }
+
+                    Operation::LessThanEq(node1, node2) => {
+                        if xla_op_slotmap.contains_key(unda_xla_map[&node1])
+                            && xla_op_slotmap.contains_key(unda_xla_map[&node1])
+                        {
+                            let xla_op = xla_op_slotmap[unda_xla_map[&node1]]
+                                .le(&xla_op_slotmap[unda_xla_map[&node2]])?;
+                            let xla_id = xla_op_slotmap.insert(xla_op);
+                            unda_xla_map.insert(*dependent_op, xla_id);
+                            unda_op_queue.push_back(*dependent_op);
+                            covered_ops.insert(*dependent_op);
+                        }
+                    }
+
+                    Operation::GreaterThanEq(node1, node2) => {
+                        if xla_op_slotmap.contains_key(unda_xla_map[&node1])
+                            && xla_op_slotmap.contains_key(unda_xla_map[&node1])
+                        {
+                            let xla_op = xla_op_slotmap[unda_xla_map[&node1]]
+                                .ge(&xla_op_slotmap[unda_xla_map[&node2]])?;
+                            let xla_id = xla_op_slotmap.insert(xla_op);
+                            unda_xla_map.insert(*dependent_op, xla_id);
+                            unda_op_queue.push_back(*dependent_op);
+                            covered_ops.insert(*dependent_op);
+                        }
+                    }
+                    Operation::Select {
+                        pred,
+                        on_true,
+                        on_false,
+                    } => {
+                        if unda_xla_map.contains_key(&pred)
+                            && unda_xla_map.contains_key(&on_true)
+                            && unda_xla_map.contains_key(&on_false)
+                            && xla_op_slotmap.contains_key(unda_xla_map[&pred])
+                            && xla_op_slotmap.contains_key(unda_xla_map[&on_true])
+                            && xla_op_slotmap.contains_key(unda_xla_map[&on_false])
+                        {
+                            let xla_op = xla_op_slotmap[unda_xla_map[&pred]].select(
+                                &xla_op_slotmap[unda_xla_map[&on_true]],
+                                &xla_op_slotmap[unda_xla_map[&on_false]],
+                            )?;
+                            let xla_id = xla_op_slotmap.insert(xla_op);
+                            unda_xla_map.insert(*dependent_op, xla_id);
+                            unda_op_queue.push_back(*dependent_op);
+                            covered_ops.insert(*dependent_op);
+                        }
+                    }
+                    Operation::TypeCast(node, ty) => {
+                        if xla_op_slotmap.contains_key(unda_xla_map[&node]) {
+                            let xla_op =
+                                xla_op_slotmap[unda_xla_map[&node]].convert(ty.primitive_type())?;
+                            let xla_id = xla_op_slotmap.insert(xla_op);
+                            unda_xla_map.insert(*dependent_op, xla_id);
+                            unda_op_queue.push_back(*dependent_op);
+                            covered_ops.insert(*dependent_op);
+                        }
+                    }
+                    Operation::SliceInDim{ node, start, stop, stride, dim } => {
+                        if xla_op_slotmap.contains_key(unda_xla_map[&node]) {
+                            let xla_op =
+                                xla_op_slotmap[unda_xla_map[&node]].slice_in_dim(start, stop, stride, dim)?;
+                            let xla_id = xla_op_slotmap.insert(xla_op);
+                            unda_xla_map.insert(*dependent_op, xla_id);
+                            unda_op_queue.push_back(*dependent_op);
+                            covered_ops.insert(*dependent_op);
+                        }
+                    }
+                    Operation::ZerosLike(node) => {
+                        if xla_op_slotmap.contains_key(unda_xla_map[&node]) {
+                            let xla_op =
+                                xla_op_slotmap[unda_xla_map[&node]].zeros_like()?;
+                            let xla_id = xla_op_slotmap.insert(xla_op);
+                            unda_xla_map.insert(*dependent_op, xla_id);
+                            unda_op_queue.push_back(*dependent_op);
+                            covered_ops.insert(*dependent_op);
+                        }
+                    }
                 }
             }
         }
 
-        let xla_return_vec: Vec<&xla::XlaOp> = returns.into_iter().map(|i| &xla_op_slotmap[unda_xla_map[&i.into()]]).collect();
+        let xla_return_vec: Vec<&xla::XlaOp> = returns
+            .into_iter()
+            .map(|i| &xla_op_slotmap[unda_xla_map[&i.into()]])
+            .collect();
         let xla_return_tuple = builder.tuple(&xla_return_vec.as_slice())?;
 
         let xla_computation = xla_return_tuple.build()?;

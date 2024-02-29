@@ -6,9 +6,24 @@ use strum_macros::EnumDiscriminants;
 pub enum Operation {
     Constant(ConstantBinding),
     Parameter(ParameterBinding),
+    StopGradient(NodeIdentifier),
+    Diff(NodeIdentifier, Parameter),
     Add(NodeIdentifier, NodeIdentifier),
     Mul(NodeIdentifier, NodeIdentifier),
-    Diff(NodeIdentifier, Parameter),
+
+    Equal(NodeIdentifier, NodeIdentifier),
+    LessThan(NodeIdentifier, NodeIdentifier),
+    GreaterThan(NodeIdentifier, NodeIdentifier),
+    LessThanEq(NodeIdentifier, NodeIdentifier),
+    GreaterThanEq(NodeIdentifier, NodeIdentifier),
+
+    Select{ pred: NodeIdentifier, on_true: NodeIdentifier, on_false: NodeIdentifier },
+
+    TypeCast(NodeIdentifier, xla::ElementType),
+
+    SliceInDim{ node: NodeIdentifier, start: i64, stop: i64, stride: i64, dim: i64 },
+
+    ZerosLike(NodeIdentifier),
 }
 
 impl Display for Operation {
