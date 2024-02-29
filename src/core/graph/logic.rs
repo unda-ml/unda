@@ -42,7 +42,11 @@ impl Context {
                                 operation: Operation::Select{ pred: pred, on_true: on_true, on_false: on_false },
                                 dtype: node_true.dtype,
                             };
-                            Ok(self.nodes.insert(node))
+                            let node_id = self.nodes.insert(node);
+                            self.dependent_nodes.entry(pred).or_insert(Vec::new()).push(node_id);
+                            self.dependent_nodes.entry(on_true).or_insert(Vec::new()).push(node_id);
+                            self.dependent_nodes.entry(on_false).or_insert(Vec::new()).push(node_id);
+                            Ok(node_id)
                         }
                     }
                 }

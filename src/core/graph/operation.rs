@@ -7,7 +7,6 @@ pub enum Operation {
     Constant(ConstantBinding),
     Parameter(ParameterBinding),
     StopGradient(NodeIdentifier),
-    Diff(NodeIdentifier, Parameter),
     Add(NodeIdentifier, NodeIdentifier),
     Mul(NodeIdentifier, NodeIdentifier),
 

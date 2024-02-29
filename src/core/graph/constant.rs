@@ -58,6 +58,7 @@ impl Context {
             operation: Operation::Constant(ConstantBinding { value }),
             dtype,
         });
+        self.constants.push(node_id);
         Ok(node_id)
     }
 
@@ -73,6 +74,7 @@ impl Context {
             operation: Operation::Constant(ConstantBinding { value }),
             dtype: T::TY,
         });
+        self.constants.push(node_id);
         Ok(node_id)
     }
 
@@ -94,6 +96,7 @@ impl Context {
             operation: Operation::Constant(ConstantBinding { value: reshaped }),
             dtype: T::TY,
         });
+        self.constants.push(node_id);
         Ok(node_id)
     }
 
@@ -108,6 +111,7 @@ impl Context {
             operation: Operation::Constant(ConstantBinding { value: l }),
             dtype: t,
         });
+        self.constants.push(node_id);
         Ok(node_id)
     }
 
@@ -134,6 +138,7 @@ impl Context {
             operation: Operation::Constant(ConstantBinding { value: new_value }),
             dtype: self.nodes[const_id].dtype,
         });
+        self.constants.push(node_id);
         Ok(node_id)
     }
 
@@ -153,6 +158,7 @@ impl Context {
             operation: Operation::Constant(ConstantBinding { value: new_value }),
             dtype: new_type,
         });
+        self.constants.push(node_id);
         Ok(node_id)
     }
 }

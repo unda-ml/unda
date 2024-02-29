@@ -20,94 +20,6 @@ pub enum CompileError {
 }
 
 impl Context {
-    fn get_dependent_nodes<A: Into<NodeIdentifier> + Copy>(
-        &self,
-        a: A,
-        dep_nodes: &mut HashMap<NodeIdentifier, Vec<NodeIdentifier>>,
-        constants: &mut HashSet<NodeIdentifier>,
-        parameters: &mut HashSet<NodeIdentifier>,
-    ) -> Result<()> {
-        let this_node_id = a.into();
-        let input_node = &self.nodes[this_node_id];
-        match input_node.operation {
-            Operation::Constant(_) => {
-                constants.insert(this_node_id);
-                Ok(())
-            }
-            Operation::Parameter(_) => {
-                parameters.insert(this_node_id);
-                Ok(())
-            }
-            Operation::StopGradient(node) => {
-                dep_nodes
-                    .entry(node)
-                    .or_insert(Vec::new())
-                    .push(this_node_id);
-                self.get_dependent_nodes(node, dep_nodes, constants, parameters)
-            }
-            Operation::Diff(_, _) => Err(CompileError::DiffNode(input_node.callsite.clone()))?,
-            Operation::Mul(node1, node2)
-            | Operation::Add(node1, node2)
-            | Operation::Equal(node1, node2)
-            | Operation::LessThan(node1, node2)
-            | Operation::GreaterThan(node1, node2)
-            | Operation::LessThanEq(node1, node2)
-            | Operation::GreaterThanEq(node1, node2) => {
-                dep_nodes
-                    .entry(node1)
-                    .or_insert(Vec::new())
-                    .push(this_node_id);
-                dep_nodes
-                    .entry(node2)
-                    .or_insert(Vec::new())
-                    .push(this_node_id);
-                self.get_dependent_nodes(node1, dep_nodes, constants, parameters)?;
-                self.get_dependent_nodes(node2, dep_nodes, constants, parameters)
-            }
-            Operation::TypeCast(node, _) => {
-                dep_nodes
-                    .entry(node)
-                    .or_insert(Vec::new())
-                    .push(this_node_id);
-                self.get_dependent_nodes(node, dep_nodes, constants, parameters)
-            }
-            Operation::SliceInDim{ node, .. } => {
-                dep_nodes
-                    .entry(node)
-                    .or_insert(Vec::new())
-                    .push(this_node_id);
-                self.get_dependent_nodes(node, dep_nodes, constants, parameters)
-            }
-            Operation::Select {
-                pred,
-                on_true,
-                on_false,
-            } => {
-                dep_nodes
-                    .entry(pred)
-                    .or_insert(Vec::new())
-                    .push(this_node_id);
-                dep_nodes
-                    .entry(on_true)
-                    .or_insert(Vec::new())
-                    .push(this_node_id);
-                dep_nodes
-                    .entry(on_false)
-                    .or_insert(Vec::new())
-                    .push(this_node_id);
-                self.get_dependent_nodes(pred, dep_nodes, constants, parameters)?;
-                self.get_dependent_nodes(on_true, dep_nodes, constants, parameters)?;
-                self.get_dependent_nodes(on_false, dep_nodes, constants, parameters)
-            }
-            Operation::ZerosLike(node) => {
-                dep_nodes
-                    .entry(node)
-                    .or_insert(Vec::new())
-                    .push(this_node_id);
-                self.get_dependent_nodes(node, dep_nodes, constants, parameters)
-            }
-        }
-    }
 
     pub fn compile<A: Into<NodeIdentifier> + Copy, const N: usize>(
         &mut self,
@@ -120,14 +32,6 @@ impl Context {
         if returns.is_empty() {
             Err(CompileError::NoReturn)?;
         }
-
-        for a in returns.iter() {
-            self.autodiff(*a, usize::MAX)?;
-        }
-        //println!("{}", self.to_string(a));
-        //while self.autodiff(a, 1)? {
-        //    println!("{}", self.to_string(a));
-        //}
 
         for a in returns.iter() {
             self.foldconsts(*a, usize::MAX)?;
@@ -143,28 +47,21 @@ impl Context {
         //    println!("{}", self.to_string(a));
         //}
 
-        // Get the bottom-up dependencies of the compute graph
-        let mut dependent_nodes = HashMap::new();
-        let mut constants = HashSet::new();
-        let mut parameters = HashSet::new();
-        for a in returns.iter() {
-            self.get_dependent_nodes(*a, &mut dependent_nodes, &mut constants, &mut parameters)?;
-        }
-
         // Prepare to loop through the unda compute graph and construct the XLA compute graph
         let mut xla_op_slotmap: SlotMap<NodeIdentifier, xla::XlaOp> = SlotMap::with_key();
         let mut unda_op_queue: VecDeque<NodeIdentifier> = VecDeque::new();
         let mut unda_xla_map: HashMap<NodeIdentifier, NodeIdentifier> = HashMap::new();
         let mut covered_ops: HashSet<NodeIdentifier> = HashSet::new();
+        let param_set: HashSet<NodeIdentifier> = self.parameters.iter().cloned().collect();
 
         let builder = xla::XlaBuilder::new(name);
 
         // declare parameters with the XLA builder
-        for (i, unda_id) in self.param_indices.iter().enumerate() {
+        for (i, unda_id) in self.parameters.iter().enumerate() {
             let node = &self.nodes[*unda_id];
 
-            if !parameters.contains(unda_id) {
-                // Unused parameter found
+            if !param_set.contains(unda_id) {
+                println!("Warning! Unused parameter {}", self.to_string(*unda_id));
             }
 
             let shape = node
@@ -188,7 +85,7 @@ impl Context {
         }
 
         // Initialize constants for the XLA builder
-        for unda_id in constants.iter() {
+        for unda_id in self.constants.iter() {
             let node = &self.nodes[*unda_id];
 
             let const_val = match &node.operation {
@@ -208,7 +105,7 @@ impl Context {
         while unda_op_queue.len() > 0 {
             let unda_id = unda_op_queue.pop_front().unwrap();
 
-            let Some(dependent_ops) = dependent_nodes.get(&unda_id) else {
+            let Some(dependent_ops) = self.dependent_nodes.get(&unda_id) else {
                 continue;
             };
 
@@ -222,7 +119,6 @@ impl Context {
                         unreachable!("Parameters can't depend on other nodes")
                     }
                     Operation::Constant(_) => unreachable!("Constants can't depend on other nodes"),
-                    Operation::Diff(_, _) => Err(CompileError::DiffNode(node.callsite.clone()))?,
                     Operation::StopGradient(node) => {
                         let xla_id = unda_xla_map[&node];
                         unda_xla_map.insert(*dependent_op, xla_id);

@@ -1,3 +1,5 @@
+use smallvec::SmallVec;
+
 use super::*;
 
 impl Context {
@@ -33,9 +35,28 @@ impl Context {
                         operation: Operation::Add(a, b),
                         dtype: node_a.dtype,
                     };
-                    Ok(self.nodes.insert(node))
+                    let node_id = self.nodes.insert(node);
+                    self.dependent_nodes.entry(a).or_insert(Vec::new()).push(node_id);
+                    self.dependent_nodes.entry(b).or_insert(Vec::new()).push(node_id);
+                    Ok(node_id)
                 }
             }
+        }
+    }
+
+    pub fn smallvec_add(&mut self, mut nodes: SmallVec<[NodeIdentifier; 2]>, default_dtype: xla::ElementType) -> Result<NodeIdentifier> {
+        if nodes.len() == 1 {
+            Ok(nodes[0])
+        } else if nodes.len() > 1 {
+            let node0 = nodes.pop().unwrap();
+            let node1 = nodes.pop().unwrap();
+            let mut add_node = self.add(node0, node1)?;
+            for next_node in nodes.into_iter() {
+                add_node = self.add(add_node, next_node)?;
+            }
+            Ok(add_node)
+        } else {
+            self.scalar(0, default_dtype)
         }
     }
 
@@ -69,7 +90,10 @@ impl Context {
                         operation: Operation::Mul(a, b),
                         dtype: node_a.dtype,
                     };
-                    Ok(self.nodes.insert(node))
+                    let node_id = self.nodes.insert(node);
+                    self.dependent_nodes.entry(a).or_insert(Vec::new()).push(node_id);
+                    self.dependent_nodes.entry(b).or_insert(Vec::new()).push(node_id);
+                    Ok(node_id)
                 }
             }
         }
@@ -105,7 +129,10 @@ impl Context {
                         operation: Operation::Equal(a, b),
                         dtype: xla::ElementType::Pred,
                     };
-                    Ok(self.nodes.insert(node))
+                    let node_id = self.nodes.insert(node);
+                    self.dependent_nodes.entry(a).or_insert(Vec::new()).push(node_id);
+                    self.dependent_nodes.entry(b).or_insert(Vec::new()).push(node_id);
+                    Ok(node_id)
                 }
             }
         }
@@ -141,7 +168,10 @@ impl Context {
                         operation: Operation::LessThan(a, b),
                         dtype: xla::ElementType::Pred,
                     };
-                    Ok(self.nodes.insert(node))
+                    let node_id = self.nodes.insert(node);
+                    self.dependent_nodes.entry(a).or_insert(Vec::new()).push(node_id);
+                    self.dependent_nodes.entry(b).or_insert(Vec::new()).push(node_id);
+                    Ok(node_id)
                 }
             }
         }
@@ -177,7 +207,10 @@ impl Context {
                         operation: Operation::GreaterThan(a, b),
                         dtype: xla::ElementType::Pred,
                     };
-                    Ok(self.nodes.insert(node))
+                    let node_id = self.nodes.insert(node);
+                    self.dependent_nodes.entry(a).or_insert(Vec::new()).push(node_id);
+                    self.dependent_nodes.entry(b).or_insert(Vec::new()).push(node_id);
+                    Ok(node_id)
                 }
             }
         }
@@ -213,7 +246,10 @@ impl Context {
                         operation: Operation::LessThanEq(a, b),
                         dtype: xla::ElementType::Pred,
                     };
-                    Ok(self.nodes.insert(node))
+                    let node_id = self.nodes.insert(node);
+                    self.dependent_nodes.entry(a).or_insert(Vec::new()).push(node_id);
+                    self.dependent_nodes.entry(b).or_insert(Vec::new()).push(node_id);
+                    Ok(node_id)
                 }
             }
         }
@@ -249,7 +285,10 @@ impl Context {
                         operation: Operation::GreaterThanEq(a, b),
                         dtype: xla::ElementType::Pred,
                     };
-                    Ok(self.nodes.insert(node))
+                    let node_id = self.nodes.insert(node);
+                    self.dependent_nodes.entry(a).or_insert(Vec::new()).push(node_id);
+                    self.dependent_nodes.entry(b).or_insert(Vec::new()).push(node_id);
+                    Ok(node_id)
                 }
             }
         }
@@ -283,31 +322,25 @@ impl Context {
     ) -> Result<NodeIdentifier> {
         let a = a.into();
         let a_dtype = self.nodes[a].dtype;
-
-        let const_zero = self.nodes.insert(Node {
-            callsite: callsite!(1),
-            shape: Shape::new(),
-            operation: Operation::Constant(ConstantBinding {
-                value: xla::Literal::scalar(0).convert(a_dtype.primitive_type())?,
-            }),
-            dtype: a_dtype,
-        });
-
+        let const_zero = self.scalar(0, a_dtype)?;
         self.maximum(const_zero, a)
     }
 
     pub fn type_cast<A: Into<NodeIdentifier> + Copy>(&mut self, a: A, dtype: xla::ElementType) -> NodeIdentifier {
         let a = a.into();
         let a_shape = self.nodes[a].shape.clone();
-        self.nodes.insert(Node {
+        let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: a_shape,
             operation: Operation::TypeCast(a, dtype),
             dtype: dtype
-        })
+        });
+        self.dependent_nodes.entry(a).or_insert(Vec::new()).push(node_id);
+        node_id
     }
 
-    pub fn slice_in_dim<A: Into<NodeIdentifier> + Copy>(&mut self, a: A, start: i64, stop: i64, stride: i64, dim: i64) {
+    /// TODO: Need shape-checking here
+    pub fn slice_in_dim<A: Into<NodeIdentifier> + Copy>(&mut self, a: A, start: i64, stop: i64, stride: i64, dim: i64) -> Result<NodeIdentifier> {
         let a = a.into();
         let mut s = Shape::new();
         for d in (0..self.nodes[a].shape.ndims()).rev() {
@@ -317,21 +350,25 @@ impl Context {
                 s.sizes.push(self.nodes[a].shape.sizes[d])
             }
         }
-        self.nodes.insert(Node {
+        let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: s,
             operation: Operation::SliceInDim { node: a, start: start, stop: stop, stride: stride, dim: dim },
             dtype: self.nodes[a].dtype
         });
+        self.dependent_nodes.entry(a).or_insert(Vec::new()).push(node_id);
+        Ok(node_id)
     }
 
-    pub fn zeros_like<A: Into<NodeIdentifier> + Copy>(&mut self, a: A) {
+    pub fn zeros_like<A: Into<NodeIdentifier> + Copy>(&mut self, a: A) -> NodeIdentifier {
         let a = a.into();
-        self.nodes.insert(Node {
+        let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: self.nodes[a].shape.clone(),
             operation: Operation::ZerosLike(a),
             dtype: self.nodes[a].dtype
         });
+        self.dependent_nodes.entry(a).or_insert(Vec::new()).push(node_id);
+        node_id
     }
 }

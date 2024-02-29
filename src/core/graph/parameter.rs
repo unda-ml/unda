@@ -35,7 +35,7 @@ impl Context {
         dtype: xla::ElementType,
     ) -> Result<Parameter> {
         let name = name.as_ref().to_string();
-        for node_id in self.param_indices.iter() {
+        for node_id in self.parameters.iter() {
             let parameter = &self.nodes[*node_id];
             match &parameter.operation {
                 Operation::Parameter(binding) => {
@@ -59,7 +59,7 @@ impl Context {
                 dtype,
             }),
         };
-        self.param_indices.push(param.node);
+        self.parameters.push(param.node);
         Ok(param)
     }
 }
