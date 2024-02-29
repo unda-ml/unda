@@ -229,4 +229,69 @@ impl Context {
             }
         }
     }
+
+    pub(crate) fn backprop<A: Into<NodeIdentifier> + Copy>(&mut self, input: A) -> Result<bool> {
+        let input = input.into();
+        let input_node = &self.nodes[input];
+
+        // traverse nodes until we find a Diff node or a leaf
+        match input_node.operation {
+            // leaf nodes mean no further processing
+            Operation::Constant(_) => Ok(false),
+            Operation::Parameter(_) => Ok(false),
+            Operation::StopGradient(_) => Ok(false),
+            // operations mean we need to go deeper
+            Operation::Add(a, b)
+            | Operation::Mul(a, b)
+            | Operation::Equal(a, b)
+            | Operation::LessThan(a, b)
+            | Operation::GreaterThan(a, b)
+            | Operation::LessThanEq(a, b)
+            | Operation::GreaterThanEq(a, b) => {
+                let r = self.backprop(a)?;
+                self.backprop(b - (r as usize))
+                    .map(|v| v || r)
+            }
+            Operation::Select {
+                pred: _,
+                on_true,
+                on_false,
+            } => {
+                let r = self.backprop(on_true)?;
+                self.backprop(on_false, )
+                    .map(|v| v || r)
+            }
+            Operation::TypeCast(node, ty) => self.backprop(node),
+            Operation::SliceInDim { node, .. } => self.backprop(node),
+            Operation::ZerosLike(node) => self.backprop(node),
+
+            Operation::Diff(tangent, param) => {
+                let tangent_node = &self.nodes[tangent];
+                let tangent_dtype = tangent_node.dtype.primitive_type();
+                match tangent_node.operation.clone() {
+                    Operation::Constant(_) => {
+                        // derivative of a constant with respect to anything is 0
+                        self.nodes[input].operation = Operation::Constant(ConstantBinding {
+                            value: xla::Literal::create_from_shape(tangent_dtype, &[]),
+                        });
+                        self.nodes[input].shape = [].into();
+                        Ok(true)
+                    }
+                    Operation::Parameter(_) => {
+                        // derivative of a parameter with respect to itself is one, and otherwise zero
+                        self.nodes[input].operation = Operation::Constant(ConstantBinding {
+                            value: xla::Literal::scalar(
+                                (tangent == param.into()) as u32,
+                            )
+                            .convert(tangent_dtype)?,
+                        });
+                        self.nodes[input].shape = [].into();
+                        Ok(true)
+                    }
+                    Operation::StopGradient(_) => Ok(false),
+                }
+
+            }
+        }
+    }
 }
