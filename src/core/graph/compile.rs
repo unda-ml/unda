@@ -52,17 +52,12 @@ impl Context {
         let mut unda_op_queue: VecDeque<NodeIdentifier> = VecDeque::new();
         let mut unda_xla_map: HashMap<NodeIdentifier, NodeIdentifier> = HashMap::new();
         let mut covered_ops: HashSet<NodeIdentifier> = HashSet::new();
-        let param_set: HashSet<NodeIdentifier> = self.parameters.iter().cloned().collect();
 
         let builder = xla::XlaBuilder::new(name);
 
         // declare parameters with the XLA builder
         for (i, unda_id) in self.parameters.iter().enumerate() {
             let node = &self.nodes[*unda_id];
-
-            if !param_set.contains(unda_id) {
-                println!("Warning! Unused parameter {}", self.to_string(*unda_id));
-            }
 
             let shape = node
                 .shape
@@ -158,6 +153,19 @@ impl Context {
                         {
                             let xla_op = xla_op_slotmap[unda_xla_map[&node1]]
                                 .eq(&xla_op_slotmap[unda_xla_map[&node2]])?;
+                            let xla_id = xla_op_slotmap.insert(xla_op);
+                            unda_xla_map.insert(*dependent_op, xla_id);
+                            unda_op_queue.push_back(*dependent_op);
+                            covered_ops.insert(*dependent_op);
+                        }
+                    }
+
+                    Operation::NotEqual(node1, node2) => {
+                        if xla_op_slotmap.contains_key(unda_xla_map[&node1])
+                            && xla_op_slotmap.contains_key(unda_xla_map[&node1])
+                        {
+                            let xla_op = xla_op_slotmap[unda_xla_map[&node1]]
+                                .ne(&xla_op_slotmap[unda_xla_map[&node2]])?;
                             let xla_id = xla_op_slotmap.insert(xla_op);
                             unda_xla_map.insert(*dependent_op, xla_id);
                             unda_op_queue.push_back(*dependent_op);
@@ -262,6 +270,16 @@ impl Context {
                         if xla_op_slotmap.contains_key(unda_xla_map[&node]) {
                             let xla_op =
                                 xla_op_slotmap[unda_xla_map[&node]].zeros_like()?;
+                            let xla_id = xla_op_slotmap.insert(xla_op);
+                            unda_xla_map.insert(*dependent_op, xla_id);
+                            unda_op_queue.push_back(*dependent_op);
+                            covered_ops.insert(*dependent_op);
+                        }
+                    }
+                    Operation::ReduceMax { node, dim, keepdims } => {
+                        if xla_op_slotmap.contains_key(unda_xla_map[&node]) {
+                            let xla_op =
+                                xla_op_slotmap[unda_xla_map[&node]].reduce_max(&[dim], keepdims)?;
                             let xla_id = xla_op_slotmap.insert(xla_op);
                             unda_xla_map.insert(*dependent_op, xla_id);
                             unda_op_queue.push_back(*dependent_op);
