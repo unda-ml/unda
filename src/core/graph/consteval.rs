@@ -31,7 +31,7 @@ impl Context {
             
             if let Some(node) = self.nodes.get(node_id) {
                 match node.operation {
-                    Operation::Add(a, b) | Operation::Mul(a, b) => {
+                    Operation::Add(a, b) | Operation::Sub(a, b) | Operation::Mul(a, b) => {
                         if let (Some(a_node), Some(b_node)) = (self.nodes.get(a.into()), self.nodes.get(b.into())) {
                             
                             //TODO, if add and one of the nodes is zero convert current node to be
@@ -56,10 +56,22 @@ impl Context {
                             }
                         }
                     },
-                    Operation::Diff(a, _) => {
+                    Operation::GreaterThan(a, b)
+                        | Operation::GreaterThanEq(a, b)
+                        | Operation::LessThan(a, b)
+                        | Operation::LessThanEq(a, b)
+                        | Operation::Equal(a, b)
+                        => {
+
                         if let Some(node) = self.nodes.get(a) {
                             if node.is_const().is_none() {
                                 to_visit.push(a);
+                            }
+                        }
+
+                        if let Some(node) = self.nodes.get(b) {
+                            if node.is_const().is_none() {
+                                to_visit.push(b);
                             }
                         }
                     },
