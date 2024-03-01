@@ -61,7 +61,6 @@ impl Context {
                 self.nodes[with_respect_to].callsite.clone(),
             ));
         }
-
         if node == with_respect_to {
             return self.scalar(1, wrt_dtype);
         }

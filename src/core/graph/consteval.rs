@@ -1,3 +1,7 @@
+use std::collections::HashSet;
+
+use xla::Literal;
+
 use super::*;
 
 impl Context {
@@ -13,35 +17,59 @@ impl Context {
         if modification_limit == 0 {
             return Ok(true);
         }
-        // TODO: implement this
-        let input_node = &self.nodes[input.into()];
-        return match input_node.operation {
-            Operation::Add(a, b) => {
-                let node_a = &self.nodes[a];
-                let node_b = &self.nodes[b];
 
-                if node_a.is_const() && node_b.is_const() {
-                    //TODO: Do replacement
-                }
-                Ok(false)
-            }
-            Operation::Mul(a, b) => {
-                let node_a = &self.nodes[a];
-                let node_b = &self.nodes[b];
+        let mut modifications: usize = 0;
+        let mut changed = false;
 
-                if node_a.is_const() && node_b.is_const() {
-                    //TODO: Do replacement
+        let mut to_visit: Vec<NodeIdentifier> = vec![input.into()];
+        let mut visitied: HashSet<NodeIdentifier> = HashSet::new();
+
+        while let Some(node_id) = to_visit.pop() {
+            if visitied.contains(&node_id.into()) || modifications >= modification_limit {
+                continue;
+            }
+            
+            if let Some(node) = self.nodes.get(node_id) {
+                match node.operation {
+                    Operation::Add(a, b) | Operation::Mul(a, b) => {
+                        if let (Some(a_node), Some(b_node)) = (self.nodes.get(a.into()), self.nodes.get(b.into())) {
+                            
+                            //TODO, if add and one of the nodes is zero convert current node to be
+                            //just the node that isn't zero
+                            //
+                            //If mul and one of the nodes is zero, zero out the new node
+                            //If mul and one of the nodes is one, set the node to just be
+                            //the non-one node
+                            //
+                            //Increment modifications only if these cases are met
+                            modifications += 1;
+                            //Enqueue the dependent nodes to check both of them for constant
+                            //mul/adding
+                            
+                            //TODO: Once we create a new Node based on the constant propegation,
+                            //use insert_with_key to 'replace existant node'
+                            if a_node.is_const().is_none() {
+                                to_visit.push(a.into());
+                            } 
+                            if b_node.is_const().is_none() {
+                                to_visit.push(b.into());
+                            }
+                        }
+                    },
+                    Operation::Diff(a, _) => {
+                        if let Some(node) = self.nodes.get(a) {
+                            if node.is_const().is_none() {
+                                to_visit.push(a);
+                            }
+                        }
+                    },
+                    _ => {}
                 }
-                Ok(false)
             }
-            _ =>
-            //TODO: Not fully sure if const folding needs to happen when the
-            //operation isn't addition or multiplication, returnign false
-            //if the operation isn't either of these for now, but definitely
-            //let me know if this should be other behavior
-            {
-                Ok(false)
-            }
-        };
+            
+            visitied.insert(node_id.into());
+        }
+
+        Ok(changed)
     }
 }
