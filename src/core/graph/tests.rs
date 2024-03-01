@@ -4,6 +4,73 @@ mod tests {
     use xla::{FromRawBytes, Literal, Shape};
 
     #[test]
+    fn test_const_fold_add(){
+        let mut ctx = Context::new();
+        let add_zero = ctx.scalar(0, xla::ElementType::F32).expect("0");
+        let param = ctx.parameter("x", [], xla::ElementType::F32).expect("x");
+
+        let add = ctx.add(param, add_zero).expect("x + 0");
+        
+        //Check that const fold did it's thing
+        assert!(ctx.fold_consts(add, usize::MAX).expect("Add fold"));
+    }
+
+    #[test]
+    fn test_no_const_fold(){
+        let mut ctx = Context::new();
+        let x = ctx.parameter("x" ,[], xla::ElementType::F32).expect("x");
+        let y = ctx.parameter("y", [], xla::ElementType::F32).expect("y");
+
+        let add = ctx.add(x, y).expect("x + y");
+
+        //Check that const fold did NOT do it's thing
+        assert!(!ctx.fold_consts(add, usize::MAX).expect("Add fold"));
+    }
+
+    #[test]
+    fn deep_const_fold(){
+        let mut ctx = Context::new();
+        let x = ctx.parameter("x", [], xla::ElementType::F32).expect("x");
+        let zero = ctx.scalar(0, xla::ElementType::F32).expect("0");
+
+        let const_sum = ctx.add(x, zero).expect("x + 0");
+        let y = ctx.parameter("y", [], xla::ElementType::F32).expect("y");
+
+        let x_y_mul = ctx.mul(const_sum, y).expect("(x + 0) * y");
+        assert!(ctx.fold_consts(x_y_mul, usize::MAX).expect("deep fold"));
+    }
+
+
+    #[test]
+    fn test_const_fold_compiles(){
+        let mut ctx = Context::new();
+        let five = ctx.scalar(5, xla::ElementType::F32).expect("5");
+        let zero = ctx.scalar(0, xla::ElementType::F32).expect("0");
+        let ten = ctx.scalar(10, xla::ElementType::F32).expect("10");
+
+        let const_sum = ctx.add(five, zero).expect("x + 0");
+
+        let five_ten_add = ctx.add(const_sum, ten).expect("(x + 0) + y");
+
+        let client = xla::PjRtClient::cpu().expect("client");
+        let name = "test";
+        let executable = ctx.compile(&name, [five_ten_add], &client).expect("executable");
+
+        // args are just provided in the order they are defined, would be nice to pass a dict or something
+        // a pjrtbuffer is just an array slice on some device
+        // but im not sure why its a nested vector instead of just one vector
+        let device_result = executable.execute::<Literal>(&[]).expect("execute");
+        let host_result = device_result[0][0]
+            .to_literal_sync()
+            .expect("to_literal_sync");
+        let untupled_result = host_result.to_tuple1().expect("untuple");
+        let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
+
+        assert_eq!(rust_result[0], 15f32);
+
+    }
+
+    #[test]
     fn ensure_is_zero_scalar(){
         let mut ctx = Context::new();
         let zeroes = ctx.scalar(0, xla::ElementType::F32).expect("zero scalar");

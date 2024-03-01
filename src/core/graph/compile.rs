@@ -33,7 +33,7 @@ impl Context {
         }
 
         for a in returns.iter() {
-            self.foldconsts(*a, usize::MAX)?;
+            self.fold_consts(*a, usize::MAX)?;
         }
         //while self.foldconsts(a, 1)? {
         //    println!("{}", self.to_string(a));

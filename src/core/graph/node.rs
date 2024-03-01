@@ -7,6 +7,7 @@ use xla::Literal;
 use std::{fmt::{Display, Formatter, Result}, error::Error};
 
 /// A node in the compute graph
+#[derive(Clone)]
 pub struct Node {
     /// helps identify where in the user's source code this node originated
     // TODO: gate this so its not present at all in release builds
@@ -18,6 +19,7 @@ pub struct Node {
     //// output type of the operation
     pub(crate) dtype: xla::ElementType,
 }
+
 
 new_key_type! {
     pub struct NodeIdentifier;
