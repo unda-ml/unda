@@ -5,7 +5,7 @@ use strum_macros::EnumDiscriminants;
 #[derive(Debug, Clone, EnumDiscriminants)]
 pub enum Operation {
     Constant(ConstantBinding),
-    Parameter(ParameterBinding),
+    Parameter(String),
     StopGradient(NodeIdentifier),
     Add(NodeIdentifier, NodeIdentifier),
     Sub(NodeIdentifier, NodeIdentifier),

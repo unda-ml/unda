@@ -5,11 +5,7 @@ use super::*;
 impl Context {
     // TODO: use trait aliases for `Into<NodeIdentifier> + Copy`
     // when they get stablized: https://github.com/rust-lang/rust/issues/41517
-    pub fn add<A: Into<NodeIdentifier> + Copy, B: Into<NodeIdentifier> + Copy>(
-        &mut self,
-        a: A,
-        b: B,
-    ) -> Result<NodeIdentifier> {
+    pub fn add(&mut self, a: NodeIdentifier, b: NodeIdentifier) -> Result<NodeIdentifier> {
         let a = a.into();
         let b = b.into();
         let node_a = &self.nodes[a];
@@ -52,11 +48,7 @@ impl Context {
         }
     }
 
-    pub fn sub<A: Into<NodeIdentifier> + Copy, B: Into<NodeIdentifier> + Copy>(
-        &mut self,
-        a: A,
-        b: B,
-    ) -> Result<NodeIdentifier> {
+    pub fn sub(&mut self, a: NodeIdentifier, b: NodeIdentifier) -> Result<NodeIdentifier> {
         let a = a.into();
         let b = b.into();
         let node_a = &self.nodes[a];
@@ -135,11 +127,7 @@ impl Context {
         }
     }
 
-    pub fn mul<A: Into<NodeIdentifier> + Copy, B: Into<NodeIdentifier> + Copy>(
-        &mut self,
-        a: A,
-        b: B,
-    ) -> Result<NodeIdentifier> {
+    pub fn mul(&mut self, a: NodeIdentifier, b: NodeIdentifier) -> Result<NodeIdentifier> {
         let a = a.into();
         let b = b.into();
         let node_a = &self.nodes[a];
@@ -182,11 +170,7 @@ impl Context {
         }
     }
 
-    pub fn neq<A: Into<NodeIdentifier> + Copy, B: Into<NodeIdentifier> + Copy>(
-        &mut self,
-        a: A,
-        b: B,
-    ) -> Result<NodeIdentifier> {
+    pub fn neq(&mut self, a: NodeIdentifier, b: NodeIdentifier) -> Result<NodeIdentifier> {
         let a = a.into();
         let b = b.into();
         let node_a = &self.nodes[a];
@@ -213,19 +197,21 @@ impl Context {
                         dtype: xla::ElementType::Pred,
                     };
                     let node_id = self.nodes.insert(node);
-                    self.dependent_nodes.entry(a).or_insert(Vec::new()).push(node_id);
-                    self.dependent_nodes.entry(b).or_insert(Vec::new()).push(node_id);
+                    self.dependent_nodes
+                        .entry(a)
+                        .or_insert(Vec::new())
+                        .push(node_id);
+                    self.dependent_nodes
+                        .entry(b)
+                        .or_insert(Vec::new())
+                        .push(node_id);
                     Ok(node_id)
                 }
             }
         }
     }
 
-    pub fn eq<A: Into<NodeIdentifier> + Copy, B: Into<NodeIdentifier> + Copy>(
-        &mut self,
-        a: A,
-        b: B,
-    ) -> Result<NodeIdentifier> {
+    pub fn eq(&mut self, a: NodeIdentifier, b: NodeIdentifier) -> Result<NodeIdentifier> {
         let a = a.into();
         let b = b.into();
         let node_a = &self.nodes[a];
@@ -268,11 +254,7 @@ impl Context {
         }
     }
 
-    pub fn lt<A: Into<NodeIdentifier> + Copy, B: Into<NodeIdentifier> + Copy>(
-        &mut self,
-        a: A,
-        b: B,
-    ) -> Result<NodeIdentifier> {
+    pub fn lt(&mut self, a: NodeIdentifier, b: NodeIdentifier) -> Result<NodeIdentifier> {
         let a = a.into();
         let b = b.into();
         let node_a = &self.nodes[a];
@@ -315,11 +297,7 @@ impl Context {
         }
     }
 
-    pub fn gt<A: Into<NodeIdentifier> + Copy, B: Into<NodeIdentifier> + Copy>(
-        &mut self,
-        a: A,
-        b: B,
-    ) -> Result<NodeIdentifier> {
+    pub fn gt(&mut self, a: NodeIdentifier, b: NodeIdentifier) -> Result<NodeIdentifier> {
         let a = a.into();
         let b = b.into();
         let node_a = &self.nodes[a];
@@ -362,11 +340,7 @@ impl Context {
         }
     }
 
-    pub fn le<A: Into<NodeIdentifier> + Copy, B: Into<NodeIdentifier> + Copy>(
-        &mut self,
-        a: A,
-        b: B,
-    ) -> Result<NodeIdentifier> {
+    pub fn le(&mut self, a: NodeIdentifier, b: NodeIdentifier) -> Result<NodeIdentifier> {
         let a = a.into();
         let b = b.into();
         let node_a = &self.nodes[a];
@@ -409,11 +383,7 @@ impl Context {
         }
     }
 
-    pub fn ge<A: Into<NodeIdentifier> + Copy, B: Into<NodeIdentifier> + Copy>(
-        &mut self,
-        a: A,
-        b: B,
-    ) -> Result<NodeIdentifier> {
+    pub fn ge(&mut self, a: NodeIdentifier, b: NodeIdentifier) -> Result<NodeIdentifier> {
         let a = a.into();
         let b = b.into();
         let node_a = &self.nodes[a];
@@ -456,40 +426,28 @@ impl Context {
         }
     }
 
-    pub fn minimum<A: Into<NodeIdentifier> + Copy, B: Into<NodeIdentifier> + Copy>(
-        &mut self,
-        a: A,
-        b: B,
-    ) -> Result<NodeIdentifier> {
+    pub fn minimum(&mut self, a: NodeIdentifier, b: NodeIdentifier) -> Result<NodeIdentifier> {
         let a = a.into();
         let b = b.into();
         let pred = self.lt(a, b)?;
         self.select(pred, a, b)
     }
 
-    pub fn maximum<A: Into<NodeIdentifier> + Copy, B: Into<NodeIdentifier> + Copy>(
-        &mut self,
-        a: A,
-        b: B,
-    ) -> Result<NodeIdentifier> {
+    pub fn maximum(&mut self, a: NodeIdentifier, b: NodeIdentifier) -> Result<NodeIdentifier> {
         let a = a.into();
         let b = b.into();
         let pred = self.gt(a, b)?;
         self.select(pred, a, b)
     }
 
-    pub fn relu<A: Into<NodeIdentifier> + Copy>(&mut self, a: A) -> Result<NodeIdentifier> {
+    pub fn relu(&mut self, a: NodeIdentifier) -> Result<NodeIdentifier> {
         let a = a.into();
         let a_dtype = self.nodes[a].dtype;
         let const_zero = self.scalar(0, a_dtype)?;
         self.maximum(const_zero, a)
     }
 
-    pub fn type_cast<A: Into<NodeIdentifier> + Copy>(
-        &mut self,
-        a: A,
-        dtype: xla::ElementType,
-    ) -> NodeIdentifier {
+    pub fn type_cast(&mut self, a: NodeIdentifier, dtype: xla::ElementType) -> NodeIdentifier {
         let a = a.into();
         let a_shape = self.nodes[a].shape.clone();
         let node_id = self.nodes.insert(Node {
@@ -506,9 +464,9 @@ impl Context {
     }
 
     /// TODO: Need shape-checking here
-    pub fn slice_in_dim<A: Into<NodeIdentifier> + Copy>(
+    pub fn slice_in_dim(
         &mut self,
-        a: A,
+        a: NodeIdentifier,
         start: i64,
         stop: i64,
         stride: i64,
@@ -518,7 +476,7 @@ impl Context {
         let mut s = Shape::new();
         for d in (0..self.nodes[a].shape.ndims()).rev() {
             if d as i64 == dim {
-                s.sizes.push(((stop - start)/stride) as u16)
+                s.sizes.push(((stop - start) / stride) as u16)
             } else {
                 s.sizes.push(self.nodes[a].shape.sizes[d])
             }
@@ -542,7 +500,7 @@ impl Context {
         Ok(node_id)
     }
 
-    pub fn zeros_like<A: Into<NodeIdentifier> + Copy>(&mut self, a: A) -> NodeIdentifier {
+    pub fn zeros_like(&mut self, a: NodeIdentifier) -> NodeIdentifier {
         let a = a.into();
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
@@ -557,7 +515,7 @@ impl Context {
         node_id
     }
 
-    pub fn reduce_max<A: Into<NodeIdentifier> + Copy>(&mut self, a: A, dim: i64, keepdims: bool) -> NodeIdentifier {
+    pub fn reduce_max(&mut self, a: NodeIdentifier, dim: i64, keepdims: bool) -> NodeIdentifier {
         let a = a.into();
         let mut s = Shape::new();
         for d in (0..self.nodes[a].shape.ndims()).rev() {
@@ -570,10 +528,17 @@ impl Context {
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: s,
-            operation: Operation::ReduceMax { node: a, dim: dim, keepdims: keepdims },
+            operation: Operation::ReduceMax {
+                node: a,
+                dim: dim,
+                keepdims: keepdims,
+            },
             dtype: self.nodes[a].dtype,
         });
-        self.dependent_nodes.entry(a).or_insert(Vec::new()).push(node_id);
+        self.dependent_nodes
+            .entry(a)
+            .or_insert(Vec::new())
+            .push(node_id);
         node_id
     }
 }

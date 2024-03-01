@@ -66,7 +66,7 @@ impl Context {
                 .collect::<SmallVec<[i64; 4]>>();
 
             let param_name: &String = match &node.operation {
-                Operation::Parameter(param_binding) => &param_binding.name,
+                Operation::Parameter(param_binding) => param_binding,
                 _ => unreachable!("Parameter indices pointed to a non-parameter node!"),
             };
 
