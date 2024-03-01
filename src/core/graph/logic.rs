@@ -2,6 +2,7 @@ use super::*;
 
 impl Context {
 
+    /// TODO: Typecheck pred
     pub fn select<A: Into<NodeIdentifier> + Copy, B: Into<NodeIdentifier> + Copy, C: Into<NodeIdentifier> + Copy>(
         &mut self,
         pred: A,
@@ -9,6 +10,7 @@ impl Context {
         on_false: C
     ) -> Result<NodeIdentifier> {
         let pred = pred.into();
+        let pred = self.stop_gradient(pred);
         let on_true = on_true.into();
         let on_false = on_false.into();
         let node_pred = &self.nodes[pred];
@@ -45,7 +47,9 @@ impl Context {
                             let node_id = self.nodes.insert(node);
                             self.dependent_nodes.entry(pred).or_insert(Vec::new()).push(node_id);
                             self.dependent_nodes.entry(on_true).or_insert(Vec::new()).push(node_id);
-                            self.dependent_nodes.entry(on_false).or_insert(Vec::new()).push(node_id);
+                            if on_true != on_false {
+                                self.dependent_nodes.entry(on_false).or_insert(Vec::new()).push(node_id);
+                            }
                             Ok(node_id)
                         }
                     }

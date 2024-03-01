@@ -36,15 +36,90 @@ impl Context {
                         dtype: node_a.dtype,
                     };
                     let node_id = self.nodes.insert(node);
-                    self.dependent_nodes.entry(a).or_insert(Vec::new()).push(node_id);
-                    self.dependent_nodes.entry(b).or_insert(Vec::new()).push(node_id);
+                    self.dependent_nodes
+                        .entry(a)
+                        .or_insert(Vec::new())
+                        .push(node_id);
+                    if a != b {
+                        self.dependent_nodes
+                            .entry(b)
+                            .or_insert(Vec::new())
+                            .push(node_id);
+                    }
                     Ok(node_id)
                 }
             }
         }
     }
 
-    pub fn smallvec_add(&mut self, mut nodes: SmallVec<[NodeIdentifier; 2]>, default_dtype: xla::ElementType) -> Result<NodeIdentifier> {
+    pub fn sub<A: Into<NodeIdentifier> + Copy, B: Into<NodeIdentifier> + Copy>(
+        &mut self,
+        a: A,
+        b: B,
+    ) -> Result<NodeIdentifier> {
+        let a = a.into();
+        let b = b.into();
+        let node_a = &self.nodes[a];
+        let node_b = &self.nodes[b];
+
+        if node_a.dtype != node_b.dtype {
+            Err(ContextError::IncompatibleOperandTypes(
+                node_a.dtype,
+                node_b.dtype,
+                callsite!(1),
+            ))
+        } else {
+            match node_a.shape.broadcast(&node_b.shape) {
+                None => Err(ContextError::IncompatibleOperandShapes(
+                    node_a.shape.clone(),
+                    node_b.shape.clone(),
+                    callsite!(1),
+                )),
+                Some(s) => {
+                    let node = Node {
+                        callsite: callsite!(1),
+                        shape: s,
+                        operation: Operation::Sub(a, b),
+                        dtype: node_a.dtype,
+                    };
+                    let node_id = self.nodes.insert(node);
+                    self.dependent_nodes
+                        .entry(a)
+                        .or_insert(Vec::new())
+                        .push(node_id);
+                    if a != b {
+                        self.dependent_nodes
+                            .entry(b)
+                            .or_insert(Vec::new())
+                            .push(node_id);
+                    }
+                    Ok(node_id)
+                }
+            }
+        }
+    }
+
+    pub fn neg<A: Into<NodeIdentifier> + Copy>(&mut self, a: A) -> NodeIdentifier {
+        let a = a.into();
+        let node = Node {
+            callsite: callsite!(1),
+            shape: self.nodes[a].shape.clone(),
+            operation: Operation::Neg(a),
+            dtype: self.nodes[a].dtype,
+        };
+        let node_id = self.nodes.insert(node);
+        self.dependent_nodes
+            .entry(a)
+            .or_insert(Vec::new())
+            .push(node_id);
+        node_id
+    }
+
+    pub fn smallvec_add(
+        &mut self,
+        mut nodes: SmallVec<[NodeIdentifier; 2]>,
+        default_dtype: xla::ElementType,
+    ) -> Result<NodeIdentifier> {
         if nodes.len() == 1 {
             Ok(nodes[0])
         } else if nodes.len() > 1 {
@@ -91,8 +166,16 @@ impl Context {
                         dtype: node_a.dtype,
                     };
                     let node_id = self.nodes.insert(node);
-                    self.dependent_nodes.entry(a).or_insert(Vec::new()).push(node_id);
-                    self.dependent_nodes.entry(b).or_insert(Vec::new()).push(node_id);
+                    self.dependent_nodes
+                        .entry(a)
+                        .or_insert(Vec::new())
+                        .push(node_id);
+                    if a != b {
+                        self.dependent_nodes
+                            .entry(b)
+                            .or_insert(Vec::new())
+                            .push(node_id);
+                    }
                     Ok(node_id)
                 }
             }
@@ -130,8 +213,16 @@ impl Context {
                         dtype: xla::ElementType::Pred,
                     };
                     let node_id = self.nodes.insert(node);
-                    self.dependent_nodes.entry(a).or_insert(Vec::new()).push(node_id);
-                    self.dependent_nodes.entry(b).or_insert(Vec::new()).push(node_id);
+                    self.dependent_nodes
+                        .entry(a)
+                        .or_insert(Vec::new())
+                        .push(node_id);
+                    if a != b {
+                        self.dependent_nodes
+                            .entry(b)
+                            .or_insert(Vec::new())
+                            .push(node_id);
+                    }
                     Ok(node_id)
                 }
             }
@@ -169,8 +260,16 @@ impl Context {
                         dtype: xla::ElementType::Pred,
                     };
                     let node_id = self.nodes.insert(node);
-                    self.dependent_nodes.entry(a).or_insert(Vec::new()).push(node_id);
-                    self.dependent_nodes.entry(b).or_insert(Vec::new()).push(node_id);
+                    self.dependent_nodes
+                        .entry(a)
+                        .or_insert(Vec::new())
+                        .push(node_id);
+                    if a != b {
+                        self.dependent_nodes
+                            .entry(b)
+                            .or_insert(Vec::new())
+                            .push(node_id);
+                    }
                     Ok(node_id)
                 }
             }
@@ -208,8 +307,16 @@ impl Context {
                         dtype: xla::ElementType::Pred,
                     };
                     let node_id = self.nodes.insert(node);
-                    self.dependent_nodes.entry(a).or_insert(Vec::new()).push(node_id);
-                    self.dependent_nodes.entry(b).or_insert(Vec::new()).push(node_id);
+                    self.dependent_nodes
+                        .entry(a)
+                        .or_insert(Vec::new())
+                        .push(node_id);
+                    if a != b {
+                        self.dependent_nodes
+                            .entry(b)
+                            .or_insert(Vec::new())
+                            .push(node_id);
+                    }
                     Ok(node_id)
                 }
             }
@@ -247,8 +354,16 @@ impl Context {
                         dtype: xla::ElementType::Pred,
                     };
                     let node_id = self.nodes.insert(node);
-                    self.dependent_nodes.entry(a).or_insert(Vec::new()).push(node_id);
-                    self.dependent_nodes.entry(b).or_insert(Vec::new()).push(node_id);
+                    self.dependent_nodes
+                        .entry(a)
+                        .or_insert(Vec::new())
+                        .push(node_id);
+                    if a != b {
+                        self.dependent_nodes
+                            .entry(b)
+                            .or_insert(Vec::new())
+                            .push(node_id);
+                    }
                     Ok(node_id)
                 }
             }
@@ -286,8 +401,16 @@ impl Context {
                         dtype: xla::ElementType::Pred,
                     };
                     let node_id = self.nodes.insert(node);
-                    self.dependent_nodes.entry(a).or_insert(Vec::new()).push(node_id);
-                    self.dependent_nodes.entry(b).or_insert(Vec::new()).push(node_id);
+                    self.dependent_nodes
+                        .entry(a)
+                        .or_insert(Vec::new())
+                        .push(node_id);
+                    if a != b {
+                        self.dependent_nodes
+                            .entry(b)
+                            .or_insert(Vec::new())
+                            .push(node_id);
+                    }
                     Ok(node_id)
                 }
             }
@@ -316,31 +439,42 @@ impl Context {
         self.select(pred, a, b)
     }
 
-    pub fn relu<A: Into<NodeIdentifier> + Copy>(
-        &mut self,
-        a: A,
-    ) -> Result<NodeIdentifier> {
+    pub fn relu<A: Into<NodeIdentifier> + Copy>(&mut self, a: A) -> Result<NodeIdentifier> {
         let a = a.into();
         let a_dtype = self.nodes[a].dtype;
         let const_zero = self.scalar(0, a_dtype)?;
         self.maximum(const_zero, a)
     }
 
-    pub fn type_cast<A: Into<NodeIdentifier> + Copy>(&mut self, a: A, dtype: xla::ElementType) -> NodeIdentifier {
+    pub fn type_cast<A: Into<NodeIdentifier> + Copy>(
+        &mut self,
+        a: A,
+        dtype: xla::ElementType,
+    ) -> NodeIdentifier {
         let a = a.into();
         let a_shape = self.nodes[a].shape.clone();
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: a_shape,
             operation: Operation::TypeCast(a, dtype),
-            dtype: dtype
+            dtype: dtype,
         });
-        self.dependent_nodes.entry(a).or_insert(Vec::new()).push(node_id);
+        self.dependent_nodes
+            .entry(a)
+            .or_insert(Vec::new())
+            .push(node_id);
         node_id
     }
 
     /// TODO: Need shape-checking here
-    pub fn slice_in_dim<A: Into<NodeIdentifier> + Copy>(&mut self, a: A, start: i64, stop: i64, stride: i64, dim: i64) -> Result<NodeIdentifier> {
+    pub fn slice_in_dim<A: Into<NodeIdentifier> + Copy>(
+        &mut self,
+        a: A,
+        start: i64,
+        stop: i64,
+        stride: i64,
+        dim: i64,
+    ) -> Result<NodeIdentifier> {
         let a = a.into();
         let mut s = Shape::new();
         for d in (0..self.nodes[a].shape.ndims()).rev() {
@@ -353,10 +487,19 @@ impl Context {
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: s,
-            operation: Operation::SliceInDim { node: a, start: start, stop: stop, stride: stride, dim: dim },
-            dtype: self.nodes[a].dtype
+            operation: Operation::SliceInDim {
+                node: a,
+                start: start,
+                stop: stop,
+                stride: stride,
+                dim: dim,
+            },
+            dtype: self.nodes[a].dtype,
         });
-        self.dependent_nodes.entry(a).or_insert(Vec::new()).push(node_id);
+        self.dependent_nodes
+            .entry(a)
+            .or_insert(Vec::new())
+            .push(node_id);
         Ok(node_id)
     }
 
@@ -366,9 +509,12 @@ impl Context {
             callsite: callsite!(1),
             shape: self.nodes[a].shape.clone(),
             operation: Operation::ZerosLike(a),
-            dtype: self.nodes[a].dtype
+            dtype: self.nodes[a].dtype,
         });
-        self.dependent_nodes.entry(a).or_insert(Vec::new()).push(node_id);
+        self.dependent_nodes
+            .entry(a)
+            .or_insert(Vec::new())
+            .push(node_id);
         node_id
     }
 }

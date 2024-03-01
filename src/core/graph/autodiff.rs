@@ -4,14 +4,17 @@ use super::*;
 
 impl Context {
     pub fn stop_gradient(&mut self, node: NodeIdentifier) -> NodeIdentifier {
-        self.nodes.insert(Node {
+        let new_node = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: self.nodes[node].shape.clone(),
             operation: Operation::StopGradient(node),
             dtype: self.nodes[node].dtype,
-        })
+        });
+        self.dependent_nodes.entry(node).or_insert(Vec::new()).push(new_node);
+        new_node
     }
 
+    /// TODO: Better names for these variables
     fn gradient_is_dependent(
         &mut self,
         dependent: NodeIdentifier,
@@ -67,6 +70,7 @@ impl Context {
 
         if self.dependent_nodes.contains_key(&with_respect_to) {
             let dependent_nodes = self.dependent_nodes[&with_respect_to].clone();
+
             for dependent_node in dependent_nodes {
                 match self.nodes[dependent_node].operation {
                     Operation::Constant(_) => panic!("Constant found as dependent node!"),
@@ -108,6 +112,16 @@ impl Context {
                         }
                     }
 
+                    Operation::Sub(a, b) => {
+                        if a == with_respect_to {
+                            dependent_pullbacks.push(self.diff(node, dependent_node)?);
+                        }
+                        if b == with_respect_to {
+                            let next_pullback = self.diff(node, dependent_node)?;
+                            dependent_pullbacks.push(self.neg(next_pullback));
+                        }
+                    }
+
                     Operation::Mul(a, b) => {
                         let next_pullback = self.diff(node, dependent_node)?;
                         if a == with_respect_to {
@@ -118,6 +132,11 @@ impl Context {
                             let mul = self.mul(a, next_pullback)?;
                             dependent_pullbacks.push(mul);
                         }
+                    }
+
+                    Operation::Neg(a) => {
+                        let next_pullback = self.diff(node, dependent_node)?;
+                        dependent_pullbacks.push(self.neg(next_pullback));
                     }
 
                     Operation::SliceInDim { node, start, stop, stride, dim } => {

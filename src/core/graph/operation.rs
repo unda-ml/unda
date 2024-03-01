@@ -8,7 +8,9 @@ pub enum Operation {
     Parameter(ParameterBinding),
     StopGradient(NodeIdentifier),
     Add(NodeIdentifier, NodeIdentifier),
+    Sub(NodeIdentifier, NodeIdentifier),
     Mul(NodeIdentifier, NodeIdentifier),
+    Neg(NodeIdentifier),
 
     Equal(NodeIdentifier, NodeIdentifier),
     LessThan(NodeIdentifier, NodeIdentifier),

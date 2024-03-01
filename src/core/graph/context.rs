@@ -73,10 +73,12 @@ impl Context {
             Operation::Constant(a) => format!("Constant {} {}", input_node.shape, a),
             Operation::Parameter(a) => format!("Parameter {} {}", input_node.shape, a),
             Operation::StopGradient(a) => {
-                format!("StopGradient {} {}", input_node.shape, self.to_string(a))
+                format!("StopGradient ({})", self.to_string(a))
             }
             Operation::Add(a, b) => format!("Add ({}) ({})", self.to_string(a), self.to_string(b)),
+            Operation::Sub(a, b) => format!("Sub ({}) ({})", self.to_string(a), self.to_string(b)),
             Operation::Mul(a, b) => format!("Mul ({}) ({})", self.to_string(a), self.to_string(b)),
+            Operation::Neg(a) => format!("Neg ({})", self.to_string(a)),
             Operation::Equal(a, b) => {
                 format!("LessThan ({}) ({})", self.to_string(a), self.to_string(b))
             }
@@ -106,7 +108,7 @@ impl Context {
                 self.to_string(on_true),
                 self.to_string(on_false)
             ),
-            Operation::TypeCast(a, ty) => format!("TypeCast {} {}", self.to_string(a), ty),
+            Operation::TypeCast(a, ty) => format!("TypeCast ({}) {}", self.to_string(a), ty),
             Operation::SliceInDim {
                 node,
                 start,
@@ -114,7 +116,7 @@ impl Context {
                 stride,
                 dim,
             } => format!(
-                "SliceInDim {} {} {} {} {}",
+                "SliceInDim ({}) {} {} {} {}",
                 self.to_string(node), start, stop, stride, dim
             ),
             Operation::ZerosLike(node) => format!("ZerosLike {}", self.to_string(node))
