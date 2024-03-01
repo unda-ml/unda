@@ -13,6 +13,7 @@ pub enum Operation {
     Neg(NodeIdentifier),
 
     Equal(NodeIdentifier, NodeIdentifier),
+    NotEqual(NodeIdentifier, NodeIdentifier),
     LessThan(NodeIdentifier, NodeIdentifier),
     GreaterThan(NodeIdentifier, NodeIdentifier),
     LessThanEq(NodeIdentifier, NodeIdentifier),
@@ -25,6 +26,8 @@ pub enum Operation {
     SliceInDim{ node: NodeIdentifier, start: i64, stop: i64, stride: i64, dim: i64 },
 
     ZerosLike(NodeIdentifier),
+
+    ReduceMax{ node: NodeIdentifier, dim: i64, keepdims: bool },
 }
 
 impl Display for Operation {

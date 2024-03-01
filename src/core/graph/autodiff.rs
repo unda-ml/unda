@@ -78,6 +78,7 @@ impl Context {
                     Operation::StopGradient(a) => continue,
 
                     Operation::Equal(a, b)
+                    | Operation::NotEqual(a, b)
                     | Operation::LessThan(a, b)
                     | Operation::LessThanEq(a, b)
                     | Operation::GreaterThan(a, b)
@@ -142,6 +143,14 @@ impl Context {
                     Operation::SliceInDim { node, start, stop, stride, dim } => {
                         if self.gradient_is_dependent(node, dependent_node) {
                             panic!("Gradient of SliceInDim requires XLA scatter op to be implemented.");
+                        } else {
+                            continue;
+                        }
+                    }
+
+                    Operation::ReduceMax { node, dim, keepdims } => {
+                        if self.gradient_is_dependent(node, dependent_node) {
+                            panic!("Gradient of ReduceMax requires XLA scatter op to be implemented.");
                         } else {
                             continue;
                         }

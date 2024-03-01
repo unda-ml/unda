@@ -182,6 +182,45 @@ impl Context {
         }
     }
 
+    pub fn neq<A: Into<NodeIdentifier> + Copy, B: Into<NodeIdentifier> + Copy>(
+        &mut self,
+        a: A,
+        b: B,
+    ) -> Result<NodeIdentifier> {
+        let a = a.into();
+        let b = b.into();
+        let node_a = &self.nodes[a];
+        let node_b = &self.nodes[b];
+
+        if node_a.dtype != node_b.dtype {
+            Err(ContextError::IncompatibleOperandTypes(
+                node_a.dtype,
+                node_b.dtype,
+                callsite!(1),
+            ))
+        } else {
+            match node_a.shape.broadcast(&node_b.shape) {
+                None => Err(ContextError::IncompatibleOperandShapes(
+                    node_a.shape.clone(),
+                    node_b.shape.clone(),
+                    callsite!(1),
+                )),
+                Some(s) => {
+                    let node = Node {
+                        callsite: callsite!(1),
+                        shape: s,
+                        operation: Operation::NotEqual(a, b),
+                        dtype: xla::ElementType::Pred,
+                    };
+                    let node_id = self.nodes.insert(node);
+                    self.dependent_nodes.entry(a).or_insert(Vec::new()).push(node_id);
+                    self.dependent_nodes.entry(b).or_insert(Vec::new()).push(node_id);
+                    Ok(node_id)
+                }
+            }
+        }
+    }
+
     pub fn eq<A: Into<NodeIdentifier> + Copy, B: Into<NodeIdentifier> + Copy>(
         &mut self,
         a: A,
@@ -479,7 +518,7 @@ impl Context {
         let mut s = Shape::new();
         for d in (0..self.nodes[a].shape.ndims()).rev() {
             if d as i64 == dim {
-                s.sizes.push(1)
+                s.sizes.push(((stop - start)/stride) as u16)
             } else {
                 s.sizes.push(self.nodes[a].shape.sizes[d])
             }
@@ -515,6 +554,26 @@ impl Context {
             .entry(a)
             .or_insert(Vec::new())
             .push(node_id);
+        node_id
+    }
+
+    pub fn reduce_max<A: Into<NodeIdentifier> + Copy>(&mut self, a: A, dim: i64, keepdims: bool) -> NodeIdentifier {
+        let a = a.into();
+        let mut s = Shape::new();
+        for d in (0..self.nodes[a].shape.ndims()).rev() {
+            if d as i64 == dim && keepdims {
+                s.sizes.push(1)
+            } else {
+                s.sizes.push(self.nodes[a].shape.sizes[d])
+            }
+        }
+        let node_id = self.nodes.insert(Node {
+            callsite: callsite!(1),
+            shape: s,
+            operation: Operation::ReduceMax { node: a, dim: dim, keepdims: keepdims },
+            dtype: self.nodes[a].dtype,
+        });
+        self.dependent_nodes.entry(a).or_insert(Vec::new()).push(node_id);
         node_id
     }
 }

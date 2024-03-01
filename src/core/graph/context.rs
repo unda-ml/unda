@@ -82,6 +82,9 @@ impl Context {
             Operation::Equal(a, b) => {
                 format!("LessThan ({}) ({})", self.to_string(a), self.to_string(b))
             }
+            Operation::NotEqual(a, b) => {
+                format!("NotEqual ({}) ({})", self.to_string(a), self.to_string(b))
+            }
             Operation::LessThan(a, b) => {
                 format!("LessThan ({}) ({})", self.to_string(a), self.to_string(b))
             }
@@ -119,7 +122,15 @@ impl Context {
                 "SliceInDim ({}) {} {} {} {}",
                 self.to_string(node), start, stop, stride, dim
             ),
-            Operation::ZerosLike(node) => format!("ZerosLike {}", self.to_string(node))
+            Operation::ZerosLike(node) => format!("ZerosLike {}", self.to_string(node)),
+            Operation::ReduceMax {
+                node,
+                dim,
+                keepdims,
+            } => format!(
+                "SliceInDim {} {} {}",
+                self.to_string(node), dim, keepdims
+            ),
         }
     }
 }
