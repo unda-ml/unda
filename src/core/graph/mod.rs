@@ -19,5 +19,4 @@ pub use constant::ConstantBinding;
 pub use context::{Context, ContextError, Result};
 pub use node::{Node, NodeIdentifier};
 pub use operation::Operation;
-pub use parameter::{Parameter, ParameterBinding};
 pub use shape::{Shape, ShapeConversionError};
