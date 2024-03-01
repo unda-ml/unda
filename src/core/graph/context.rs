@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use super::*;
 use slotmap::SlotMap;
 
@@ -5,7 +7,9 @@ use slotmap::SlotMap;
 // TODO: rename this to something meaningful
 pub struct Context {
     pub(crate) nodes: SlotMap<NodeIdentifier, Node>,
-    pub(crate) param_indices: Vec<NodeIdentifier>,
+    pub(crate) constants: Vec<NodeIdentifier>,
+    pub(crate) parameters: Vec<NodeIdentifier>,
+    pub(crate) dependent_nodes: HashMap<NodeIdentifier, Vec<NodeIdentifier>>,
 }
 
 impl Default for Context {
@@ -44,7 +48,10 @@ pub enum ContextError {
     MultipleReturns(),
 
     #[error("Operation is not differentiable, to use it as a constant in a differentiable computation, wrap it with Context::stop_gradient.")]
-    NonDifferentiableError(Callsite),
+    NonDifferentiableOpError(Callsite),
+
+    #[error("Type is not differentiable, differentiable types are F16, Bf16, F32, F64, C64, C128")]
+    NonDifferentiableTypeError(Callsite),
 }
 
 pub type Result<T> = std::result::Result<T, ContextError>;
@@ -53,7 +60,9 @@ impl Context {
     pub fn new() -> Self {
         Self {
             nodes: SlotMap::with_key(),
-            param_indices: Vec::new(),
+            constants: Vec::new(),
+            parameters: Vec::new(),
+            dependent_nodes: HashMap::new(),
         }
     }
 
@@ -64,13 +73,17 @@ impl Context {
             Operation::Constant(a) => format!("Constant {} {}", input_node.shape, a),
             Operation::Parameter(a) => format!("Parameter {} {}", input_node.shape, a),
             Operation::StopGradient(a) => {
-                format!("StopGradient {} {}", input_node.shape, self.to_string(a))
+                format!("StopGradient ({})", self.to_string(a))
             }
-            Operation::Diff(a, b) => format!("Diff ({}) {}", self.to_string(a), self.to_string(b)),
             Operation::Add(a, b) => format!("Add ({}) ({})", self.to_string(a), self.to_string(b)),
+            Operation::Sub(a, b) => format!("Sub ({}) ({})", self.to_string(a), self.to_string(b)),
             Operation::Mul(a, b) => format!("Mul ({}) ({})", self.to_string(a), self.to_string(b)),
+            Operation::Neg(a) => format!("Neg ({})", self.to_string(a)),
             Operation::Equal(a, b) => {
                 format!("LessThan ({}) ({})", self.to_string(a), self.to_string(b))
+            }
+            Operation::NotEqual(a, b) => {
+                format!("NotEqual ({}) ({})", self.to_string(a), self.to_string(b))
             }
             Operation::LessThan(a, b) => {
                 format!("LessThan ({}) ({})", self.to_string(a), self.to_string(b))
@@ -98,7 +111,7 @@ impl Context {
                 self.to_string(on_true),
                 self.to_string(on_false)
             ),
-            Operation::TypeCast(a, ty) => format!("TypeCast {} {}", self.to_string(a), ty),
+            Operation::TypeCast(a, ty) => format!("TypeCast ({}) {}", self.to_string(a), ty),
             Operation::SliceInDim {
                 node,
                 start,
@@ -106,10 +119,18 @@ impl Context {
                 stride,
                 dim,
             } => format!(
-                "SliceInDim {} {} {} {} {}",
+                "SliceInDim ({}) {} {} {} {}",
                 self.to_string(node), start, stop, stride, dim
             ),
-            Operation::ZerosLike(node) => format!("ZerosLike {}", self.to_string(node))
+            Operation::ZerosLike(node) => format!("ZerosLike {}", self.to_string(node)),
+            Operation::ReduceMax {
+                node,
+                dim,
+                keepdims,
+            } => format!(
+                "SliceInDim {} {} {}",
+                self.to_string(node), dim, keepdims
+            ),
         }
     }
 }
