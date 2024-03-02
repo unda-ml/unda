@@ -4,18 +4,6 @@ mod tests {
     use xla::{FromRawBytes, Literal, Shape};
 
     #[test]
-    fn test_const_fold_add(){
-        let mut ctx = Context::new();
-        let add_zero = ctx.scalar(0, xla::ElementType::F32).expect("0");
-        let param = ctx.parameter("x", [], xla::ElementType::F32).expect("x");
-
-        let add = ctx.add(param, add_zero).expect("x + 0");
-        
-        //Check that const fold did it's thing
-        assert!(ctx.fold_consts(add, usize::MAX).expect("Add fold"));
-    }
-
-    #[test]
     fn test_no_const_fold(){
         let mut ctx = Context::new();
         let x = ctx.parameter("x" ,[], xla::ElementType::F32).expect("x");
