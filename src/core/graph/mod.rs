@@ -11,8 +11,8 @@ mod operation;
 mod parameter;
 mod shape;
 mod subterm;
-mod tests;
-//mod tests_cpu;
+//mod tests;
+mod tests_cpu;
 
 use callsite::{callsite, Callsite};
 pub use compile::CompileError;
