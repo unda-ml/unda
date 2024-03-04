@@ -20,10 +20,10 @@ pub enum CompileError {
 }
 
 impl Context {
-    pub fn compile<A: Into<NodeIdentifier> + Copy, const N: usize>(
+    pub fn compile<const N: usize>(
         &mut self,
         name: &str,
-        returns: [A; N],
+        returns: [NodeIdentifier; N],
         client: &xla::PjRtClient,
     ) -> Result<xla::PjRtLoadedExecutable> {
         // TODO: gate debug mode behind a feature flag
