@@ -6,11 +6,11 @@ use super::*;
 
 impl Context {
 
-    fn collect_deps<A: Into<NodeIdentifier> + Copy>(
+    fn collect_deps(
         &self,
-        node: A,
+        node: NodeIdentifier,
         ) -> Vec<NodeIdentifier> {
-        self.dependent_nodes[&node.into()].iter()
+        self.dependent_nodes[&node].iter()
             .map(|node| node.clone())
             .collect::<Vec<NodeIdentifier>>()
     }
@@ -36,31 +36,31 @@ impl Context {
                     | Operation::LessThan(a, b)
                     | Operation::LessThanEq(a, b)  => {
                         
-                    if a == to_remove.into() {
+                    if a == to_remove {
                         match self.nodes[dep_node].operation {
-                            Operation::Add(_, _) => self.nodes[dep_node].operation = Operation::Add(rep_with.into(), b),
-                            Operation::Sub(_, _) => self.nodes[dep_node].operation = Operation::Sub(rep_with.into(), b),
-                            Operation::Mul(_, _) => self.nodes[dep_node].operation = Operation::Mul(rep_with.into(), b),
-                            Operation::GreaterThan(_, _) => self.nodes[dep_node].operation = Operation::GreaterThan(rep_with.into(), b),
-                            Operation::GreaterThanEq(_, _) => self.nodes[dep_node].operation = Operation::GreaterThanEq(rep_with.into(), b),
-                            Operation::Equal(_, _) => self.nodes[dep_node].operation = Operation::Equal(rep_with.into(), b),
-                            Operation::NotEqual(_, _) => self.nodes[dep_node].operation = Operation::NotEqual(rep_with.into(), b),
-                            Operation::LessThan(_, _) => self.nodes[dep_node].operation = Operation::LessThan(rep_with.into(), b),
-                            Operation::LessThanEq(_, _) => self.nodes[dep_node].operation = Operation::LessThanEq(rep_with.into(), b),
+                            Operation::Add(_, _) => self.nodes[dep_node].operation = Operation::Add(rep_with, b),
+                            Operation::Sub(_, _) => self.nodes[dep_node].operation = Operation::Sub(rep_with, b),
+                            Operation::Mul(_, _) => self.nodes[dep_node].operation = Operation::Mul(rep_with, b),
+                            Operation::GreaterThan(_, _) => self.nodes[dep_node].operation = Operation::GreaterThan(rep_with, b),
+                            Operation::GreaterThanEq(_, _) => self.nodes[dep_node].operation = Operation::GreaterThanEq(rep_with, b),
+                            Operation::Equal(_, _) => self.nodes[dep_node].operation = Operation::Equal(rep_with, b),
+                            Operation::NotEqual(_, _) => self.nodes[dep_node].operation = Operation::NotEqual(rep_with, b),
+                            Operation::LessThan(_, _) => self.nodes[dep_node].operation = Operation::LessThan(rep_with, b),
+                            Operation::LessThanEq(_, _) => self.nodes[dep_node].operation = Operation::LessThanEq(rep_with, b),
                             _ => unreachable!("Only add, sub, mul, gt, gte, e, ne, lt and lte can be reached here")
                         }
                         changed = true;
-                    } else if b == to_remove.into() {
+                    } else if b == to_remove {
                         match self.nodes[dep_node].operation {
-                            Operation::Add(_, _) => self.nodes[dep_node].operation = Operation::Add(a, rep_with.into()),
-                            Operation::Sub(_, _) => self.nodes[dep_node].operation = Operation::Sub(a, rep_with.into()),
-                            Operation::Mul(_, _) => self.nodes[dep_node].operation = Operation::Mul(a, rep_with.into()),
-                            Operation::GreaterThan(_, _) => self.nodes[dep_node].operation = Operation::GreaterThan(a, rep_with.into()),
-                            Operation::GreaterThanEq(_, _) => self.nodes[dep_node].operation = Operation::GreaterThanEq(a, rep_with.into()),
-                            Operation::Equal(_, _) => self.nodes[dep_node].operation = Operation::Equal(a, rep_with.into()),
-                            Operation::NotEqual(_, _) => self.nodes[dep_node].operation = Operation::NotEqual(a, rep_with.into()),
-                            Operation::LessThan(_, _) => self.nodes[dep_node].operation = Operation::LessThan(a, rep_with.into()),
-                            Operation::LessThanEq(_, _) => self.nodes[dep_node].operation = Operation::LessThanEq(a, rep_with.into()),
+                            Operation::Add(_, _) => self.nodes[dep_node].operation = Operation::Add(a, rep_with),
+                            Operation::Sub(_, _) => self.nodes[dep_node].operation = Operation::Sub(a, rep_with),
+                            Operation::Mul(_, _) => self.nodes[dep_node].operation = Operation::Mul(a, rep_with),
+                            Operation::GreaterThan(_, _) => self.nodes[dep_node].operation = Operation::GreaterThan(a, rep_with),
+                            Operation::GreaterThanEq(_, _) => self.nodes[dep_node].operation = Operation::GreaterThanEq(a, rep_with),
+                            Operation::Equal(_, _) => self.nodes[dep_node].operation = Operation::Equal(a, rep_with),
+                            Operation::NotEqual(_, _) => self.nodes[dep_node].operation = Operation::NotEqual(a, rep_with),
+                            Operation::LessThan(_, _) => self.nodes[dep_node].operation = Operation::LessThan(a, rep_with),
+                            Operation::LessThanEq(_, _) => self.nodes[dep_node].operation = Operation::LessThanEq(a, rep_with),
                             _ => unreachable!("Only add, sub, mul, gt, gte, e, ne, lt and lte can be reached here")
                         }
 
@@ -74,11 +74,11 @@ impl Context {
                 Operation::StopGradient(a) 
                     | Operation::Neg(a)
                     | Operation::ZerosLike(a) => {
-                    if a == to_remove.into() {
+                    if a == to_remove {
                         match self.nodes[dep_node].operation {
-                            Operation::Neg(_) => self.nodes[dep_node].operation = Operation::Neg(rep_with.into()),
-                            Operation::ZerosLike(_) => self.nodes[dep_node].operation = Operation::ZerosLike(rep_with.into()),
-                            Operation::StopGradient(_) => self.nodes[dep_node].operation = Operation::StopGradient(rep_with.into()),
+                            Operation::Neg(_) => self.nodes[dep_node].operation = Operation::Neg(rep_with),
+                            Operation::ZerosLike(_) => self.nodes[dep_node].operation = Operation::ZerosLike(rep_with),
+                            Operation::StopGradient(_) => self.nodes[dep_node].operation = Operation::StopGradient(rep_with),
                             _ => unreachable!("Only Neg, StopGradient and ZerosLike get this far")
                         }
                         changed = true;
@@ -86,27 +86,27 @@ impl Context {
                 },
                 Operation::TypeCast(a, t) => {
                     changed = true;
-                    self.nodes[dep_node].operation = Operation::TypeCast(rep_with.into(), t)
+                    self.nodes[dep_node].operation = Operation::TypeCast(rep_with, t)
                 },
                 Operation::Select { pred, on_true, on_false } => {
-                    if pred == to_remove.into() {
+                    if pred == to_remove {
                         changed = true;
-                        self.nodes[dep_node].operation = Operation::Select { pred: rep_with.into(), on_true, on_false }
-                    } else if on_true == to_remove.into() {
+                        self.nodes[dep_node].operation = Operation::Select { pred: rep_with, on_true, on_false }
+                    } else if on_true == to_remove {
                         changed = true;
-                        self.nodes[dep_node].operation = Operation::Select { pred, on_true: rep_with.into(), on_false }
-                    } else if on_false == to_remove.into() {
+                        self.nodes[dep_node].operation = Operation::Select { pred, on_true: rep_with, on_false }
+                    } else if on_false == to_remove {
                         changed = true;
-                        self.nodes[dep_node].operation = Operation::Select { pred, on_true, on_false: rep_with.into() }
+                        self.nodes[dep_node].operation = Operation::Select { pred, on_true, on_false: rep_with }
                     }
                 },
                 Operation::ReduceMax { node, dim, keepdims } => {
                     changed = true;
-                    self.nodes[dep_node].operation = Operation::ReduceMax { node: rep_with.into(), dim, keepdims }
+                    self.nodes[dep_node].operation = Operation::ReduceMax { node: rep_with, dim, keepdims }
                 },
                 Operation::SliceInDim { node, start, stop, stride, dim } => {
                     changed = true;
-                    self.nodes[dep_node].operation = Operation::SliceInDim { node: rep_with.into(), start, stop, stride, dim }
+                    self.nodes[dep_node].operation = Operation::SliceInDim { node: rep_with, start, stop, stride, dim }
                 }
             }
         }
@@ -129,11 +129,11 @@ impl Context {
         let mut modifications: usize = 0;
         let mut changed = false;
 
-        let mut to_visit: Vec<NodeIdentifier> = vec![input.into()];
+        let mut to_visit: Vec<NodeIdentifier> = vec![input];
         let mut visitied: HashSet<NodeIdentifier> = HashSet::new();
 
         while let Some(node_id) = to_visit.pop() {
-            if visitied.contains(&node_id.into()) || modifications >= modification_limit {
+            if visitied.contains(&node_id) || modifications >= modification_limit {
                 continue;
             }
             match self.nodes[node_id].operation {
@@ -155,11 +155,11 @@ impl Context {
 
                         //TODO: Once we create a new Node based on the constant propegation,
                         //use insert_with_key to 'replace existant node'
-                        if self.nodes.get(a.into()).unwrap().is_const().is_none() {
-                            to_visit.push(a.into());
+                        if self.nodes.get(a).unwrap().is_const().is_none() {
+                            to_visit.push(a);
                         } 
-                        if self.nodes.get(b.into()).unwrap().is_const().is_none() {
-                            to_visit.push(b.into());
+                        if self.nodes.get(b).unwrap().is_const().is_none() {
+                            to_visit.push(b);
                         }
                     }, 
                 Operation::Mul(a, b) => {
@@ -208,11 +208,11 @@ impl Context {
 
                     //TODO: Once we create a new Node based on the constant propegation,
                     //use insert_with_key to 'replace existant node'
-                    if self.nodes.get(a.into()).unwrap().is_const().is_none() {
-                        to_visit.push(a.into());
+                    if self.nodes.get(a).unwrap().is_const().is_none() {
+                        to_visit.push(a);
                     } 
-                    if self.nodes.get(b.into()).unwrap().is_const().is_none() {
-                        to_visit.push(b.into());
+                    if self.nodes.get(b).unwrap().is_const().is_none() {
+                        to_visit.push(b);
                     }
          
                 },
@@ -237,7 +237,7 @@ impl Context {
                     },
                 _ => {}
             }
-            visitied.insert(node_id.into());
+            visitied.insert(node_id);
         }
 
         Ok(changed)
