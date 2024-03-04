@@ -115,6 +115,47 @@ mod tests {
     }
 
     #[test]
+    fn test_mul_folds(){
+        let mut ctx = Context::new();
+        let x = ctx.parameter("x", [], xla::ElementType::F32).expect("x");
+        let one = ctx.scalar(1, xla::ElementType::F32).expect("1");
+
+        let const_sum = ctx.mul(x, one).expect("x * 1");
+        let y = ctx.parameter("y", [], xla::ElementType::F32).expect("y");
+
+        let x_y_mul = ctx.mul(const_sum, y).expect("(x * 1) * y");
+        assert!(ctx.fold_consts(x_y_mul, usize::MAX).expect("deep fold"));
+    }
+
+    #[test]
+    fn test_mul_compiles(){
+        let mut ctx = Context::new();
+
+        let x = ctx.parameter("x", [], xla::ElementType::F32).expect("x");
+        let y = ctx.parameter("y", [], xla::ElementType::F32).expect("y");
+        let one = ctx.scalar(1, xla::ElementType::F32).expect("1");
+
+        let mul = ctx.mul(x, one).expect("x * 1");
+        let x_y_product = ctx.mul(mul, y).expect("(x * 0) * y");
+
+        let client = xla::PjRtClient::cpu().expect("client");
+        let name = "test";
+        let executable = ctx.compile(&name, [x_y_product], &client).expect("executable");
+
+        let x_in = Literal::scalar(5.5f32);
+        let y_in = Literal::scalar(10f32);
+
+        let device_result = executable.execute(&[x_in, y_in]).expect("execute");
+        let host_result = device_result[0][0]
+            .to_literal_sync()
+            .expect("to_literal_sync");
+        let untupled_result = host_result.to_tuple1().expect("untuple");
+        let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
+
+        assert_eq!(rust_result[0], 55f32);
+    }
+
+    #[test]
     fn ensure_is_zero_scalar(){
         let mut ctx = Context::new();
         let zeroes = ctx.scalar(0, xla::ElementType::F32).expect("zero scalar");

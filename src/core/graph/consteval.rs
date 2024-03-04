@@ -1,5 +1,7 @@
 use std::collections::HashSet;
 
+use xla::ElementType;
+
 use super::*;
 
 impl Context {
@@ -158,14 +160,38 @@ impl Context {
                                     changed = true;
                                 } else if let Some(literal) = self.nodes[a].is_const() {
                                     //Check for mul by 1
-
+                                    let floating_literal: Vec<f32> = literal.convert(xla::PrimitiveType::F32)?.to_vec()?;
+                                    let mut all_one = true;
+                                    floating_literal.iter().for_each(|elem| {
+                                        if elem != &1f32 {
+                                            all_one = false;
+                                        }
+                                    });
+                                    if all_one {
+                                        //a is all ones, replace node_id with a
+                                        self.replace_index(node_id, b)?;
+                                        modifications += 1;
+                                        changed = true;
+                                    }
                                 } else if self.nodes[b].is_zero()?{
                                     self.replace_index(node_id, b)?;
                                     modifications += 1;
                                     changed = true;
                                 } else if let Some(literal) = self.nodes[b].is_const() {
                                     //Check for mul by 1
-                                    
+                                    let floating_literal: Vec<f32> = literal.convert(xla::PrimitiveType::F32)?.to_vec()?;
+                                    let mut all_one = true;
+                                    floating_literal.iter().for_each(|elem| {
+                                        if elem != &1f32 {
+                                            all_one = false;
+                                        }
+                                    });
+                                    if all_one {
+                                        //b is all ones, replace node_id with a
+                                        self.replace_index(node_id, a)?;
+                                        modifications += 1;
+                                        changed = true;
+                                    }
                                 }
                             },
                             _ => {
