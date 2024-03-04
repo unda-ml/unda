@@ -84,7 +84,34 @@ mod tests {
         let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
 
         assert_eq!(rust_result[0], 100f32);
+    }
 
+    #[test]
+    fn test_mul_by_zero_folds(){
+        let mut ctx = Context::new();
+
+        let x = ctx.parameter("x", [], xla::ElementType::F32).expect("x");
+        let y = ctx.parameter("y", [], xla::ElementType::F32).expect("y");
+        let zero = ctx.scalar(0, xla::ElementType::F32).expect("zero");
+
+        let mul = ctx.mul(x, zero).expect("x * 0");
+        let x_y_product = ctx.mul(mul, y).expect("(x * 0) * y");
+
+        let client = xla::PjRtClient::cpu().expect("client");
+        let name = "test";
+        let executable = ctx.compile(&name, [x_y_product], &client).expect("executable");
+
+        let x_in = Literal::scalar(10f32);
+        let y_in = Literal::scalar(10f32);
+
+        let device_result = executable.execute(&[x_in, y_in]).expect("execute");
+        let host_result = device_result[0][0]
+            .to_literal_sync()
+            .expect("to_literal_sync");
+        let untupled_result = host_result.to_tuple1().expect("untuple");
+        let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
+
+        assert_eq!(rust_result[0], 0f32);
     }
 
     #[test]

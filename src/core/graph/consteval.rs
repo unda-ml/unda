@@ -152,7 +152,21 @@ impl Context {
                                 }
                             },
                             Operation::Mul(_, _) => {
+                                if self.nodes[a].is_zero()? {
+                                    self.replace_index(node_id, a)?;
+                                    modifications += 1;
+                                    changed = true;
+                                } else if let Some(literal) = self.nodes[a].is_const() {
+                                    //Check for mul by 1
 
+                                } else if self.nodes[b].is_zero()?{
+                                    self.replace_index(node_id, b)?;
+                                    modifications += 1;
+                                    changed = true;
+                                } else if let Some(literal) = self.nodes[b].is_const() {
+                                    //Check for mul by 1
+                                    
+                                }
                             },
                             _ => {
                                 unreachable!("Cannot fold parameters of a node that isn't mul, add or sub for now")
