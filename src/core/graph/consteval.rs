@@ -35,8 +35,22 @@ impl Context {
                     | Operation::NotEqual(a, b)
                     | Operation::LessThan(a, b)
                     | Operation::LessThanEq(a, b)  => {
-                        
-                    if a == to_remove {
+                    if a == b {
+                        match self.nodes[dep_node].operation {
+                            Operation::Add(_, _) => self.nodes[dep_node].operation = Operation::Add(rep_with, rep_with),
+                            Operation::Sub(_, _) => self.nodes[dep_node].operation = Operation::Sub(rep_with, rep_with),
+                            Operation::Mul(_, _) => self.nodes[dep_node].operation = Operation::Mul(rep_with, rep_with),
+                            Operation::GreaterThan(_, _) => self.nodes[dep_node].operation = Operation::GreaterThan(rep_with, rep_with),
+                            Operation::GreaterThanEq(_, _) => self.nodes[dep_node].operation = Operation::GreaterThanEq(rep_with, rep_with),
+                            Operation::Equal(_, _) => self.nodes[dep_node].operation = Operation::Equal(rep_with, rep_with),
+                            Operation::NotEqual(_, _) => self.nodes[dep_node].operation = Operation::NotEqual(rep_with, rep_with),
+                            Operation::LessThan(_, _) => self.nodes[dep_node].operation = Operation::LessThan(rep_with, rep_with),
+                            Operation::LessThanEq(_, _) => self.nodes[dep_node].operation = Operation::LessThanEq(rep_with, rep_with),
+                            _ => unreachable!("Only add, sub, mul, gt, gte, e, ne, lt and lte can be reached here")
+                        }
+                        changed = true;
+
+                    } if a == to_remove {
                         match self.nodes[dep_node].operation {
                             Operation::Add(_, _) => self.nodes[dep_node].operation = Operation::Add(rep_with, b),
                             Operation::Sub(_, _) => self.nodes[dep_node].operation = Operation::Sub(rep_with, b),
@@ -84,14 +98,20 @@ impl Context {
                         changed = true;
                     }
                 },
-                Operation::TypeCast(a, t) => {
+                Operation::TypeCast(_, t) => {
                     changed = true;
                     self.nodes[dep_node].operation = Operation::TypeCast(rep_with, t)
                 },
                 Operation::Select { pred, on_true, on_false } => {
                     if pred == to_remove {
+                        if pred == on_true {
+                            self.nodes[dep_node].operation = Operation::Select { pred: rep_with, on_true: rep_with, on_false }
+                        } else if pred == on_false {
+                            self.nodes[dep_node].operation = Operation::Select { pred: rep_with, on_true, on_false: rep_with }
+                        } else { 
+                            self.nodes[dep_node].operation = Operation::Select { pred: rep_with, on_true, on_false }
+                        }
                         changed = true;
-                        self.nodes[dep_node].operation = Operation::Select { pred: rep_with, on_true, on_false }
                     } else if on_true == to_remove {
                         changed = true;
                         self.nodes[dep_node].operation = Operation::Select { pred, on_true: rep_with, on_false }
