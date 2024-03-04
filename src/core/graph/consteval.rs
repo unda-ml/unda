@@ -141,18 +141,11 @@ impl Context {
                         match self.nodes[node_id].operation {
                             Operation::Add(_, _) | Operation::Sub(_, _) => {
                                 if self.nodes[a].is_zero()? {
-                                    //self.nodes[node_id] = self.nodes[b].clone();
-
-                                    //Set all dependents of the removed node to be dependent on
-                                    //node b instead, iterate through all nodes and replace the
-                                    //identifier with node b
                                     self.replace_index(node_id, b)?;
                                     modifications += 1;
                                     changed = true;
 
                                 } else if self.nodes[b].is_zero()? {
-                                    self.nodes[node_id] = self.nodes[a].clone();
-
                                     self.replace_index(node_id, a)?;
                                     modifications += 1;
                                     changed = true;
