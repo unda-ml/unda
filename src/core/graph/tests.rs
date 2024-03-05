@@ -402,6 +402,7 @@ mod tests {
         let y = ctx.sub(quartic_term, quadratic_term).expect("y");
 
         let dydx = ctx.diff(y, x.into()).expect("dydx");
+        ctx.fold_consts(dydx, usize::max_value()).expect("fold consts");
         println!("{}", ctx.to_string(dydx));
         let lr = ctx.scalar(0.75, xla::ElementType::F32).expect("lr");
         let update = ctx.mul(lr, dydx).expect("update");
