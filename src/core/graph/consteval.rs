@@ -291,39 +291,65 @@ impl Context {
                             changed = true;
                         }
                     }
-                    //Enqueue the dependent nodes to check both of them for constant
-                    //mul/adding
-
-                    //TODO: Once we create a new Node based on the constant propegation,
-                    //use insert_with_key to 'replace existant node'
-                    if self.nodes.get(a).unwrap().is_const().is_none() {
+                    if let None = self.nodes[a].is_const() {
                         to_visit.push(a);
                     } 
-                    if self.nodes.get(b).unwrap().is_const().is_none() {
+                    if let None = self.nodes[b].is_const() {
                         to_visit.push(b);
                     }
          
                 },
+                Operation::Neg(a) => {
+                    //TODO
+                }
                 Operation::GreaterThan(a, b)
                     | Operation::GreaterThanEq(a, b)
                     | Operation::LessThan(a, b)
                     | Operation::LessThanEq(a, b)
                     | Operation::Equal(a, b)
+                    | Operation::NotEqual(a, b)
                     => {
 
-                        if let Some(node) = self.nodes.get(a) {
-                            if node.is_const().is_none() {
-                                to_visit.push(a);
-                            }
+                        if let None = self.nodes[a].is_const() {
+                            to_visit.push(a);
                         }
 
-                        if let Some(node) = self.nodes.get(b) {
-                            if node.is_const().is_none() {
-                                to_visit.push(b);
-                            }
+                        if let None = self.nodes[b].is_const() {
+                            to_visit.push(b);
                         }
+
                     },
-                _ => {}
+                Operation::StopGradient(a)
+                    | Operation::TypeCast(a, _)
+                    | Operation::ZerosLike(a) 
+                    => {
+                    if let None = self.nodes[a].is_const() {
+                        to_visit.push(a);
+                    }
+                },
+                Operation::Select { pred, on_true, on_false } => {
+                    if let None = self.nodes[pred].is_const() {
+                        to_visit.push(pred)
+                    }
+                    if let None = self.nodes[on_true].is_const() {
+                        to_visit.push(on_true)
+                    }
+                    if let None = self.nodes[on_false].is_const() {
+                        to_visit.push(on_false)
+                    }
+                },
+                Operation::SliceInDim { node, start, stop, stride, dim } => {
+                    if let None = self.nodes[node].is_const() {
+                        to_visit.push(node);
+                    }
+                },
+                Operation::ReduceMax { node, dim, keepdims } => {
+                    if let None = self.nodes[node].is_const() {
+                        to_visit.push(node);
+                    }
+                }, 
+                Operation::Constant(_) 
+                    | Operation::Parameter(_) => {}
             }
             visitied.insert(node_id);
         }
