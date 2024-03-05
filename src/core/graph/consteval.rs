@@ -236,7 +236,6 @@ impl Context {
                             modifications += 1;
                             changed = true;
                         }
-                        modifications += 1;
                         //Enqueue the dependent nodes to check both of them for constant
                         //mul/adding
 
@@ -254,12 +253,13 @@ impl Context {
                         self.replace_index(node_id, a)?;
                         modifications += 1;
                         changed = true;
-                    } else if let Some(literal) = self.nodes[a].is_const() {
+                    }
+                    if let Some(literal) = self.nodes[a].is_const() {
                         //Check for mul by 1
                         let floating_literal: Vec<f32> = literal.convert(xla::PrimitiveType::F32)?.to_vec()?;
                         let mut all_one = true;
                         floating_literal.iter().for_each(|elem| {
-                            if elem != &1f32 {
+                            if *elem != 1f32 {
                                 all_one = false;
                             }
                         });
@@ -269,16 +269,18 @@ impl Context {
                             modifications += 1;
                             changed = true;
                         }
-                    } else if self.nodes[b].is_zero()?{
+                    }
+                    if self.nodes[b].is_zero()?{
                         self.replace_index(node_id, b)?;
                         modifications += 1;
                         changed = true;
-                    } else if let Some(literal) = self.nodes[b].is_const() {
+                    }
+                    if let Some(literal) = self.nodes[b].is_const() {
                         //Check for mul by 1
                         let floating_literal: Vec<f32> = literal.convert(xla::PrimitiveType::F32)?.to_vec()?;
                         let mut all_one = true;
                         floating_literal.iter().for_each(|elem| {
-                            if elem != &1f32 {
+                            if *elem != 1f32 {
                                 all_one = false;
                             }
                         });
@@ -289,7 +291,6 @@ impl Context {
                             changed = true;
                         }
                     }
-                    modifications += 1;
                     //Enqueue the dependent nodes to check both of them for constant
                     //mul/adding
 
