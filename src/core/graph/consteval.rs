@@ -300,7 +300,9 @@ impl Context {
          
                 },
                 Operation::Neg(a) => {
-                    //TODO
+                    if let None = self.nodes[a].is_const() {
+                        to_visit.push(a);
+                    }
                 }
                 Operation::GreaterThan(a, b)
                     | Operation::GreaterThanEq(a, b)
