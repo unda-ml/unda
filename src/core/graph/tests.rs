@@ -1,7 +1,195 @@
 #[cfg(test)]
 mod tests {
-    use crate::core::graph::Context;
-    use xla::FromRawBytes;
+    use crate::core::graph::{Context, Node, callsite::callsite, ConstantBinding};
+    use xla::{FromRawBytes, Literal, Shape};
+
+    #[test]
+    fn test_no_const_fold(){
+        let mut ctx = Context::new();
+        let x = ctx.parameter("x" ,[], xla::ElementType::F32).expect("x");
+        let y = ctx.parameter("y", [], xla::ElementType::F32).expect("y");
+
+        let add = ctx.add(x, y).expect("x + y");
+
+        //Check that const fold did NOT do it's thing
+        assert!(!ctx.fold_consts(add, usize::MAX).expect("Add fold"));
+    }
+
+    #[test]
+    fn deep_const_fold(){
+        let mut ctx = Context::new();
+        let x = ctx.parameter("x", [], xla::ElementType::F32).expect("x");
+        let zero = ctx.scalar(0, xla::ElementType::F32).expect("0");
+
+        let const_sum = ctx.add(x, zero).expect("x + 0");
+        let y = ctx.parameter("y", [], xla::ElementType::F32).expect("y");
+
+        let x_y_mul = ctx.mul(const_sum, y).expect("(x + 0) * y");
+        assert!(ctx.fold_consts(x_y_mul, usize::MAX).expect("deep fold"));
+    }
+
+
+    #[test]
+    fn test_const_fold_compiles(){
+        let mut ctx = Context::new();
+        let five = ctx.scalar(5, xla::ElementType::F32).expect("5");
+        let zero = ctx.scalar(0, xla::ElementType::F32).expect("0");
+        let ten = ctx.scalar(10, xla::ElementType::F32).expect("10");
+
+        let const_sum = ctx.add(five, zero).expect("x + 0");
+
+        let five_ten_add = ctx.add(const_sum, ten).expect("(x + 0) + y");
+
+        let client = xla::PjRtClient::cpu().expect("client");
+        let name = "test";
+        let executable = ctx.compile(&name, [five_ten_add], &client).expect("executable");
+
+        // args are just provided in the order they are defined, would be nice to pass a dict or something
+        // a pjrtbuffer is just an array slice on some device
+        // but im not sure why its a nested vector instead of just one vector
+        let device_result = executable.execute::<Literal>(&[]).expect("execute");
+        let host_result = device_result[0][0]
+            .to_literal_sync()
+            .expect("to_literal_sync");
+        let untupled_result = host_result.to_tuple1().expect("untuple");
+        let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
+
+        assert_eq!(rust_result[0], 15f32);
+
+    }
+
+    #[test]
+    fn test_const_fold_compiles_params(){
+        let mut ctx = Context::new();
+
+        let x = ctx.parameter("x", [], xla::ElementType::F32).expect("x");
+        let y = ctx.parameter("y", [], xla::ElementType::F32).expect("y");
+        let zero = ctx.scalar(0, xla::ElementType::F32).expect("zero");
+
+        let sum = ctx.add(x, zero).expect("x + 0");
+        let x_y_product = ctx.mul(sum, y).expect("(x + 0) * y");
+
+        let client = xla::PjRtClient::cpu().expect("client");
+        let name = "test";
+        let executable = ctx.compile(&name, [x_y_product], &client).expect("executable");
+
+        let x_in = Literal::scalar(10f32);
+        let y_in = Literal::scalar(10f32);
+
+        let device_result = executable.execute(&[x_in, y_in]).expect("execute");
+        let host_result = device_result[0][0]
+            .to_literal_sync()
+            .expect("to_literal_sync");
+        let untupled_result = host_result.to_tuple1().expect("untuple");
+        let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
+
+        assert_eq!(rust_result[0], 100f32);
+    }
+
+    #[test]
+    fn test_mul_by_zero_folds(){
+        let mut ctx = Context::new();
+
+        let x = ctx.parameter("x", [], xla::ElementType::F32).expect("x");
+        let y = ctx.parameter("y", [], xla::ElementType::F32).expect("y");
+        let zero = ctx.scalar(0, xla::ElementType::F32).expect("zero");
+
+        let mul = ctx.mul(x, zero).expect("x * 0");
+        let x_y_product = ctx.mul(mul, y).expect("(x * 0) * y");
+
+        let client = xla::PjRtClient::cpu().expect("client");
+        let name = "test";
+        let executable = ctx.compile(&name, [x_y_product], &client).expect("executable");
+
+        let x_in = Literal::scalar(10f32);
+        let y_in = Literal::scalar(10f32);
+
+        let device_result = executable.execute(&[x_in, y_in]).expect("execute");
+        let host_result = device_result[0][0]
+            .to_literal_sync()
+            .expect("to_literal_sync");
+        let untupled_result = host_result.to_tuple1().expect("untuple");
+        let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
+
+        assert_eq!(rust_result[0], 0f32);
+    }
+
+    #[test]
+    fn test_mul_folds(){
+        let mut ctx = Context::new();
+        let x = ctx.parameter("x", [], xla::ElementType::F32).expect("x");
+        let one = ctx.scalar(1, xla::ElementType::F32).expect("1");
+
+        let const_sum = ctx.mul(x, one).expect("x * 1");
+        let y = ctx.parameter("y", [], xla::ElementType::F32).expect("y");
+
+        let x_y_mul = ctx.mul(const_sum, y).expect("(x * 1) * y");
+        assert!(ctx.fold_consts(x_y_mul, usize::MAX).expect("deep fold"));
+    }
+
+    #[test]
+    fn test_mul_compiles(){
+        let mut ctx = Context::new();
+
+        let x = ctx.parameter("x", [], xla::ElementType::F32).expect("x");
+        let y = ctx.parameter("y", [], xla::ElementType::F32).expect("y");
+        let one = ctx.scalar(1, xla::ElementType::F32).expect("1");
+
+        let mul = ctx.mul(x, one).expect("x * 1");
+        let x_y_product = ctx.mul(mul, y).expect("(x * 0) * y");
+
+        let client = xla::PjRtClient::cpu().expect("client");
+        let name = "test";
+        let executable = ctx.compile(&name, [x_y_product], &client).expect("executable");
+
+        let x_in = Literal::scalar(5.5f32);
+        let y_in = Literal::scalar(10f32);
+
+        let device_result = executable.execute(&[x_in, y_in]).expect("execute");
+        let host_result = device_result[0][0]
+            .to_literal_sync()
+            .expect("to_literal_sync");
+        let untupled_result = host_result.to_tuple1().expect("untuple");
+        let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
+
+        assert_eq!(rust_result[0], 55f32);
+    }
+
+    #[test]
+    fn ensure_is_zero_scalar(){
+        let mut ctx = Context::new();
+        let zeroes = ctx.scalar(0, xla::ElementType::F32).expect("zero scalar");
+        let node = ctx.nodes.get(zeroes).expect("node of zero");
+
+        assert!(node.is_zero().expect("is zero"));
+    }
+
+    #[test]
+    fn ensure_is_zero_vector(){
+        let mut ctx = Context::new();
+        let zeroes = ctx.vector([0.0,0.0,0.0,0.0], xla::ElementType::F64).expect("zero vector");
+        let node = ctx.nodes.get(zeroes).expect("node of zeroes");
+
+        assert!(node.is_zero().expect("is zero"));
+    }
+
+    #[test]
+    fn ensure_is_zero_unique_types(){
+        let mut ctx = Context::new();
+        let zeroes = ctx.matrix([[0u64,0u64],[0u64,0u64],[0u64,0u64]], xla::ElementType::U64).expect("zero matrix u64");
+        let node = ctx.nodes.get(zeroes).expect("node of zeroes");
+
+        assert!(node.is_zero().expect("is zero"));
+    }
+
+    #[test]
+    fn ensure_is_const(){
+        let mut ctx = Context::new();
+        let scalar_const = ctx.scalar(15, xla::ElementType::F32).expect("fifteen");
+        let node = ctx.nodes.get(scalar_const).expect("node of 15");
+
+        assert!(node.is_const().is_some());
+    }
 
     #[test]
     fn test_mul_add_scalar_consts_and_params() {
@@ -214,6 +402,7 @@ mod tests {
         let y = ctx.sub(quartic_term, quadratic_term).expect("y");
 
         let dydx = ctx.diff(y, x.into()).expect("dydx");
+        ctx.fold_consts(dydx, usize::max_value()).expect("fold consts");
         println!("{}", ctx.to_string(dydx));
         let lr = ctx.scalar(0.75, xla::ElementType::F32).expect("lr");
         let update = ctx.mul(lr, dydx).expect("update");
