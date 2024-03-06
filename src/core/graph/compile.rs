@@ -120,14 +120,14 @@ impl Context {
                         covered_ops.insert(*dependent_op);
                     }
 
-                    Operation::Mul(node1, node2) => {
-                        if unda_xla_map.contains_key(&node1)
-                            && unda_xla_map.contains_key(&node2)
-                            && xla_op_slotmap.contains_key(unda_xla_map[&node1])
-                            && xla_op_slotmap.contains_key(unda_xla_map[&node2])
+                    Operation::Mul(a, b) => {
+                        if unda_xla_map.contains_key(&a)
+                            && unda_xla_map.contains_key(&b)
+                            && xla_op_slotmap.contains_key(unda_xla_map[&a])
+                            && xla_op_slotmap.contains_key(unda_xla_map[&b])
                         {
-                            let xla_op = xla_op_slotmap[unda_xla_map[&node1]]
-                                .mul_(&xla_op_slotmap[unda_xla_map[&node2]])?;
+                            let xla_op = xla_op_slotmap[unda_xla_map[&a]]
+                                .mul_(&xla_op_slotmap[unda_xla_map[&b]])?;
                             let xla_id = xla_op_slotmap.insert(xla_op);
                             unda_xla_map.insert(*dependent_op, xla_id);
                             unda_op_queue.push_back(*dependent_op);
@@ -135,14 +135,14 @@ impl Context {
                         }
                     }
 
-                    Operation::Add(node1, node2) => {
-                        if unda_xla_map.contains_key(&node1)
-                            && unda_xla_map.contains_key(&node2)
-                            && xla_op_slotmap.contains_key(unda_xla_map[&node1])
-                            && xla_op_slotmap.contains_key(unda_xla_map[&node2])
+                    Operation::Add(a, b) => {
+                        if unda_xla_map.contains_key(&a)
+                            && unda_xla_map.contains_key(&b)
+                            && xla_op_slotmap.contains_key(unda_xla_map[&a])
+                            && xla_op_slotmap.contains_key(unda_xla_map[&b])
                         {
-                            let xla_op = xla_op_slotmap[unda_xla_map[&node1]]
-                                .add_(&xla_op_slotmap[unda_xla_map[&node2]])?;
+                            let xla_op = xla_op_slotmap[unda_xla_map[&a]]
+                                .add_(&xla_op_slotmap[unda_xla_map[&b]])?;
                             let xla_id = xla_op_slotmap.insert(xla_op);
                             unda_xla_map.insert(*dependent_op, xla_id);
                             unda_op_queue.push_back(*dependent_op);
@@ -150,14 +150,14 @@ impl Context {
                         }
                     }
 
-                    Operation::Sub(node1, node2) => {
-                        if unda_xla_map.contains_key(&node1)
-                            && unda_xla_map.contains_key(&node2)
-                            && xla_op_slotmap.contains_key(unda_xla_map[&node1])
-                            && xla_op_slotmap.contains_key(unda_xla_map[&node2])
+                    Operation::Sub(a, b) => {
+                        if unda_xla_map.contains_key(&a)
+                            && unda_xla_map.contains_key(&b)
+                            && xla_op_slotmap.contains_key(unda_xla_map[&a])
+                            && xla_op_slotmap.contains_key(unda_xla_map[&b])
                         {
-                            let xla_op = xla_op_slotmap[unda_xla_map[&node1]]
-                                .sub_(&xla_op_slotmap[unda_xla_map[&node2]])?;
+                            let xla_op = xla_op_slotmap[unda_xla_map[&a]]
+                                .sub_(&xla_op_slotmap[unda_xla_map[&b]])?;
                             let xla_id = xla_op_slotmap.insert(xla_op);
                             unda_xla_map.insert(*dependent_op, xla_id);
                             unda_op_queue.push_back(*dependent_op);
@@ -177,14 +177,14 @@ impl Context {
                         }
                     }
 
-                    Operation::Equal(node1, node2) => {
-                        if unda_xla_map.contains_key(&node1)
-                            && unda_xla_map.contains_key(&node2)
-                            && xla_op_slotmap.contains_key(unda_xla_map[&node1])
-                            && xla_op_slotmap.contains_key(unda_xla_map[&node2])
+                    Operation::Equal(a, b) => {
+                        if unda_xla_map.contains_key(&a)
+                            && unda_xla_map.contains_key(&b)
+                            && xla_op_slotmap.contains_key(unda_xla_map[&a])
+                            && xla_op_slotmap.contains_key(unda_xla_map[&b])
                         {
-                            let xla_op = xla_op_slotmap[unda_xla_map[&node1]]
-                                .eq(&xla_op_slotmap[unda_xla_map[&node2]])?;
+                            let xla_op = xla_op_slotmap[unda_xla_map[&a]]
+                                .eq(&xla_op_slotmap[unda_xla_map[&b]])?;
                             let xla_id = xla_op_slotmap.insert(xla_op);
                             unda_xla_map.insert(*dependent_op, xla_id);
                             unda_op_queue.push_back(*dependent_op);
@@ -192,12 +192,12 @@ impl Context {
                         }
                     }
 
-                    Operation::NotEqual(node1, node2) => {
-                        if xla_op_slotmap.contains_key(unda_xla_map[&node1])
-                            && xla_op_slotmap.contains_key(unda_xla_map[&node1])
+                    Operation::NotEqual(a, b) => {
+                        if xla_op_slotmap.contains_key(unda_xla_map[&a])
+                            && xla_op_slotmap.contains_key(unda_xla_map[&a])
                         {
-                            let xla_op = xla_op_slotmap[unda_xla_map[&node1]]
-                                .ne(&xla_op_slotmap[unda_xla_map[&node2]])?;
+                            let xla_op = xla_op_slotmap[unda_xla_map[&a]]
+                                .ne(&xla_op_slotmap[unda_xla_map[&b]])?;
                             let xla_id = xla_op_slotmap.insert(xla_op);
                             unda_xla_map.insert(*dependent_op, xla_id);
                             unda_op_queue.push_back(*dependent_op);
@@ -205,14 +205,14 @@ impl Context {
                         }
                     }
 
-                    Operation::LessThan(node1, node2) => {
-                        if unda_xla_map.contains_key(&node1)
-                            && unda_xla_map.contains_key(&node2)
-                            && xla_op_slotmap.contains_key(unda_xla_map[&node1])
-                            && xla_op_slotmap.contains_key(unda_xla_map[&node2])
+                    Operation::LessThan(a, b) => {
+                        if unda_xla_map.contains_key(&a)
+                            && unda_xla_map.contains_key(&b)
+                            && xla_op_slotmap.contains_key(unda_xla_map[&a])
+                            && xla_op_slotmap.contains_key(unda_xla_map[&b])
                         {
-                            let xla_op = xla_op_slotmap[unda_xla_map[&node1]]
-                                .lt(&xla_op_slotmap[unda_xla_map[&node2]])?;
+                            let xla_op = xla_op_slotmap[unda_xla_map[&a]]
+                                .lt(&xla_op_slotmap[unda_xla_map[&b]])?;
                             let xla_id = xla_op_slotmap.insert(xla_op);
                             unda_xla_map.insert(*dependent_op, xla_id);
                             unda_op_queue.push_back(*dependent_op);
@@ -220,14 +220,14 @@ impl Context {
                         }
                     }
 
-                    Operation::GreaterThan(node1, node2) => {
-                        if unda_xla_map.contains_key(&node1)
-                            && unda_xla_map.contains_key(&node2)
-                            && xla_op_slotmap.contains_key(unda_xla_map[&node1])
-                            && xla_op_slotmap.contains_key(unda_xla_map[&node2])
+                    Operation::GreaterThan(a, b) => {
+                        if unda_xla_map.contains_key(&a)
+                            && unda_xla_map.contains_key(&b)
+                            && xla_op_slotmap.contains_key(unda_xla_map[&a])
+                            && xla_op_slotmap.contains_key(unda_xla_map[&b])
                         {
-                            let xla_op = xla_op_slotmap[unda_xla_map[&node1]]
-                                .gt(&xla_op_slotmap[unda_xla_map[&node2]])?;
+                            let xla_op = xla_op_slotmap[unda_xla_map[&a]]
+                                .gt(&xla_op_slotmap[unda_xla_map[&b]])?;
                             let xla_id = xla_op_slotmap.insert(xla_op);
                             unda_xla_map.insert(*dependent_op, xla_id);
                             unda_op_queue.push_back(*dependent_op);
@@ -235,14 +235,14 @@ impl Context {
                         }
                     }
 
-                    Operation::LessThanEq(node1, node2) => {
-                        if unda_xla_map.contains_key(&node1)
-                            && unda_xla_map.contains_key(&node2)
-                            && xla_op_slotmap.contains_key(unda_xla_map[&node1])
-                            && xla_op_slotmap.contains_key(unda_xla_map[&node2])
+                    Operation::LessThanEq(a, b) => {
+                        if unda_xla_map.contains_key(&a)
+                            && unda_xla_map.contains_key(&b)
+                            && xla_op_slotmap.contains_key(unda_xla_map[&a])
+                            && xla_op_slotmap.contains_key(unda_xla_map[&b])
                         {
-                            let xla_op = xla_op_slotmap[unda_xla_map[&node1]]
-                                .le(&xla_op_slotmap[unda_xla_map[&node2]])?;
+                            let xla_op = xla_op_slotmap[unda_xla_map[&a]]
+                                .le(&xla_op_slotmap[unda_xla_map[&b]])?;
                             let xla_id = xla_op_slotmap.insert(xla_op);
                             unda_xla_map.insert(*dependent_op, xla_id);
                             unda_op_queue.push_back(*dependent_op);
@@ -250,14 +250,14 @@ impl Context {
                         }
                     }
 
-                    Operation::GreaterThanEq(node1, node2) => {
-                        if unda_xla_map.contains_key(&node1)
-                            && unda_xla_map.contains_key(&node2)
-                            && xla_op_slotmap.contains_key(unda_xla_map[&node1])
-                            && xla_op_slotmap.contains_key(unda_xla_map[&node2])
+                    Operation::GreaterThanEq(a, b) => {
+                        if unda_xla_map.contains_key(&a)
+                            && unda_xla_map.contains_key(&b)
+                            && xla_op_slotmap.contains_key(unda_xla_map[&a])
+                            && xla_op_slotmap.contains_key(unda_xla_map[&b])
                         {
-                            let xla_op = xla_op_slotmap[unda_xla_map[&node1]]
-                                .ge(&xla_op_slotmap[unda_xla_map[&node2]])?;
+                            let xla_op = xla_op_slotmap[unda_xla_map[&a]]
+                                .ge(&xla_op_slotmap[unda_xla_map[&b]])?;
                             let xla_id = xla_op_slotmap.insert(xla_op);
                             unda_xla_map.insert(*dependent_op, xla_id);
                             unda_op_queue.push_back(*dependent_op);
@@ -298,12 +298,14 @@ impl Context {
                             covered_ops.insert(*dependent_op);
                         }
                     }
-                    Operation::Reshape(node, sh) => {
+                    Operation::Reshape(node) => {
                         if unda_xla_map.contains_key(&node)
                             && xla_op_slotmap.contains_key(unda_xla_map[&node])
                         {
                             let xla_op = xla_op_slotmap[unda_xla_map[&node]].reshape(
-                                sh.sizes
+                                self.nodes[node]
+                                    .shape
+                                    .sizes
                                     .iter()
                                     .map(|s| *s as i64)
                                     .collect::<Vec<i64>>()

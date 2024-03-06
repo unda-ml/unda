@@ -104,7 +104,7 @@ impl Context {
                         }
                     }
 
-                    Operation::Reshape(node, sh) => {
+                    Operation::Reshape(node) => {
                         let next_pullback = self.diff(node, dependent_node)?;
                         let node_sh = self.nodes[node].shape.clone();
                         let pullback = self.reshape(next_pullback, node_sh)?;
@@ -156,7 +156,7 @@ impl Context {
                         for i in (0..self.nodes[node].shape.ndims()).rev() {
                             new_sizes.push(self.nodes[node].shape.sizes[i]);
                             if i as i64 == dim {
-                                new_sizes.push(n_tiles as u16);
+                                new_sizes.push(n_tiles as u32);
                             }
                         }
 
@@ -209,7 +209,7 @@ impl Context {
                             for i in (0..self.nodes[node].shape.ndims()).rev() {
                                 new_sizes.push(self.nodes[node].shape.sizes[i]);
                                 if i as i64 == dim {
-                                    new_sizes.push(1u16);
+                                    new_sizes.push(1u32);
                                 }
                             }
                             let reshaped_pullback =

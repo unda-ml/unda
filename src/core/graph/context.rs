@@ -66,8 +66,8 @@ impl Context {
         }
     }
 
-    pub fn to_string<A: Into<NodeIdentifier> + Copy>(&self, input: A) -> String {
-        let input_node = &self.nodes[input.into()];
+    pub fn to_string(&self, input: NodeIdentifier) -> String {
+        let input_node = &self.nodes[input];
 
         match input_node.operation.clone() {
             Operation::Constant(a) => format!("Constant {} {}", input_node.shape, a),
@@ -112,7 +112,7 @@ impl Context {
                 self.to_string(on_false)
             ),
             Operation::TypeCast(a, ty) => format!("TypeCast ({}) {}", self.to_string(a), ty),
-            Operation::Reshape(a, sh) => format!("TypeCast ({}) {}", self.to_string(a), sh),
+            Operation::Reshape(a) => format!("TypeCast ({}) {}", self.to_string(a), self.nodes[a].shape),
             Operation::SliceInDim {
                 node,
                 start,

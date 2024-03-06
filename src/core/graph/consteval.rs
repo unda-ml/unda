@@ -165,9 +165,9 @@ impl Context {
                     changed = true;
                     self.nodes[dep_node].operation = Operation::TypeCast(rep_with, t)
                 },
-                Operation::Reshape(_, s) => {
+                Operation::Reshape(_) => {
                     changed = true;
-                    self.nodes[dep_node].operation = Operation::Reshape(rep_with, s.clone())
+                    self.nodes[dep_node].operation = Operation::Reshape(rep_with)
                 },
                 Operation::Select { pred, on_true, on_false } => {
                     if pred == to_remove {
@@ -339,7 +339,7 @@ impl Context {
                     },
                 Operation::StopGradient(a)
                     | Operation::TypeCast(a, _)
-                    | Operation::Reshape(a, _)
+                    | Operation::Reshape(a)
                     | Operation::ZerosLike(a)
                     => {
                     if let None = self.nodes[a].is_const() {

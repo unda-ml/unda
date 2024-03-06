@@ -70,7 +70,7 @@ impl Context {
         let value = xla::Literal::vec1(&values).convert(dtype.primitive_type())?;
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
-            shape: [N as u16].into(),
+            shape: [N as u32].into(),
             operation: Operation::Constant(ConstantBinding { value }),
             dtype: T::TY,
         });
@@ -92,7 +92,7 @@ impl Context {
         let reshaped = value.reshape(&[N as i64, M as i64])?;
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
-            shape: [N as u16, M as u16].into(),
+            shape: [N as u32, M as u32].into(),
             operation: Operation::Constant(ConstantBinding { value: reshaped }),
             dtype: T::TY,
         });

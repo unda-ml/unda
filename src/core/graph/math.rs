@@ -451,8 +451,8 @@ impl Context {
         } else {
             let node_id = self.nodes.insert(Node {
                 callsite: callsite!(1),
-                shape: shape.clone(),
-                operation: Operation::Reshape(a, shape),
+                shape: shape,
+                operation: Operation::Reshape(a),
                 dtype: self.nodes[a].dtype,
             });
             self.dependent_nodes
@@ -475,7 +475,7 @@ impl Context {
         let mut s = Shape::new();
         for d in (0..self.nodes[a].shape.ndims()).rev() {
             if d as i64 == dim {
-                s.sizes.push(((stop - start) / stride) as u16);
+                s.sizes.push(((stop - start) / stride) as u32);
             } else {
                 s.sizes.push(self.nodes[a].shape.sizes[d]);
             }
@@ -508,7 +508,7 @@ impl Context {
         let mut s = Shape::new();
         for d in (0..self.nodes[a].shape.ndims()).rev() {
             if d as i64 == dim {
-                s.sizes.push((n_tiles as u16)*self.nodes[a].shape.sizes[d]);
+                s.sizes.push((n_tiles as u32)*self.nodes[a].shape.sizes[d]);
             } else {
                 s.sizes.push(self.nodes[a].shape.sizes[d]);
             }
