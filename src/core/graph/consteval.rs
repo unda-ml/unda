@@ -1,7 +1,5 @@
 use std::collections::HashSet;
 
-use xla::ElementType;
-
 use super::*;
 
 impl Context {
