@@ -1,5 +1,7 @@
 use smallvec::SmallVec;
 
+use super::callsite::Callsite;
+
 /// array of sizes along each axis
 /// scalar would be an []
 /// 3d vector would be [3]
@@ -16,6 +18,8 @@ pub enum ShapeConversionError {
     UnexpectedTupleShape,
     #[error("Expected Array Shape but got Unsupported Shape")]
     UnexpectedUnsupportedShape,
+    #[error("Shapes {0} and {1} are of different sizes at {2}.")]
+    MismatchedSizes(Shape, Shape, Callsite),
 }
 
 impl From<&[u16]> for Shape {

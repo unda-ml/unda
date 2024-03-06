@@ -112,6 +112,7 @@ impl Context {
                 self.to_string(on_false)
             ),
             Operation::TypeCast(a, ty) => format!("TypeCast ({}) {}", self.to_string(a), ty),
+            Operation::Reshape(a, sh) => format!("TypeCast ({}) {}", self.to_string(a), sh),
             Operation::SliceInDim {
                 node,
                 start,
@@ -122,13 +123,29 @@ impl Context {
                 "SliceInDim ({}) {} {} {} {}",
                 self.to_string(node), start, stop, stride, dim
             ),
+            Operation::TileInDim {
+                node,
+                n_tiles,
+                dim,
+            } => format!(
+                "SliceInDim ({}) {} {}",
+                self.to_string(node), n_tiles, dim
+            ),
             Operation::ZerosLike(node) => format!("ZerosLike {}", self.to_string(node)),
             Operation::ReduceMax {
                 node,
                 dim,
                 keepdims,
             } => format!(
-                "SliceInDim {} {} {}",
+                "ReduceMax {} {} {}",
+                self.to_string(node), dim, keepdims
+            ),
+            Operation::ReduceSum {
+                node,
+                dim,
+                keepdims,
+            } => format!(
+                "ReduceSum {} {} {}",
                 self.to_string(node), dim, keepdims
             ),
         }

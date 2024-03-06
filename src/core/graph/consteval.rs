@@ -21,7 +21,7 @@ impl Context {
         rep_with: NodeIdentifier
         ) -> Result<bool> {
         let mut changed = false;
-        
+
         let deps = self.collect_deps(to_remove);
 
         for dep_node in deps {
@@ -139,7 +139,7 @@ impl Context {
                         changed = true;
                     }
                 },
-                Operation::Constant(_) 
+                Operation::Constant(_)
                     | Operation::Parameter(_) => {
                     unreachable!("Constants or Parameters cannot depend on nodes");
                 },
@@ -154,7 +154,7 @@ impl Context {
                         self.nodes[dep_node].operation = Operation::Neg(rep_with);
                         changed = true;
                     }
-                }, 
+                },
                 Operation::ZerosLike(a) => {
                     if a == to_remove {
                         self.nodes[dep_node].operation = Operation::ZerosLike(rep_with);
@@ -165,13 +165,17 @@ impl Context {
                     changed = true;
                     self.nodes[dep_node].operation = Operation::TypeCast(rep_with, t)
                 },
+                Operation::Reshape(_, s) => {
+                    changed = true;
+                    self.nodes[dep_node].operation = Operation::Reshape(rep_with, s.clone())
+                },
                 Operation::Select { pred, on_true, on_false } => {
                     if pred == to_remove {
                         if pred == on_true {
                             self.nodes[dep_node].operation = Operation::Select { pred: rep_with, on_true: rep_with, on_false }
                         } else if pred == on_false {
                             self.nodes[dep_node].operation = Operation::Select { pred: rep_with, on_true, on_false: rep_with }
-                        } else { 
+                        } else {
                             self.nodes[dep_node].operation = Operation::Select { pred: rep_with, on_true, on_false }
                         }
                         changed = true;
@@ -189,10 +193,22 @@ impl Context {
                         self.nodes[dep_node].operation = Operation::ReduceMax { node: rep_with, dim, keepdims }
                     }
                 },
+                Operation::ReduceSum { node, dim, keepdims } => {
+                    if node == to_remove {
+                        changed = true;
+                        self.nodes[dep_node].operation = Operation::ReduceSum { node: rep_with, dim, keepdims }
+                    }
+                },
                 Operation::SliceInDim { node, start, stop, stride, dim } => {
                     if node == to_remove {
                         changed = true;
                         self.nodes[dep_node].operation = Operation::SliceInDim { node: rep_with, start, stop, stride, dim }
+                    }
+                },
+                Operation::TileInDim { node, n_tiles, dim } => {
+                    if node == to_remove {
+                        changed = true;
+                        self.nodes[dep_node].operation = Operation::TileInDim { node: rep_with, n_tiles, dim }
                     }
                 }
             }
@@ -224,7 +240,7 @@ impl Context {
                 continue;
             }
             match self.nodes[node_id].operation {
-                Operation::Add(a, b) 
+                Operation::Add(a, b)
                     | Operation::Sub(a, b) => {
                         if self.nodes[a].is_zero()? {
                             self.replace_index(node_id, b)?;
@@ -243,11 +259,11 @@ impl Context {
                         //use insert_with_key to 'replace existant node'
                         if self.nodes.get(a).unwrap().is_const().is_none() {
                             to_visit.push(a);
-                        } 
+                        }
                         if self.nodes.get(b).unwrap().is_const().is_none() {
                             to_visit.push(b);
                         }
-                    }, 
+                    },
                 Operation::Mul(a, b) => {
                     if self.nodes[a].is_zero()? {
                         self.replace_index(node_id, a)?;
@@ -293,11 +309,11 @@ impl Context {
                     }
                     if let None = self.nodes[a].is_const() {
                         to_visit.push(a);
-                    } 
+                    }
                     if let None = self.nodes[b].is_const() {
                         to_visit.push(b);
                     }
-         
+
                 },
                 Operation::Neg(a) => {
                     if let None = self.nodes[a].is_const() {
@@ -323,7 +339,8 @@ impl Context {
                     },
                 Operation::StopGradient(a)
                     | Operation::TypeCast(a, _)
-                    | Operation::ZerosLike(a) 
+                    | Operation::Reshape(a, _)
+                    | Operation::ZerosLike(a)
                     => {
                     if let None = self.nodes[a].is_const() {
                         to_visit.push(a);
@@ -345,12 +362,22 @@ impl Context {
                         to_visit.push(node);
                     }
                 },
+                Operation::TileInDim { node, n_tiles, dim } => {
+                    if let None = self.nodes[node].is_const() {
+                        to_visit.push(node);
+                    }
+                },
                 Operation::ReduceMax { node, dim, keepdims } => {
                     if let None = self.nodes[node].is_const() {
                         to_visit.push(node);
                     }
-                }, 
-                Operation::Constant(_) 
+                },
+                Operation::ReduceSum { node, dim, keepdims } => {
+                    if let None = self.nodes[node].is_const() {
+                        to_visit.push(node);
+                    }
+                },
+                Operation::Constant(_)
                     | Operation::Parameter(_) => {}
             }
             visitied.insert(node_id);

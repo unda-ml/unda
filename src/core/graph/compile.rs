@@ -298,6 +298,23 @@ impl Context {
                             covered_ops.insert(*dependent_op);
                         }
                     }
+                    Operation::Reshape(node, sh) => {
+                        if unda_xla_map.contains_key(&node)
+                            && xla_op_slotmap.contains_key(unda_xla_map[&node])
+                        {
+                            let xla_op = xla_op_slotmap[unda_xla_map[&node]].reshape(
+                                sh.sizes
+                                    .iter()
+                                    .map(|s| *s as i64)
+                                    .collect::<Vec<i64>>()
+                                    .as_slice(),
+                            )?;
+                            let xla_id = xla_op_slotmap.insert(xla_op);
+                            unda_xla_map.insert(*dependent_op, xla_id);
+                            unda_op_queue.push_back(*dependent_op);
+                            covered_ops.insert(*dependent_op);
+                        }
+                    }
                     Operation::SliceInDim {
                         node,
                         start,
@@ -316,6 +333,22 @@ impl Context {
                             covered_ops.insert(*dependent_op);
                         }
                     }
+                    Operation::TileInDim { node, n_tiles, dim } => {
+                        if unda_xla_map.contains_key(&node)
+                            && xla_op_slotmap.contains_key(unda_xla_map[&node])
+                        {
+                            let node_op = &xla_op_slotmap[unda_xla_map[&node]];
+                            let mut copies: Vec<xla::XlaOp> = Vec::new();
+                            for _ in 1..n_tiles {
+                                copies.push(node_op.copy()?);
+                            }
+                            let xla_op = node_op.concat_in_dim(copies.as_slice(), dim)?;
+                            let xla_id = xla_op_slotmap.insert(xla_op);
+                            unda_xla_map.insert(*dependent_op, xla_id);
+                            unda_op_queue.push_back(*dependent_op);
+                            covered_ops.insert(*dependent_op);
+                        }
+                    }
                     Operation::ZerosLike(node) => {
                         if unda_xla_map.contains_key(&node)
                             && xla_op_slotmap.contains_key(unda_xla_map[&node])
@@ -327,10 +360,28 @@ impl Context {
                             covered_ops.insert(*dependent_op);
                         }
                     }
-                    Operation::ReduceMax { node, dim, keepdims } => {
+                    Operation::ReduceMax {
+                        node,
+                        dim,
+                        keepdims,
+                    } => {
                         if xla_op_slotmap.contains_key(unda_xla_map[&node]) {
                             let xla_op =
                                 xla_op_slotmap[unda_xla_map[&node]].reduce_max(&[dim], keepdims)?;
+                            let xla_id = xla_op_slotmap.insert(xla_op);
+                            unda_xla_map.insert(*dependent_op, xla_id);
+                            unda_op_queue.push_back(*dependent_op);
+                            covered_ops.insert(*dependent_op);
+                        }
+                    }
+                    Operation::ReduceSum {
+                        node,
+                        dim,
+                        keepdims,
+                    } => {
+                        if xla_op_slotmap.contains_key(unda_xla_map[&node]) {
+                            let xla_op =
+                                xla_op_slotmap[unda_xla_map[&node]].reduce_sum(&[dim], keepdims)?;
                             let xla_id = xla_op_slotmap.insert(xla_op);
                             unda_xla_map.insert(*dependent_op, xla_id);
                             unda_op_queue.push_back(*dependent_op);

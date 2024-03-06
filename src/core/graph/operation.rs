@@ -22,12 +22,15 @@ pub enum Operation {
     Select{ pred: NodeIdentifier, on_true: NodeIdentifier, on_false: NodeIdentifier },
 
     TypeCast(NodeIdentifier, xla::ElementType),
+    Reshape(NodeIdentifier, Shape),
 
     SliceInDim{ node: NodeIdentifier, start: i64, stop: i64, stride: i64, dim: i64 },
+    TileInDim{ node: NodeIdentifier, n_tiles: i64, dim: i64 },
 
     ZerosLike(NodeIdentifier),
 
     ReduceMax{ node: NodeIdentifier, dim: i64, keepdims: bool },
+    ReduceSum{ node: NodeIdentifier, dim: i64, keepdims: bool }
 }
 
 impl Display for Operation {
