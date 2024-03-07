@@ -10,6 +10,7 @@ pub enum Operation {
     Add(NodeIdentifier, NodeIdentifier),
     Sub(NodeIdentifier, NodeIdentifier),
     Mul(NodeIdentifier, NodeIdentifier),
+    Div(NodeIdentifier, NodeIdentifier),
     Neg(NodeIdentifier),
 
     Equal(NodeIdentifier, NodeIdentifier),
@@ -30,7 +31,9 @@ pub enum Operation {
     ZerosLike(NodeIdentifier),
 
     ReduceMax{ node: NodeIdentifier, dim: i64, keepdims: bool },
-    ReduceSum{ node: NodeIdentifier, dim: i64, keepdims: bool }
+    ReduceSum{ node: NodeIdentifier, dim: i64, keepdims: bool },
+    // TODO: This might not behave well for integral types! Figure out behavior.
+    ReduceMean{ node: NodeIdentifier, dim: i64, keepdims: bool },
 }
 
 impl Display for Operation {

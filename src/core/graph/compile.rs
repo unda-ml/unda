@@ -135,6 +135,21 @@ impl Context {
                         }
                     }
 
+                    Operation::Div(a, b) => {
+                        if unda_xla_map.contains_key(&a)
+                            && unda_xla_map.contains_key(&b)
+                            && xla_op_slotmap.contains_key(unda_xla_map[&a])
+                            && xla_op_slotmap.contains_key(unda_xla_map[&b])
+                        {
+                            let xla_op = xla_op_slotmap[unda_xla_map[&a]]
+                                .div_(&xla_op_slotmap[unda_xla_map[&b]])?;
+                            let xla_id = xla_op_slotmap.insert(xla_op);
+                            unda_xla_map.insert(*dependent_op, xla_id);
+                            unda_op_queue.push_back(*dependent_op);
+                            covered_ops.insert(*dependent_op);
+                        }
+                    }
+
                     Operation::Add(a, b) => {
                         if unda_xla_map.contains_key(&a)
                             && unda_xla_map.contains_key(&b)
@@ -384,6 +399,20 @@ impl Context {
                         if xla_op_slotmap.contains_key(unda_xla_map[&node]) {
                             let xla_op =
                                 xla_op_slotmap[unda_xla_map[&node]].reduce_sum(&[dim], keepdims)?;
+                            let xla_id = xla_op_slotmap.insert(xla_op);
+                            unda_xla_map.insert(*dependent_op, xla_id);
+                            unda_op_queue.push_back(*dependent_op);
+                            covered_ops.insert(*dependent_op);
+                        }
+                    }
+                    Operation::ReduceMean {
+                        node,
+                        dim,
+                        keepdims,
+                    } => {
+                        if xla_op_slotmap.contains_key(unda_xla_map[&node]) {
+                            let xla_op =
+                                xla_op_slotmap[unda_xla_map[&node]].reduce_mean(&[dim], keepdims)?;
                             let xla_id = xla_op_slotmap.insert(xla_op);
                             unda_xla_map.insert(*dependent_op, xla_id);
                             unda_op_queue.push_back(*dependent_op);

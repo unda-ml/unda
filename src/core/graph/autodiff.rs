@@ -144,6 +144,21 @@ impl Context {
                         }
                     }
 
+                    Operation::Div(a, b) => {
+                        let next_pullback = self.diff(output, dependent_node)?;
+                        if a == with_respect_to {
+                            let div = self.div(next_pullback, b)?;
+                            dependent_pullbacks.push(div);
+                        }
+                        if b == with_respect_to {
+                            let mul = self.mul(b, b)?;
+                            let div = self.div(a, mul)?;
+                            let neg = self.neg(div);
+                            let this_pullback = self.mul(neg, next_pullback)?;
+                            dependent_pullbacks.push(this_pullback);
+                        }
+                    }
+
                     Operation::Neg(a) => {
                         let next_pullback = self.diff(output, dependent_node)?;
                         dependent_pullbacks.push(self.neg(next_pullback));
@@ -217,6 +232,32 @@ impl Context {
                             self.tile_in_dim(reshaped_pullback, n_tiles, dim)?
                         };
                         dependent_pullbacks.push(tiled_pullback);
+                    }
+
+                    Operation::ReduceMean {
+                        node,
+                        dim,
+                        keepdims,
+                    } => {
+                        let next_pullback = self.diff(output, dependent_node)?;
+                        let n_tiles = self.nodes[node].shape.sizes[dim as usize] as i64;
+                        let tiled_pullback = if keepdims {
+                            self.tile_in_dim(next_pullback, n_tiles, dim)?
+                        } else {
+                            let mut new_sizes = SmallVec::new();
+                            for i in (0..self.nodes[node].shape.ndims()).rev() {
+                                new_sizes.push(self.nodes[node].shape.sizes[i]);
+                                if i as i64 == dim {
+                                    new_sizes.push(1u32);
+                                }
+                            }
+                            let reshaped_pullback =
+                                self.reshape(next_pullback, Shape { sizes: new_sizes })?;
+                            self.tile_in_dim(reshaped_pullback, n_tiles, dim)?
+                        };
+                        let scale = self.scalar(1.0/(n_tiles as f32), self.nodes[node].dtype)?;
+                        let rescaled_pullback = self.mul(scale, tiled_pullback)?;
+                        dependent_pullbacks.push(rescaled_pullback);
                     }
 
                     Operation::Select {

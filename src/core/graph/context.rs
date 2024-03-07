@@ -78,6 +78,7 @@ impl Context {
             Operation::Add(a, b) => format!("Add ({}) ({})", self.to_string(a), self.to_string(b)),
             Operation::Sub(a, b) => format!("Sub ({}) ({})", self.to_string(a), self.to_string(b)),
             Operation::Mul(a, b) => format!("Mul ({}) ({})", self.to_string(a), self.to_string(b)),
+            Operation::Div(a, b) => format!("Div ({}) ({})", self.to_string(a), self.to_string(b)),
             Operation::Neg(a) => format!("Neg ({})", self.to_string(a)),
             Operation::Equal(a, b) => {
                 format!("LessThan ({}) ({})", self.to_string(a), self.to_string(b))
@@ -146,6 +147,14 @@ impl Context {
                 keepdims,
             } => format!(
                 "ReduceSum {} {} {}",
+                self.to_string(node), dim, keepdims
+            ),
+            Operation::ReduceMean {
+                node,
+                dim,
+                keepdims,
+            } => format!(
+                "ReduceMean {} {} {}",
                 self.to_string(node), dim, keepdims
             ),
         }
