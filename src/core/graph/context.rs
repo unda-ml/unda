@@ -113,7 +113,11 @@ impl Context {
                 self.to_string(on_false)
             ),
             Operation::TypeCast(a, ty) => format!("TypeCast ({}) {}", self.to_string(a), ty),
-            Operation::Reshape(a) => format!("TypeCast ({}) {}", self.to_string(a), self.nodes[a].shape),
+            Operation::Reshape(a) => format!(
+                "Reshape ({}) {}",
+                self.to_string(a),
+                self.nodes[input].shape
+            ),
             Operation::SliceInDim {
                 node,
                 start,
@@ -122,41 +126,31 @@ impl Context {
                 dim,
             } => format!(
                 "SliceInDim ({}) {} {} {} {}",
-                self.to_string(node), start, stop, stride, dim
+                self.to_string(node),
+                start,
+                stop,
+                stride,
+                dim
             ),
-            Operation::TileInDim {
-                node,
-                n_tiles,
-                dim,
-            } => format!(
-                "SliceInDim ({}) {} {}",
-                self.to_string(node), n_tiles, dim
-            ),
+            Operation::TileInDim { node, n_tiles, dim } => {
+                format!("TileInDim ({}) {} {}", self.to_string(node), n_tiles, dim)
+            }
             Operation::ZerosLike(node) => format!("ZerosLike {}", self.to_string(node)),
             Operation::ReduceMax {
                 node,
                 dim,
                 keepdims,
-            } => format!(
-                "ReduceMax {} {} {}",
-                self.to_string(node), dim, keepdims
-            ),
+            } => format!("ReduceMax {} {} {}", self.to_string(node), dim, keepdims),
             Operation::ReduceSum {
                 node,
                 dim,
                 keepdims,
-            } => format!(
-                "ReduceSum {} {} {}",
-                self.to_string(node), dim, keepdims
-            ),
+            } => format!("ReduceSum {} {} {}", self.to_string(node), dim, keepdims),
             Operation::ReduceMean {
                 node,
                 dim,
                 keepdims,
-            } => format!(
-                "ReduceMean {} {} {}",
-                self.to_string(node), dim, keepdims
-            ),
+            } => format!("ReduceMean {} {} {}", self.to_string(node), dim, keepdims),
         }
     }
 }

@@ -106,6 +106,7 @@ impl Context {
         &mut self,
         mut nodes: SmallVec<[NodeIdentifier; 2]>,
         default_dtype: xla::ElementType,
+        default_shape: Shape,
     ) -> Result<NodeIdentifier> {
         if nodes.len() == 1 {
             Ok(nodes[0])
@@ -118,7 +119,7 @@ impl Context {
             }
             Ok(add_node)
         } else {
-            self.scalar(0, default_dtype)
+            self.zeroes(default_shape, default_dtype)
         }
     }
 
@@ -549,7 +550,8 @@ impl Context {
         let mut s = Shape::new();
         for d in (0..self.nodes[a].shape.ndims()).rev() {
             if d as i64 == dim {
-                s.sizes.push((n_tiles as u32)*self.nodes[a].shape.sizes[d]);
+                s.sizes
+                    .push((n_tiles as u32) * self.nodes[a].shape.sizes[d]);
             } else {
                 s.sizes.push(self.nodes[a].shape.sizes[d]);
             }
@@ -624,6 +626,32 @@ impl Context {
             callsite: callsite!(1),
             shape: s,
             operation: Operation::ReduceSum {
+                node: a,
+                dim: dim,
+                keepdims: keepdims,
+            },
+            dtype: self.nodes[a].dtype,
+        });
+        self.dependent_nodes
+            .entry(a)
+            .or_insert(Vec::new())
+            .push(node_id);
+        node_id
+    }
+
+    pub fn reduce_mean(&mut self, a: NodeIdentifier, dim: i64, keepdims: bool) -> NodeIdentifier {
+        let mut s = Shape::new();
+        for d in (0..self.nodes[a].shape.ndims()).rev() {
+            if d as i64 == dim && keepdims {
+                s.sizes.push(1)
+            } else {
+                s.sizes.push(self.nodes[a].shape.sizes[d])
+            }
+        }
+        let node_id = self.nodes.insert(Node {
+            callsite: callsite!(1),
+            shape: s,
+            operation: Operation::ReduceMean {
                 node: a,
                 dim: dim,
                 keepdims: keepdims,

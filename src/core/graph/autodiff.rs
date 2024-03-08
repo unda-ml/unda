@@ -48,6 +48,7 @@ impl Context {
         output: NodeIdentifier,
         with_respect_to: NodeIdentifier,
     ) -> Result<NodeIdentifier> {
+        let wrt_shape = self.nodes[with_respect_to].shape.clone();
         let wrt_dtype = self.nodes[with_respect_to].dtype;
 
         if ![
@@ -245,11 +246,14 @@ impl Context {
                             self.tile_in_dim(next_pullback, n_tiles, dim)?
                         } else {
                             let mut new_sizes = SmallVec::new();
-                            for i in (0..self.nodes[node].shape.ndims()).rev() {
-                                new_sizes.push(self.nodes[node].shape.sizes[i]);
+                            for i in (0..self.nodes[next_pullback].shape.ndims()).rev() {
+                                new_sizes.push(self.nodes[next_pullback].shape.sizes[i]);
                                 if i as i64 == dim {
                                     new_sizes.push(1u32);
                                 }
+                            }
+                            if self.nodes[next_pullback].shape.ndims() == 0 {
+                                new_sizes.push(1u32);
                             }
                             let reshaped_pullback =
                                 self.reshape(next_pullback, Shape { sizes: new_sizes })?;
@@ -280,6 +284,6 @@ impl Context {
             }
         }
 
-        self.smallvec_add(dependent_pullbacks, wrt_dtype)
+        self.smallvec_add(dependent_pullbacks, wrt_dtype, wrt_shape)
     }
 }

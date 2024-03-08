@@ -318,7 +318,7 @@ impl Context {
                             && xla_op_slotmap.contains_key(unda_xla_map[&node])
                         {
                             let xla_op = xla_op_slotmap[unda_xla_map[&node]].reshape(
-                                self.nodes[node]
+                                self.nodes[*dependent_op]
                                     .shape
                                     .sizes
                                     .iter()
