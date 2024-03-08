@@ -70,7 +70,7 @@ impl Context {
         let value = xla::Literal::vec1(&values).convert(dtype.primitive_type())?;
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
-            shape: [N as u16].into(),
+            shape: [N as u32].into(),
             operation: Operation::Constant(ConstantBinding { value }),
             dtype: T::TY,
         });
@@ -90,11 +90,36 @@ impl Context {
         let slice = vec.as_slice();
         let value = xla::Literal::vec1(slice).convert(dtype.primitive_type())?;
         let reshaped = value.reshape(&[N as i64, M as i64])?;
+        let casted = reshaped.convert(dtype.primitive_type())?;
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
-            shape: [N as u16, M as u16].into(),
-            operation: Operation::Constant(ConstantBinding { value: reshaped }),
+            shape: [N as u32, M as u32].into(),
+            operation: Operation::Constant(ConstantBinding { value: casted }),
             dtype: T::TY,
+        });
+        self.constants.push(node_id);
+        Ok(node_id)
+    }
+
+    pub fn zeroes<S: Into<Shape>>(&mut self, shape: S, dtype: xla::ElementType) -> Result<NodeIdentifier> {
+        let shape = shape.into();
+        let vec = (0..shape.size())
+            .map(|i| 0)
+            .collect::<Vec<i64>>();
+        let slice = vec.as_slice();
+        let value = xla::Literal::vec1(slice).convert(dtype.primitive_type())?;
+        let i64_vec = shape
+            .sizes
+            .iter()
+            .map(|d| *d as i64)
+            .collect::<Vec<i64>>();
+        let i64_slice = i64_vec.as_slice();
+        let reshaped = value.reshape(i64_slice)?;
+        let node_id = self.nodes.insert(Node {
+            callsite: callsite!(1),
+            shape: shape,
+            operation: Operation::Constant(ConstantBinding { value: reshaped }),
+            dtype: dtype,
         });
         self.constants.push(node_id);
         Ok(node_id)

@@ -10,6 +10,7 @@ pub enum Operation {
     Add(NodeIdentifier, NodeIdentifier),
     Sub(NodeIdentifier, NodeIdentifier),
     Mul(NodeIdentifier, NodeIdentifier),
+    Div(NodeIdentifier, NodeIdentifier),
     Neg(NodeIdentifier),
 
     Equal(NodeIdentifier, NodeIdentifier),
@@ -22,12 +23,17 @@ pub enum Operation {
     Select{ pred: NodeIdentifier, on_true: NodeIdentifier, on_false: NodeIdentifier },
 
     TypeCast(NodeIdentifier, xla::ElementType),
+    Reshape(NodeIdentifier),
 
     SliceInDim{ node: NodeIdentifier, start: i64, stop: i64, stride: i64, dim: i64 },
+    TileInDim{ node: NodeIdentifier, n_tiles: i64, dim: i64 },
 
     ZerosLike(NodeIdentifier),
 
-    ReduceMax{ node: NodeIdentifier, dim: i64, keepdims: bool },
+    ReduceMax{ node: NodeIdentifier, dim: i64, },
+    ReduceSum{ node: NodeIdentifier, dim: i64, },
+    // TODO: This might not behave well for integral types! Figure out behavior.
+    ReduceMean{ node: NodeIdentifier, dim: i64, },
 }
 
 impl Display for Operation {
