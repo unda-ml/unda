@@ -139,18 +139,15 @@ impl Context {
             Operation::ReduceMax {
                 node,
                 dim,
-                keepdims,
-            } => format!("ReduceMax {} {} {}", self.to_string(node), dim, keepdims),
+            } => format!("ReduceMax {} {}", self.to_string(node), dim),
             Operation::ReduceSum {
                 node,
                 dim,
-                keepdims,
-            } => format!("ReduceSum {} {} {}", self.to_string(node), dim, keepdims),
+            } => format!("ReduceSum {} {}", self.to_string(node), dim),
             Operation::ReduceMean {
                 node,
                 dim,
-                keepdims,
-            } => format!("ReduceMean {} {} {}", self.to_string(node), dim, keepdims),
+            } => format!("ReduceMean {} {}", self.to_string(node), dim),
         }
     }
 }

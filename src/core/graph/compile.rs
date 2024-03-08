@@ -380,11 +380,10 @@ impl Context {
                     Operation::ReduceMax {
                         node,
                         dim,
-                        keepdims,
                     } => {
                         if xla_op_slotmap.contains_key(unda_xla_map[&node]) {
                             let xla_op =
-                                xla_op_slotmap[unda_xla_map[&node]].reduce_max(&[dim], keepdims)?;
+                                xla_op_slotmap[unda_xla_map[&node]].reduce_max(&[dim], false)?;
                             let xla_id = xla_op_slotmap.insert(xla_op);
                             unda_xla_map.insert(*dependent_op, xla_id);
                             unda_op_queue.push_back(*dependent_op);
@@ -394,11 +393,10 @@ impl Context {
                     Operation::ReduceSum {
                         node,
                         dim,
-                        keepdims,
                     } => {
                         if xla_op_slotmap.contains_key(unda_xla_map[&node]) {
                             let xla_op =
-                                xla_op_slotmap[unda_xla_map[&node]].reduce_sum(&[dim], keepdims)?;
+                                xla_op_slotmap[unda_xla_map[&node]].reduce_sum(&[dim], false)?;
                             let xla_id = xla_op_slotmap.insert(xla_op);
                             unda_xla_map.insert(*dependent_op, xla_id);
                             unda_op_queue.push_back(*dependent_op);
@@ -408,11 +406,10 @@ impl Context {
                     Operation::ReduceMean {
                         node,
                         dim,
-                        keepdims,
                     } => {
                         if xla_op_slotmap.contains_key(unda_xla_map[&node]) {
                             let xla_op =
-                                xla_op_slotmap[unda_xla_map[&node]].reduce_mean(&[dim], keepdims)?;
+                                xla_op_slotmap[unda_xla_map[&node]].reduce_mean(&[dim], false)?;
                             let xla_id = xla_op_slotmap.insert(xla_op);
                             unda_xla_map.insert(*dependent_op, xla_id);
                             unda_op_queue.push_back(*dependent_op);

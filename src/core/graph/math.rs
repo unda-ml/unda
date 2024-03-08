@@ -587,12 +587,15 @@ impl Context {
         node_id
     }
 
-    pub fn reduce_max(&mut self, a: NodeIdentifier, dim: i64, keepdims: bool) -> NodeIdentifier {
+    pub fn reduce_max(
+        &mut self,
+        a: NodeIdentifier,
+        dim: i64,
+        keepdims: bool,
+    ) -> Result<NodeIdentifier> {
         let mut s = Shape::new();
         for d in (0..self.nodes[a].shape.ndims()).rev() {
-            if d as i64 == dim && keepdims {
-                s.sizes.push(1)
-            } else {
+            if d as i64 != dim {
                 s.sizes.push(self.nodes[a].shape.sizes[d])
             }
         }
@@ -602,7 +605,6 @@ impl Context {
             operation: Operation::ReduceMax {
                 node: a,
                 dim: dim,
-                keepdims: keepdims,
             },
             dtype: self.nodes[a].dtype,
         });
@@ -610,15 +612,30 @@ impl Context {
             .entry(a)
             .or_insert(Vec::new())
             .push(node_id);
-        node_id
+        if keepdims {
+            let mut s_keepdim = Shape::new();
+            for d in (0..self.nodes[a].shape.ndims()).rev() {
+                if d as i64 == dim {
+                    s_keepdim.sizes.push(1u32)
+                } else {
+                    s_keepdim.sizes.push(self.nodes[a].shape.sizes[d])
+                }
+            }
+            self.reshape(node_id, s_keepdim)
+        } else {
+            Ok(node_id)
+        }
     }
 
-    pub fn reduce_sum(&mut self, a: NodeIdentifier, dim: i64, keepdims: bool) -> NodeIdentifier {
+    pub fn reduce_sum(
+        &mut self,
+        a: NodeIdentifier,
+        dim: i64,
+        keepdims: bool,
+    ) -> Result<NodeIdentifier> {
         let mut s = Shape::new();
         for d in (0..self.nodes[a].shape.ndims()).rev() {
-            if d as i64 == dim && keepdims {
-                s.sizes.push(1)
-            } else {
+            if d as i64 != dim {
                 s.sizes.push(self.nodes[a].shape.sizes[d])
             }
         }
@@ -628,7 +645,6 @@ impl Context {
             operation: Operation::ReduceSum {
                 node: a,
                 dim: dim,
-                keepdims: keepdims,
             },
             dtype: self.nodes[a].dtype,
         });
@@ -636,15 +652,30 @@ impl Context {
             .entry(a)
             .or_insert(Vec::new())
             .push(node_id);
-        node_id
+        if keepdims {
+            let mut s_keepdim = Shape::new();
+            for d in (0..self.nodes[a].shape.ndims()).rev() {
+                if d as i64 == dim {
+                    s_keepdim.sizes.push(1u32)
+                } else {
+                    s_keepdim.sizes.push(self.nodes[a].shape.sizes[d])
+                }
+            }
+            self.reshape(node_id, s_keepdim)
+        } else {
+            Ok(node_id)
+        }
     }
 
-    pub fn reduce_mean(&mut self, a: NodeIdentifier, dim: i64, keepdims: bool) -> NodeIdentifier {
+    pub fn reduce_mean(
+        &mut self,
+        a: NodeIdentifier,
+        dim: i64,
+        keepdims: bool,
+    ) -> Result<NodeIdentifier> {
         let mut s = Shape::new();
         for d in (0..self.nodes[a].shape.ndims()).rev() {
-            if d as i64 == dim && keepdims {
-                s.sizes.push(1)
-            } else {
+            if d as i64 != dim {
                 s.sizes.push(self.nodes[a].shape.sizes[d])
             }
         }
@@ -654,7 +685,6 @@ impl Context {
             operation: Operation::ReduceMean {
                 node: a,
                 dim: dim,
-                keepdims: keepdims,
             },
             dtype: self.nodes[a].dtype,
         });
@@ -662,6 +692,18 @@ impl Context {
             .entry(a)
             .or_insert(Vec::new())
             .push(node_id);
-        node_id
+        if keepdims {
+            let mut s_keepdim = Shape::new();
+            for d in (0..self.nodes[a].shape.ndims()).rev() {
+                if d as i64 == dim {
+                    s_keepdim.sizes.push(1u32)
+                } else {
+                    s_keepdim.sizes.push(self.nodes[a].shape.sizes[d])
+                }
+            }
+            self.reshape(node_id, s_keepdim)
+        } else {
+            Ok(node_id)
+        }
     }
 }

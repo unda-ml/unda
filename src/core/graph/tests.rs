@@ -593,12 +593,12 @@ mod tests {
 
         let x = ctx.parameter("x", [2], xla::ElementType::F32).expect("x");
         let x2 = ctx.mul(x, x).expect("x2");
-        let y = ctx.reduce_mean(x2, 0, false);
-        println!("{}", ctx.nodes[y].shape);
+        let y = ctx.reduce_mean(x2, 0, true).expect("y");
 
         let dydx = ctx.diff(y, x.into()).expect("dydx");
         ctx.fold_consts(dydx, usize::max_value()).expect("fold_consts");
         println!("{}", ctx.to_string(dydx));
+        assert_eq!(ctx.to_string(dydx), "Mul (Mul (Constant Scalar 2) (Parameter Vector2 x)) (Constant Scalar 0.5)");
         let lr = ctx.scalar(1, xla::ElementType::F32).expect("lr");
         let update = ctx.mul(lr, dydx).expect("update");
         let new_x = ctx.sub(x, update).expect("new_x");

@@ -30,10 +30,10 @@ pub enum Operation {
 
     ZerosLike(NodeIdentifier),
 
-    ReduceMax{ node: NodeIdentifier, dim: i64, keepdims: bool },
-    ReduceSum{ node: NodeIdentifier, dim: i64, keepdims: bool },
+    ReduceMax{ node: NodeIdentifier, dim: i64, },
+    ReduceSum{ node: NodeIdentifier, dim: i64, },
     // TODO: This might not behave well for integral types! Figure out behavior.
-    ReduceMean{ node: NodeIdentifier, dim: i64, keepdims: bool },
+    ReduceMean{ node: NodeIdentifier, dim: i64, },
 }
 
 impl Display for Operation {
