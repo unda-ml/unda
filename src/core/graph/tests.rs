@@ -597,6 +597,7 @@ mod tests {
         println!("{}", ctx.nodes[y].shape);
 
         let dydx = ctx.diff(y, x.into()).expect("dydx");
+        ctx.fold_consts(dydx, usize::max_value()).expect("fold_consts");
         println!("{}", ctx.to_string(dydx));
         let lr = ctx.scalar(1, xla::ElementType::F32).expect("lr");
         let update = ctx.mul(lr, dydx).expect("update");

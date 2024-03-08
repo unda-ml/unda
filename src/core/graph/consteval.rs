@@ -305,6 +305,41 @@ impl Context {
                             changed = true;
                         }
                     }
+                    if let Operation::TileInDim { node, n_tiles, dim } = self.nodes[a].operation {
+                        if let Some(literal) = self.nodes[node].is_const() {
+                            //Check for mul by 1
+                            let floating_literal: Vec<f32> = literal.convert(xla::PrimitiveType::F32)?.to_vec()?;
+                            let mut all_one = true;
+                            floating_literal.iter().for_each(|elem| {
+                                if *elem != 1f32 {
+                                    all_one = false;
+                                }
+                            });
+                            if all_one {
+                                //a is all ones, replace node_id with a
+                                self.replace_index(node_id, b)?;
+                                modifications += 1;
+                                changed = true;
+                            }
+                        } else if let Operation::Reshape(x) = self.nodes[node].operation {
+                            if let Some(literal) = self.nodes[x].is_const() {
+                                //Check for mul by 1
+                                let floating_literal: Vec<f32> = literal.convert(xla::PrimitiveType::F32)?.to_vec()?;
+                                let mut all_one = true;
+                                floating_literal.iter().for_each(|elem| {
+                                    if *elem != 1f32 {
+                                        all_one = false;
+                                    }
+                                });
+                                if all_one {
+                                    //a is all ones, replace node_id with a
+                                    self.replace_index(node_id, b)?;
+                                    modifications += 1;
+                                    changed = true;
+                                }
+                            }
+                        }
+                    }
                     if self.nodes[b].is_zero()?{
                         self.replace_index(node_id, b)?;
                         modifications += 1;
@@ -324,6 +359,41 @@ impl Context {
                             self.replace_index(node_id, a)?;
                             modifications += 1;
                             changed = true;
+                        }
+                    }
+                    if let Operation::TileInDim { node, n_tiles, dim } = self.nodes[b].operation {
+                        if let Some(literal) = self.nodes[node].is_const() {
+                            //Check for mul by 1
+                            let floating_literal: Vec<f32> = literal.convert(xla::PrimitiveType::F32)?.to_vec()?;
+                            let mut all_one = true;
+                            floating_literal.iter().for_each(|elem| {
+                                if *elem != 1f32 {
+                                    all_one = false;
+                                }
+                            });
+                            if all_one {
+                                //a is all ones, replace node_id with a
+                                self.replace_index(node_id, a)?;
+                                modifications += 1;
+                                changed = true;
+                            }
+                        } else if let Operation::Reshape(x) = self.nodes[node].operation {
+                            if let Some(literal) = self.nodes[x].is_const() {
+                                //Check for mul by 1
+                                let floating_literal: Vec<f32> = literal.convert(xla::PrimitiveType::F32)?.to_vec()?;
+                                let mut all_one = true;
+                                floating_literal.iter().for_each(|elem| {
+                                    if *elem != 1f32 {
+                                        all_one = false;
+                                    }
+                                });
+                                if all_one {
+                                    //a is all ones, replace node_id with a
+                                    self.replace_index(node_id, a)?;
+                                    modifications += 1;
+                                    changed = true;
+                                }
+                            }
                         }
                     }
                     if let None = self.nodes[a].is_const() {
