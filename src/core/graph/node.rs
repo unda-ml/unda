@@ -6,6 +6,9 @@ use slotmap::new_key_type;
 use xla::Literal;
 use std::{fmt::{Display, Formatter, Result}, error::Error};
 
+use half::bf16;
+use half::f16;
+
 /// A node in the compute graph
 #[derive(Clone, Debug)]
 pub struct Node {
@@ -40,6 +43,23 @@ impl Node {
         return match &self.operation {
             Operation::Constant(a) => {
                 match a.value.element_type()? {
+                    xla::ElementType::Pred => {
+                      let data_ref = a.value.to_vec::<u8>()?;
+                        for i in data_ref.iter() {
+                            if !i.is_zero() {
+                                return Ok(false);
+                            }
+                        }
+  
+                    },
+                    xla::ElementType::F16 => {
+                        let data_ref = a.value.to_vec::<f16>()?;
+                        for i in data_ref.iter() {
+                            if *i != f16::ZERO {
+                                return Ok(false);
+                            }
+                        }
+                    },
                     xla::ElementType::F32 => {
                         let data_ref = a.value.to_vec::<f32>()?;
                         for i in data_ref.iter() {
@@ -50,6 +70,15 @@ impl Node {
                     },
                     xla::ElementType::F64 => {
                         let data_ref = a.value.to_vec::<f64>()?;
+                        for i in data_ref.iter() {
+                            if !i.is_zero() {
+                                return Ok(false);
+                            }
+                        }
+                    },
+
+                    xla::ElementType::U8 => {
+                        let data_ref = a.value.to_vec::<u8>()?;
                         for i in data_ref.iter() {
                             if !i.is_zero() {
                                 return Ok(false);
@@ -81,6 +110,16 @@ impl Node {
                             }
                         }
                     },
+
+                    xla::ElementType::S8 => {
+                        let data_ref = a.value.to_vec::<i8>()?;
+                        for i in data_ref.iter() {
+                            if !i.is_zero() {
+                                return Ok(false);
+                            }
+                        }
+                    },
+
                     xla::ElementType::S16 => {
                         let data_ref = a.value.to_vec::<i16>()?;
                         for i in data_ref.iter() {
@@ -114,10 +153,13 @@ impl Node {
                         return Ok(false);
                     },
                     xla::ElementType::Bf16 => {
-                        //TODO
-                        return Ok(false);
-                    },
-                    _ => { return Ok(false); }
+                        let data_ref: Vec<bf16> = a.value.to_vec()?;
+                        for i in data_ref.iter() {
+                            if *i != bf16::ZERO {
+                                return Ok(false);
+                            }
+                        }
+                    }
                 }
 
                 Ok(true)
