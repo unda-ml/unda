@@ -7,7 +7,7 @@ use xla::Literal;
 use std::{fmt::{Display, Formatter, Result}, error::Error};
 
 /// A node in the compute graph
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Node {
     /// helps identify where in the user's source code this node originated
     // TODO: gate this so its not present at all in release builds
@@ -39,7 +39,7 @@ impl Node {
         //TODO! Convert type to primative type so we can collect the values
         return match &self.operation {
             Operation::Constant(a) => {
-                match self.dtype {
+                match a.value.element_type()? {
                     xla::ElementType::F32 => {
                         let data_ref = a.value.to_vec::<f32>()?;
                         for i in data_ref.iter() {

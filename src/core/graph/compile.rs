@@ -32,9 +32,11 @@ impl Context {
             Err(CompileError::NoReturn)?;
         }
 
+
         for a in returns.iter() {
             self.fold_consts(*a, usize::MAX)?;
         }
+
         //while self.foldconsts(a, 1)? {
         //    println!("{}", self.to_string(a));
         //}
@@ -419,7 +421,6 @@ impl Context {
                 }
             }
         }
-
         let xla_return_vec: Vec<&xla::XlaOp> = returns
             .into_iter()
             .map(|i| &xla_op_slotmap[unda_xla_map[&i.into()]])
