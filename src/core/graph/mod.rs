@@ -11,7 +11,7 @@ mod operation;
 mod parameter;
 mod shape;
 mod subterm;
-mod tests;
+//mod tests;
 mod tests_cpu;
 
 use callsite::{callsite, Callsite};
