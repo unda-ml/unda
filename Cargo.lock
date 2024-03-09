@@ -1156,10 +1156,11 @@ checksum = "32b752e52a2da0ddfbdbcc6fceadfeede4c939ed16d13e648833a61dfb611ed8"
 [[package]]
 name = "xla"
 version = "0.1.6"
-source = "git+https://github.com/Ebanflo42/xla-rs?branch=dev#71d37f6d4a37872119cfcc6d26105c10349083ab"
+source = "git+https://github.com/Ebanflo42/xla-rs?branch=dev#e90f9250df62aea0ec7efe15c8040fa5f7258f6b"
 dependencies = [
  "bindgen",
  "cc",
+ "half 2.4.0",
  "libc",
  "num-derive",
  "num-traits",
