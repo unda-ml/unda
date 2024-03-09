@@ -211,6 +211,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "248e3bacc7dc6baa3b21e405ee045c3047101a49145e7e9eca583ab4c2ca5345"
 
 [[package]]
+name = "crunchy"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7a81dae078cea95a014a339291cec439d2f232ebe854a9d672b796c6afafa9b7"
+
+[[package]]
 name = "crypto-common"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -423,6 +429,16 @@ name = "half"
 version = "1.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1b43ede17f21864e81be2fa654110bf1e793774238d86ef8555c37e6519c0403"
+
+[[package]]
+name = "half"
+version = "2.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b5eceaaeec696539ddaf7b333340f1af35a5aa87ae3e4f3ead0532f72affab2e"
+dependencies = [
+ "cfg-if",
+ "crunchy",
+]
 
 [[package]]
 name = "heck"
@@ -822,7 +838,7 @@ version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2bef2ebfde456fb76bbcf9f59315333decc4fda0b2b44b420243c11e0f5ec1f5"
 dependencies = [
- "half",
+ "half 1.8.3",
  "serde",
 ]
 
@@ -1023,6 +1039,7 @@ dependencies = [
  "backtrace",
  "csv",
  "futures",
+ "half 2.4.0",
  "itertools",
  "rand",
  "rand_distr",
@@ -1139,10 +1156,11 @@ checksum = "32b752e52a2da0ddfbdbcc6fceadfeede4c939ed16d13e648833a61dfb611ed8"
 [[package]]
 name = "xla"
 version = "0.1.6"
-source = "git+https://github.com/Ebanflo42/xla-rs?branch=dev#71d37f6d4a37872119cfcc6d26105c10349083ab"
+source = "git+https://github.com/Ebanflo42/xla-rs?branch=dev#e90f9250df62aea0ec7efe15c8040fa5f7258f6b"
 dependencies = [
  "bindgen",
  "cc",
+ "half 2.4.0",
  "libc",
  "num-derive",
  "num-traits",
