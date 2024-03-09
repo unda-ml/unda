@@ -38,7 +38,7 @@ impl Node {
             _ => None,
         };
     }
-    pub(crate) fn is_val(&self) -> super::Result<bool> {
+    pub(crate) fn is_one(&self) -> super::Result<bool> {
         //TODO! Convert type to primative type so we can collect the values
         return match &self.operation {
             Operation::Constant(a) => {
