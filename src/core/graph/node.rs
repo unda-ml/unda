@@ -38,6 +38,135 @@ impl Node {
             _ => None,
         };
     }
+    pub(crate) fn is_one(&self) -> super::Result<bool> {
+        //TODO! Convert type to primative type so we can collect the values
+        return match &self.operation {
+            Operation::Constant(a) => {
+                match a.value.element_type()? {
+                    xla::ElementType::Pred => {
+                      let data_ref = a.value.to_vec::<u8>()?;
+                        for i in data_ref.iter() {
+                            if i != &1u8 {
+                                return Ok(false);
+                            }
+                        }
+  
+                    },
+                    xla::ElementType::F16 => {
+                        let data_ref = a.value.to_vec::<f16>()?;
+                        for i in data_ref.iter() {
+                            if *i != f16::ONE {
+                                return Ok(false);
+                            }
+                        }
+                    },
+                    xla::ElementType::F32 => {
+                        let data_ref = a.value.to_vec::<f32>()?;
+                        for i in data_ref.iter() {
+                            if i != &1f32 {
+                                return Ok(false);
+                            }
+                        }
+                    },
+                    xla::ElementType::F64 => {
+                        let data_ref = a.value.to_vec::<f64>()?;
+                        for i in data_ref.iter() {
+                            if i != &1f64 {
+                                return Ok(false);
+                            }
+                        }
+                    },
+
+                    xla::ElementType::U8 => {
+                        let data_ref = a.value.to_vec::<u8>()?;
+                        for i in data_ref.iter() {
+                            if i != &1u8 {
+                                return Ok(false);
+                            }
+                        }
+                    },
+
+                    xla::ElementType::U16 => {
+                        let data_ref = a.value.to_vec::<u16>()?;
+                        for i in data_ref.iter() {
+                            if i != &1u16 {
+                                return Ok(false);
+                            }
+                        }
+                    },
+                    xla::ElementType::U32 => {
+                        let data_ref = a.value.to_vec::<u32>()?;
+                        for i in data_ref.iter() {
+                            if i != &1u32 {
+                                return Ok(false);
+                            }
+                        }
+                    },
+                    xla::ElementType::U64 => {
+                        let data_ref = a.value.to_vec::<u64>()?;
+                        for i in data_ref.iter() {
+                            if i != &1u64 {
+                                return Ok(false);
+                            }
+                        }
+                    },
+
+                    xla::ElementType::S8 => {
+                        let data_ref = a.value.to_vec::<i8>()?;
+                        for i in data_ref.iter() {
+                            if i != &1i8 {
+                                return Ok(false);
+                            }
+                        }
+                    },
+
+                    xla::ElementType::S16 => {
+                        let data_ref = a.value.to_vec::<i16>()?;
+                        for i in data_ref.iter() {
+                            if i != &1i16 {
+                                return Ok(false);
+                            }
+                        }
+                    },
+                    xla::ElementType::S32 => {
+                        let data_ref = a.value.to_vec::<i32>()?;
+                        for i in data_ref.iter() {
+                            if i != &1i32 {
+                                return Ok(false);
+                            }
+                        }
+                    },
+                    xla::ElementType::S64 => {
+                        let data_ref = a.value.to_vec::<i64>()?;
+                        for i in data_ref.iter() {
+                            if i != &1i64 {
+                                return Ok(false);
+                            }
+                        }
+                    },
+                    xla::ElementType::C64 => {
+                        //TODO
+                        return Ok(false);
+                    },
+                    xla::ElementType::C128 => {
+                        //TODO
+                        return Ok(false);
+                    },
+                    xla::ElementType::Bf16 => {
+                        let data_ref: Vec<bf16> = a.value.to_vec()?;
+                        for i in data_ref.iter() {
+                            if i != &bf16::ONE {
+                                return Ok(false);
+                            }
+                        }
+                    }
+                }
+
+                Ok(true)
+            },
+            _ => Ok(false),
+        };
+    }
     pub(crate) fn is_zero(&self) -> super::Result<bool> {
         //TODO! Convert type to primative type so we can collect the values
         return match &self.operation {
@@ -95,7 +224,7 @@ impl Node {
                         }
                     },
                     xla::ElementType::U32 => {
-                        let data_ref = a.value.to_vec::<u64>()?;
+                        let data_ref = a.value.to_vec::<u32>()?;
                         for i in data_ref.iter() {
                             if !i.is_zero() {
                                 return Ok(false);
@@ -155,7 +284,7 @@ impl Node {
                     xla::ElementType::Bf16 => {
                         let data_ref: Vec<bf16> = a.value.to_vec()?;
                         for i in data_ref.iter() {
-                            if *i != bf16::ZERO {
+                            if i != &bf16::ZERO || i == &bf16::NEG_ZERO {
                                 return Ok(false);
                             }
                         }
