@@ -24,7 +24,7 @@ impl Context {
         for dep_node in deps {
             match self.nodes[dep_node].operation {
                 Operation::Add(a, b) => {
-                    if a == b {
+                    if to_remove == a && a == b {
                         self.nodes[dep_node].operation = Operation::Add(rep_with, rep_with);
                         changed = true;
                     } else if a == to_remove {
@@ -48,7 +48,7 @@ impl Context {
                     }
                 }
                 Operation::Sub(a, b) => {
-                    if a == b {
+                    if to_remove == a && a == b {
                         self.nodes[dep_node].operation = Operation::Sub(rep_with, rep_with);
                         changed = true;
                     } else if a == to_remove {
@@ -60,7 +60,7 @@ impl Context {
                     }
                 }
                 Operation::Mul(a, b) => {
-                    if a == b {
+                    if to_remove == a && a == b {
                         self.nodes[dep_node].operation = Operation::Mul(rep_with, rep_with);
                         changed = true;
                     } else if a == to_remove {
@@ -72,7 +72,7 @@ impl Context {
                     }
                 }
                 Operation::Div(a, b) => {
-                    if a == b {
+                    if to_remove == a && a == b {
                         self.nodes[dep_node].operation = Operation::Div(rep_with, rep_with);
                         changed = true;
                     } else if a == to_remove {
@@ -84,7 +84,7 @@ impl Context {
                     }
                 }
                 Operation::GreaterThan(a, b) => {
-                    if a == b {
+                    if to_remove == a && a == b {
                         self.nodes[dep_node].operation = Operation::GreaterThan(rep_with, rep_with);
                         changed = true;
                     } else if a == to_remove {
@@ -97,7 +97,7 @@ impl Context {
                 }
 
                 Operation::GreaterThanEq(a, b) => {
-                    if a == b {
+                    if to_remove == a && a == b {
                         self.nodes[dep_node].operation =
                             Operation::GreaterThanEq(rep_with, rep_with);
                         changed = true;
@@ -110,7 +110,7 @@ impl Context {
                     }
                 }
                 Operation::Equal(a, b) => {
-                    if a == b {
+                    if to_remove == a && a == b {
                         self.nodes[dep_node].operation = Operation::Equal(rep_with, rep_with);
                         changed = true;
                     } else if a == to_remove {
@@ -122,7 +122,7 @@ impl Context {
                     }
                 }
                 Operation::NotEqual(a, b) => {
-                    if a == b {
+                    if to_remove == a && a == b {
                         self.nodes[dep_node].operation = Operation::NotEqual(rep_with, rep_with);
                         changed = true;
                     } else if a == to_remove {
@@ -134,7 +134,7 @@ impl Context {
                     }
                 }
                 Operation::LessThan(a, b) => {
-                    if a == b {
+                    if to_remove == a && a == b {
                         self.nodes[dep_node].operation = Operation::LessThan(rep_with, rep_with);
                         changed = true;
                     } else if a == to_remove {
@@ -147,7 +147,7 @@ impl Context {
                 }
 
                 Operation::LessThanEq(a, b) => {
-                    if a == b {
+                    if to_remove == a && a == b {
                         self.nodes[dep_node].operation = Operation::LessThanEq(rep_with, rep_with);
                         changed = true;
                     } else if a == to_remove {
@@ -193,7 +193,7 @@ impl Context {
                         changed = true;
                     }
                 }
-                Operation::TypeCast(_, t) => {
+                Operation::TypeCast(a, t) => {
                     changed = true;
                     self.nodes[dep_node].operation = Operation::TypeCast(rep_with, t)
                 }
