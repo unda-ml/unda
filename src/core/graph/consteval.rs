@@ -35,6 +35,18 @@ impl Context {
                         changed = true;
                     }
                 }
+                Operation::Pow(a, b) => {
+                    if a == to_remove && a == b {
+                        self.nodes[dep_node].operation = Operation::Pow(rep_with, rep_with);
+                        changed = true;
+                    } else if a == to_remove {
+                        self.nodes[dep_node].operation = Operation::Pow(rep_with, b);
+                        changed = true;
+                    } else if b == to_remove {
+                        self.nodes[dep_node].operation = Operation::Pow(a, rep_with);
+                        changed = true;
+                    }
+                }
                 Operation::Sub(a, b) => {
                     if a == b {
                         self.nodes[dep_node].operation = Operation::Sub(rep_with, rep_with);
@@ -163,7 +175,14 @@ impl Context {
                 }
                 Operation::Exp(a) => {
                     if a == to_remove {
-                        self.nodes[dep_node].operation = Operation::Exp(a);
+                        self.nodes[dep_node].operation = Operation::Exp(rep_with);
+                        changed = true;
+                    }
+                }
+
+                Operation::Log(a) => {
+                    if a == to_remove {
+                        self.nodes[dep_node].operation = Operation::Log(rep_with);
                         changed = true;
                     }
                 }
@@ -407,13 +426,19 @@ impl Context {
                         to_visit.push(a);
                     }
                 }
+                Operation::Log(a) => {
+                    if let None = self.nodes[a].is_const() {
+                        to_visit.push(a);
+                    }
+                }
                 Operation::GreaterThan(a, b)
                 | Operation::GreaterThanEq(a, b)
                 | Operation::LessThan(a, b)
                 | Operation::LessThanEq(a, b)
                 | Operation::Equal(a, b)
                 | Operation::NotEqual(a, b)
-                | Operation::Div(a, b) => {
+                | Operation::Div(a, b)
+                | Operation::Pow(a, b) => {
                     if let None = self.nodes[a].is_const() {
                         to_visit.push(a);
                     }

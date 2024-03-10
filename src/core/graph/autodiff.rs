@@ -162,6 +162,38 @@ impl Context {
                             dependent_pullbacks.push(this_pullback);
                         }
                     }
+                    
+                    Operation::Pow(a, b) => {
+                        let next_pullback = self.diff(output, dependent_node)?;
+                        if a == with_respect_to {
+                            let one = self.scalar(1, wrt_dtype)?;
+                            let b_min_one = self.sub(b, one)?;
+
+                            let new_pow = self.pow(a, b_min_one)?;
+                            let power_rule = self.mul(b, new_pow)?;
+                            
+                            let this_pullback = self.mul(power_rule, next_pullback)?;
+                            dependent_pullbacks.push(this_pullback);
+                        } 
+                        if b == with_respect_to {
+                            let log_a = self.log(a)?;
+                            let log_times_orig = self.mul(log_a, dependent_node)?;
+                            let this_pullback = self.mul(log_times_orig, next_pullback)?;
+
+                            dependent_pullbacks.push(this_pullback);
+                        }
+                    }
+
+                    Operation::Log(a) => {
+                        if a == with_respect_to {
+                            let next_pullback = self.diff(output, dependent_node)?;
+                            let one = self.scalar(1, wrt_dtype)?;
+                            let quotient = self.div(one, a)?;
+
+                            let next_pullback = self.mul(quotient, next_pullback)?;
+                            dependent_pullbacks.push(next_pullback);
+                        }
+                    }
 
                     Operation::Neg(_) => {
                         let next_pullback = self.diff(output, dependent_node)?;

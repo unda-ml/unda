@@ -152,6 +152,21 @@ impl Context {
                         }
                     }
 
+                    Operation::Pow(a, b) => {
+                        if unda_xla_map.contains_key(&a)
+                            && unda_xla_map.contains_key(&b)
+                            && xla_op_slotmap.contains_key(unda_xla_map[&a])
+                            && xla_op_slotmap.contains_key(unda_xla_map[&b])
+                        {
+                            let xla_op = xla_op_slotmap[unda_xla_map[&a]]
+                                .pow(&xla_op_slotmap[unda_xla_map[&b]])?;
+                            let xla_id = xla_op_slotmap.insert(xla_op);
+                            unda_xla_map.insert(*dependent_op, xla_id);
+                            unda_op_queue.push_back(*dependent_op);
+                            covered_ops.insert(*dependent_op);
+                        }
+                    }
+
                     Operation::Add(a, b) => {
                         if unda_xla_map.contains_key(&a)
                             && unda_xla_map.contains_key(&b)
@@ -200,6 +215,18 @@ impl Context {
                             && xla_op_slotmap.contains_key(unda_xla_map[&a])
                         {
                             let xla_op = xla_op_slotmap[unda_xla_map[&a]].exp()?;
+                            let xla_id = xla_op_slotmap.insert(xla_op);
+                            unda_xla_map.insert(*dependent_op, xla_id);
+                            unda_op_queue.push_back(*dependent_op);
+                            covered_ops.insert(*dependent_op);
+                        }
+                    }
+
+                    Operation::Log(a) => {
+                        if unda_xla_map.contains_key(&a) 
+                            && xla_op_slotmap.contains_key(unda_xla_map[&a])
+                        {
+                            let xla_op = xla_op_slotmap[unda_xla_map[&a]].log()?;
                             let xla_id = xla_op_slotmap.insert(xla_op);
                             unda_xla_map.insert(*dependent_op, xla_id);
                             unda_op_queue.push_back(*dependent_op);
