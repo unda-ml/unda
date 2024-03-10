@@ -4,6 +4,33 @@ mod tests {
     use xla::FromRawBytes;
 
     #[test]
+    fn test_exp() {
+        let mut ctx = Context::new();
+        let x = ctx.parameter("x", [], xla::ElementType::F32).expect("x");
+
+        let exp = ctx.exp(x).expect("e ^ x");
+
+        let client = xla::PjRtClient::cpu().expect("client");
+        let name = "test";
+        let executable = ctx.compile(&name, [exp], &client).expect("executable");
+
+        let x_input = xla::Literal::scalar(2f32);
+        // args are just provided in the order they are defined, would be nice to pass a dict or something
+        // a pjrtbuffer is just an array slice on some device
+        // but im not sure why its a nested vector instead of just one vector
+        let device_result = executable.execute(&[x_input]).expect("execute");
+        let host_result = device_result[0][0]
+            .to_literal_sync()
+            .expect("to_literal_sync");
+        let untupled_result = host_result.to_tuple1().expect("untuple");
+        let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
+        println!("{:?}", rust_result);
+
+        assert_eq!(rust_result[0], f32::exp(2f32));
+
+    }
+
+    #[test]
     fn test_mul_add_scalar_consts_and_params() {
         let mut ctx = Context::new();
 

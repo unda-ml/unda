@@ -12,6 +12,7 @@ pub enum Operation {
     Mul(NodeIdentifier, NodeIdentifier),
     Div(NodeIdentifier, NodeIdentifier),
     Neg(NodeIdentifier),
+    Exp(NodeIdentifier),
 
     Equal(NodeIdentifier, NodeIdentifier),
     NotEqual(NodeIdentifier, NodeIdentifier),
