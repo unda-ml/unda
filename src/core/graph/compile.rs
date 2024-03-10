@@ -150,7 +150,7 @@ impl Context {
                             unda_op_queue.push_back(*dependent_op);
                             covered_ops.insert(*dependent_op);
                         }
-                    },
+                    }
 
                     Operation::Add(a, b) => {
                         if unda_xla_map.contains_key(&a)
