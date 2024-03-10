@@ -58,6 +58,30 @@ mod tests {
     }
 
     #[test]
+    fn test_log(){
+        let mut ctx = Context::new();
+        let x = ctx.parameter("x", [], xla::ElementType::F32).expect("x");
+
+        let log = ctx.log(x).expect("lnx");
+
+        let client = xla::PjRtClient::cpu().expect("client");
+        let name = "test";
+        let executable = ctx.compile(&name, [log], &client).expect("executable");
+
+        let x_input = xla::Literal::scalar(f32::exp(2f32));
+
+        let device_result = executable.execute(&[x_input]).expect("execute");
+        let host_result = device_result[0][0]
+            .to_literal_sync()
+            .expect("to_literal_sync");
+        let untupled_result = host_result.to_tuple1().expect("untuple");
+        let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
+        println!("{:?}", rust_result);
+
+        assert_eq!(rust_result[0], 2f32);
+    }
+
+    #[test]
     fn test_mul_add_scalar_consts_and_params() {
         let mut ctx = Context::new();
 
