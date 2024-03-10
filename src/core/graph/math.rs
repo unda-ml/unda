@@ -102,6 +102,21 @@ impl Context {
         node_id
     }
 
+    pub fn exp(&mut self, a: NodeIdentifier) -> Result<NodeIdentifier> {
+        let node = Node {
+            callsite: callsite!(1),
+            shape: self.nodes[a].shape.clone(),
+            operation: Operation::Exp(a),
+            dtype: self.nodes[a].dtype,
+        };
+        let node_id = self.nodes.insert(node);
+        self.dependent_nodes
+            .entry(a)
+            .or_insert(Vec::new())
+            .push(node_id);
+        Ok(node_id)
+    }
+
     pub fn smallvec_add(
         &mut self,
         mut nodes: SmallVec<[NodeIdentifier; 2]>,

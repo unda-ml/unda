@@ -163,9 +163,18 @@ impl Context {
                         }
                     }
 
-                    Operation::Neg(a) => {
+                    Operation::Neg(_) => {
                         let next_pullback = self.diff(output, dependent_node)?;
                         dependent_pullbacks.push(self.neg(next_pullback));
+                    }, 
+
+                    Operation::Exp(a) => {
+                        if a == with_respect_to {
+                            let next_pullback = self.diff(output, dependent_node)?;
+                            let this_pullback = self.mul(next_pullback, dependent_node)?;
+
+                            dependent_pullbacks.push(this_pullback);
+                        }
                     }
 
                     Operation::TileInDim { node, n_tiles, dim } => {

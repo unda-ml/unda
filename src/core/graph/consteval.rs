@@ -161,6 +161,13 @@ impl Context {
                         changed = true;
                     }
                 }
+                Operation::Exp(a) => {
+                    if a == to_remove {
+                        self.nodes[dep_node].operation = Operation::Exp(a);
+                        changed = true;
+                    }
+                }
+
                 Operation::ZerosLike(a) => {
                     if a == to_remove {
                         self.nodes[dep_node].operation = Operation::ZerosLike(rep_with);
@@ -395,6 +402,11 @@ impl Context {
                         to_visit.push(a);
                     }
                 }
+                Operation::Exp(a) => {
+                    if let None = self.nodes[a].is_const() {
+                        to_visit.push(a);
+                    }
+                }
                 Operation::GreaterThan(a, b)
                 | Operation::GreaterThanEq(a, b)
                 | Operation::LessThan(a, b)
@@ -435,23 +447,23 @@ impl Context {
                 }
                 Operation::SliceInDim {
                     node,
-                    start,
-                    stop,
-                    stride,
-                    dim,
+                    start: _,
+                    stop: _,
+                    stride: _,
+                    dim: _,
                 } => {
                     if let None = self.nodes[node].is_const() {
                         to_visit.push(node);
                     }
                 }
-                Operation::TileInDim { node, n_tiles, dim } => {
+                Operation::TileInDim { node, n_tiles: _, dim: _ } => {
                     if let None = self.nodes[node].is_const() {
                         to_visit.push(node);
                     }
                 }
-                Operation::ReduceMax { node, dim }
-                | Operation::ReduceSum { node, dim }
-                | Operation::ReduceMean { node, dim } => {
+                Operation::ReduceMax { node, dim: _ }
+                | Operation::ReduceSum { node, dim: _ }
+                | Operation::ReduceMean { node, dim:_  } => {
                     if let None = self.nodes[node].is_const() {
                         to_visit.push(node);
                     }

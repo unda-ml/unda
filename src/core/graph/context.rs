@@ -80,6 +80,7 @@ impl Context {
             Operation::Mul(a, b) => format!("Mul ({}) ({})", self.to_string(a), self.to_string(b)),
             Operation::Div(a, b) => format!("Div ({}) ({})", self.to_string(a), self.to_string(b)),
             Operation::Neg(a) => format!("Neg ({})", self.to_string(a)),
+            Operation::Exp(a) => format!("Exp ({})", self.to_string(a)),
             Operation::Equal(a, b) => {
                 format!("LessThan ({}) ({})", self.to_string(a), self.to_string(b))
             }
