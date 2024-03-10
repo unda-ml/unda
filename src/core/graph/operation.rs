@@ -11,7 +11,9 @@ pub enum Operation {
     Sub(NodeIdentifier, NodeIdentifier),
     Mul(NodeIdentifier, NodeIdentifier),
     Div(NodeIdentifier, NodeIdentifier),
+    Pow(NodeIdentifier, NodeIdentifier),
     Neg(NodeIdentifier),
+    Log(NodeIdentifier),
     Exp(NodeIdentifier),
 
     Equal(NodeIdentifier, NodeIdentifier),
