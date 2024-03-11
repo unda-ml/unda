@@ -1,7 +1,68 @@
+macro_rules! create_test {
+    ($name:ident, $op:ident, $dtype:ident, $in1:expr, $in2:expr, $exp:expr) => {
+        #[test]
+        fn $name() {
+            let mut ctx = Context::new();
+            let x = ctx.parameter("x", [], xla::ElementType::$dtype).expect("x");
+            let y = ctx.parameter("y", [], xla::ElementType::$dtype).expect("y");
+
+            let operation = ctx.$op(x, y).expect("operation");
+
+            let client = xla::PjRtClient::cpu().expect("client");
+            let name = "test";
+            let executable = ctx.compile(&name, [operation], &client).expect("executable");
+
+            let x_input = xla::Literal::scalar($in1);
+            let y_input = xla::Literal::scalar($in2);
+
+            let device_result = executable.execute(&[x_input, y_input]).expect("execute");
+            let host_result = device_result[0][0]
+                .to_literal_sync()
+                .expect("to_literal_sync");
+            let untupled_result = host_result.to_tuple1().expect("untuple");
+            let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
+
+            assert_eq!(rust_result[0], $exp);
+        }
+    };
+    ($name:ident, $op:ident, $dtype:ident, $in:expr, $exp:expr) => {
+        #[test]
+        fn $name() {
+            let mut ctx = Context::new();
+            let x = ctx.parameter("x", [], xla::ElementType::$dtype).expect("x");
+
+            let operation = ctx.$op(x).expect("operation");
+
+            let client = xla::PjRtClient::cpu().expect("client");
+            let name = "test";
+            let executable = ctx.compile(&name, [operation], &client).expect("executable");
+
+            let x_input = xla::Literal::scalar($in);
+
+            let device_result = executable.execute(&[x_input]).expect("execute");
+            let host_result = device_result[0][0]
+                .to_literal_sync()
+                .expect("to_literal_sync");
+            let untupled_result = host_result.to_tuple1().expect("untuple");
+            let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
+
+            assert_eq!(rust_result[0], $exp);
+        }
+    };
+
+}
+
 #[cfg(test)]
 mod tests {
     use crate::core::graph::Context;
     use xla::FromRawBytes;
+
+    create_test!(test_pow_f32_100_squared, pow, F32, 10f32, 2f32, 100f32);
+    create_test!(test_pow_f32_3_squared, pow, F32, 3f32, 2f32, 9f32);
+    create_test!(test_ln_10, log, F32, 10f32, f32::ln(10f32));
+    create_test!(test_ln_e, log, F32, 1f32, 0f32);
+    create_test!(test_add_1_2, add, F32, 1f32, 2f32, 3f32);
+    create_test!(test_sub_1_2, sub, F32, 1f32, 2f32, -1f32);
 
     #[test]
     fn test_exp() {
@@ -27,33 +88,6 @@ mod tests {
         println!("{:?}", rust_result);
 
         assert_eq!(rust_result[0], f32::exp(2f32));
-
-    }
-
-    #[test]
-    fn test_pow() {
-        let mut ctx = Context::new();
-        let x = ctx.parameter("x", [], xla::ElementType::F32).expect("x");
-        let y = ctx.parameter("y", [], xla::ElementType::F32).expect("y");
-
-        let pow = ctx.pow(x, y).expect("x ^ y");
-
-        let client = xla::PjRtClient::cpu().expect("client");
-        let name = "test";
-        let executable = ctx.compile(&name, [pow], &client).expect("executable");
-
-        let x_input = xla::Literal::scalar(3f32);
-        let y_input = xla::Literal::scalar(2f32);
-
-        let device_result = executable.execute(&[x_input, y_input]).expect("execute");
-        let host_result = device_result[0][0]
-            .to_literal_sync()
-            .expect("to_literal_sync");
-        let untupled_result = host_result.to_tuple1().expect("untuple");
-        let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
-        println!("{:?}", rust_result);
-
-        assert_eq!(rust_result[0], 9f32);
 
     }
 

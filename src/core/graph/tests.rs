@@ -1,3 +1,59 @@
+macro_rules! create_test {
+    ($name:ident, $op:ident, $dtype:ident, $in1:expr, $in2:expr, $exp:expr) => {
+        #[test]
+        fn $name() {
+            let mut ctx = Context::new();
+            let x = ctx.parameter("x", [], xla::ElementType::$dtype).expect("x");
+            let y = ctx.parameter("y", [], xla::ElementType::$dtype).expect("y");
+
+            let operation = ctx.$op(x, y).expect("operation");
+
+            let client = xla::PjRtClient::gpu(0.7, false).expect("client");
+            let name = "test";
+            let executable = ctx.compile(&name, [operation], &client).expect("executable");
+
+            let x_input = xla::Literal::scalar($in1);
+            let y_input = xla::Literal::scalar($in2);
+
+            let device_result = executable.execute(&[x_input, y_input]).expect("execute");
+            let host_result = device_result[0][0]
+                .to_literal_sync()
+                .expect("to_literal_sync");
+            let untupled_result = host_result.to_tuple1().expect("untuple");
+            let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
+            println!("{:?}", rust_result);
+
+            assert_eq!(rust_result[0], $exp);
+        }
+    };
+    ($name:ident, $op:ident, $dtype:ident, $in:expr, $exp:expr) => {
+        #[test]
+        fn $name() {
+            let mut ctx = Context::new();
+            let x = ctx.parameter("x", [], xla::ElementType::$dtype).expect("x");
+
+            let operation = ctx.$op(x).expect("operation");
+
+            let client = xla::PjRtClient::gpu(0.7, false).expect("client");
+            let name = "test";
+            let executable = ctx.compile(&name, [operation], &client).expect("executable");
+
+            let x_input = xla::Literal::scalar($in);
+
+            let device_result = executable.execute(&[x_input]).expect("execute");
+            let host_result = device_result[0][0]
+                .to_literal_sync()
+                .expect("to_literal_sync");
+            let untupled_result = host_result.to_tuple1().expect("untuple");
+            let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
+            println!("{:?}", rust_result);
+
+            assert_eq!(rust_result[0], $exp);
+        }
+    };
+
+}
+
 #[cfg(test)]
 mod tests {
     use crate::core::graph::{callsite::callsite, ConstantBinding, Context, Node, Operation};
