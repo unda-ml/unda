@@ -28,6 +28,7 @@ pub enum Operation {
     TypeCast(NodeIdentifier, xla::ElementType),
     Reshape(NodeIdentifier),
 
+    Transpose(NodeIdentifier, Vec<i64>),
     SliceInDim{ node: NodeIdentifier, start: i64, stop: i64, stride: i64, dim: i64 },
     TileInDim{ node: NodeIdentifier, n_tiles: i64, dim: i64 },
 

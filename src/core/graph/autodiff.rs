@@ -112,6 +112,10 @@ impl Context {
                         dependent_pullbacks.push(pullback);
                     }
 
+                    Operation::Transpose(a, p) => {
+                        
+                    }
+
                     Operation::ZerosLike(_) => continue,
 
                     Operation::Add(a, b) => {

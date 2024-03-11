@@ -270,6 +270,12 @@ impl Context {
                         }
                     }
                 }
+                Operation::Transpose(a, dim) => {
+                    if a == to_remove {
+                        self.nodes[dep_node].operation = Operation::Transpose(rep_with, dim.clone());
+                        changed = true;
+                    }
+                }
                 Operation::SliceInDim {
                     node,
                     start,
@@ -427,6 +433,11 @@ impl Context {
                     }
                 }
                 Operation::Log(a) => {
+                    if let None = self.nodes[a].is_const() {
+                        to_visit.push(a);
+                    }
+                }
+                Operation::Transpose(a, _) => {
                     if let None = self.nodes[a].is_const() {
                         to_visit.push(a);
                     }

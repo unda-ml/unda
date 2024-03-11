@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use super::*;
+use itertools::Itertools;
 use slotmap::SlotMap;
 
 /// XLA computation graph context.
@@ -83,6 +84,7 @@ impl Context {
             Operation::Neg(a) => format!("Neg ({})", self.to_string(a)),
             Operation::Exp(a) => format!("Exp ({})", self.to_string(a)),
             Operation::Log(a) => format!("Log ({})", self.to_string(a)),
+            Operation::Transpose(a, b) => format!("Transpose: ({}) ({:?})", self.to_string(a), b),
             Operation::Equal(a, b) => {
                 format!("LessThan ({}) ({})", self.to_string(a), self.to_string(b))
             }

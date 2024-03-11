@@ -577,6 +577,22 @@ impl Context {
         }
     }
 
+    pub fn transpose(&mut self, a: NodeIdentifier, index_perm: &[i64]) -> Result<NodeIdentifier> {
+        let a_shape = self.nodes[a].shape.clone();
+        let index_perms_deref = index_perm.to_vec();
+        let node_id = self.nodes.insert(Node {
+            callsite: callsite!(1),
+            shape: a_shape,
+            operation: Operation::Transpose(a, index_perms_deref),
+            dtype: self.nodes[a].dtype,
+        });
+        self.dependent_nodes
+            .entry(a)
+            .or_insert(Vec::new())
+            .push(node_id);
+        Ok(node_id)
+    }
+
     /// TODO: Need shape-checking here
     pub fn slice_in_dim(
         &mut self,
