@@ -55,14 +55,70 @@ macro_rules! create_test {
 #[cfg(test)]
 mod tests {
     use crate::core::graph::Context;
-    use xla::FromRawBytes;
+    use xla::{FromRawBytes, Literal, Shape};
 
     create_test!(test_pow_f32_100_squared, pow, F32, 10f32, 2f32, 100f32);
     create_test!(test_pow_f32_3_squared, pow, F32, 3f32, 2f32, 9f32);
+    create_test!(test_pow_f32_zeroth_pow, pow, F32, 3f32, 0f32, 1f32);
     create_test!(test_ln_10, log, F32, 10f32, f32::ln(10f32));
     create_test!(test_ln_e, log, F32, 1f32, 0f32);
     create_test!(test_add_1_2, add, F32, 1f32, 2f32, 3f32);
     create_test!(test_sub_1_2, sub, F32, 1f32, 2f32, -1f32);
+
+    #[test]
+    fn test_transpose() {
+        let mut ctx = Context::new();
+        let mat = ctx.matrix([[1,2,3], [4,5,6]], xla::ElementType::F32).expect("initial mat");
+
+        let transpose = ctx.transpose(mat, &[1,0]).expect("transpose mat");
+
+        let client = xla::PjRtClient::cpu().expect("client");
+        let name = "test";
+        let executable = ctx.compile(&name, [transpose], &client).expect("executable");
+
+        let device_result = executable.execute::<Literal>(&[]).expect("execute");
+        let host_result = device_result[0][0]
+            .to_literal_sync()
+            .expect("to_literal_sync");
+        let untupled_result = host_result.to_tuple1().expect("untuple");
+        let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
+        println!("{:?}", rust_result);
+
+        match untupled_result.shape().unwrap() {
+            Shape::Array(shape) => {
+                assert_eq!(shape.dims(), &[3,2]);
+            },
+            _ => {
+                panic!("matrix transpose result is not an ArrayShape");
+            }
+        }
+        //assert_eq!(untupled_result.shape()?, [3, 2]);
+        assert_eq!(rust_result.as_slice(), &[1f32,4f32,2f32,5f32,3f32,6f32]);
+    }
+
+    /*#[test]
+    fn test_inv_perm_transpose() {
+        let before = &[1,0];
+        let after = Context::inv_perm(before);
+
+        assert_eq!(&[0,1], after.as_slice());
+    }*/
+
+    #[test]
+    fn test_inv_perm() {
+        let before = &[1,2,0,3];
+        let after = Context::inv_perm(before);
+
+        assert_eq!(&[2,0,1,3], after.as_slice());
+    }
+
+    #[test]
+    fn test_inv_perm_cplx() {
+        let before = &[4,8,0,7,1,5,3,6,2];
+        let after = Context::inv_perm(before);
+
+        assert_eq!(&[2,4,8,6,0,5,7,3,1], after.as_slice())
+    }
 
     #[test]
     fn test_exp() {

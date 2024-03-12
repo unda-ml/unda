@@ -22,7 +22,8 @@ impl Context {
         let deps = self.collect_deps(to_remove);
 
         for dep_node in deps {
-            match self.nodes[dep_node].operation {
+            //Again, clone here is pretty bad
+            match self.nodes[dep_node].operation.clone() {
                 Operation::Add(a, b) => {
                     if to_remove == a && a == b {
                         self.nodes[dep_node].operation = Operation::Add(rep_with, rep_with);
@@ -270,6 +271,12 @@ impl Context {
                         }
                     }
                 }
+                Operation::Transpose(a, dim) => {
+                    if a == to_remove {
+                        self.nodes[dep_node].operation = Operation::Transpose(rep_with, dim.clone());
+                        changed = true;
+                    }
+                }
                 Operation::SliceInDim {
                     node,
                     start,
@@ -427,6 +434,11 @@ impl Context {
                     }
                 }
                 Operation::Log(a) => {
+                    if let None = self.nodes[a].is_const() {
+                        to_visit.push(a);
+                    }
+                }
+                Operation::Transpose(a, _) => {
                     if let None = self.nodes[a].is_const() {
                         to_visit.push(a);
                     }
