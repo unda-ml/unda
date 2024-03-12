@@ -67,12 +67,20 @@ mod tests {
     create_test!(test_sub_1_2, sub, F32, 1f32, 2f32, -1f32);
 
 
-    #[test]
+    /*#[test]
     fn test_inv_perm_transpose() {
         let before = &[1,0];
         let after = Context::inv_perm(before);
 
         assert_eq!(&[0,1], after.as_slice());
+    }*/
+
+    #[test]
+    fn test_inv_perm_cplx() {
+        let before = &[4,8,0,7,1,5,3,6,2];
+        let after = Context::inv_perm(before);
+
+        assert_eq!(&[2,4,8,6,0,5,7,3,1], after.as_slice())
     }
 
     #[test]

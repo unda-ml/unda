@@ -581,7 +581,7 @@ impl Context {
         let mut res = vec![0i64; index_perm.len()];
         
         for (idx, val) in index_perm.iter().enumerate() {
-            res[idx] = index_perm[*val as usize];
+            res[*val as usize] = idx as i64;
         }
 
         res
