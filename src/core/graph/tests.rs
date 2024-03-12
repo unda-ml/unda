@@ -59,6 +59,30 @@ mod tests {
     use crate::core::graph::{callsite::callsite, ConstantBinding, Context, Node, Operation};
     use xla::{FromRawBytes, Literal, Shape};
 
+    create_test!(test_pow_f32_100_squared, pow, F32, 10f32, 2f32, 100f32);
+    create_test!(test_pow_f32_3_squared, pow, F32, 3f32, 2f32, 9f32);
+    create_test!(test_ln_10, log, F32, 10f32, f32::ln(10f32));
+    create_test!(test_ln_e, log, F32, 1f32, 0f32);
+    create_test!(test_add_1_2, add, F32, 1f32, 2f32, 3f32);
+    create_test!(test_sub_1_2, sub, F32, 1f32, 2f32, -1f32);
+
+
+    #[test]
+    fn test_inv_perm_transpose() {
+        let before = &[1,0];
+        let after = Context::inv_perm(before);
+
+        assert_eq!(&[0,1], after.as_slice());
+    }
+
+    #[test]
+    fn test_inv_perm() {
+        let before = &[1,2,0,3];
+        let after = Context::inv_perm(before);
+
+        assert_eq!(&[2,0,1,3], after.as_slice());
+    }
+
     #[test]
     fn test_no_const_fold() {
         let mut ctx = Context::new();

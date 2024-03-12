@@ -579,10 +579,9 @@ impl Context {
 
     pub(crate) fn inv_perm(index_perm: &[i64]) -> Vec<i64> {
         let mut res = vec![0i64; index_perm.len()];
-
         
         for (idx, val) in index_perm.iter().enumerate() {
-            res[*val as usize] = idx as i64;
+            res[idx] = index_perm[*val as usize];
         }
 
         res

@@ -64,6 +64,23 @@ mod tests {
     create_test!(test_add_1_2, add, F32, 1f32, 2f32, 3f32);
     create_test!(test_sub_1_2, sub, F32, 1f32, 2f32, -1f32);
 
+
+    #[test]
+    fn test_inv_perm_transpose() {
+        let before = &[1,0];
+        let after = Context::inv_perm(before);
+
+        assert_eq!(&[0,1], after.as_slice());
+    }
+
+    #[test]
+    fn test_inv_perm() {
+        let before = &[1,2,0,3];
+        let after = Context::inv_perm(before);
+
+        assert_eq!(&[2,0,1,3], after.as_slice());
+    }
+
     #[test]
     fn test_exp() {
         let mut ctx = Context::new();
