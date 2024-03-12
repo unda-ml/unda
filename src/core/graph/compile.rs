@@ -110,7 +110,10 @@ impl Context {
                     continue;
                 }
                 let node = &self.nodes[*dependent_op];
-                match node.operation {
+                //TODO: Clone here is not great, we could & the node operation
+                //or come up with a better way of storing the Vec<i64> that Transpose
+                //uses(that's what causes the borrow checker error if we dont clone)
+                match node.operation.clone() {
                     Operation::Parameter(_) => {
                         unreachable!("Parameters can't depend on other nodes")
                     }

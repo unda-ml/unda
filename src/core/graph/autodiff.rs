@@ -75,7 +75,9 @@ impl Context {
             let dependent_nodes = self.dependent_nodes[&with_respect_to].clone();
 
             for dependent_node in dependent_nodes {
-                match self.nodes[dependent_node].operation {
+                //Again again, clone() here is not wonderful, there's gotta be a better way to
+                //store the i64 vec for Transpose
+                match self.nodes[dependent_node].operation.clone() {
                     Operation::Constant(_) => panic!("Constant found as dependent node!"),
                     Operation::Parameter(_) => panic!("Parameter found as dependent node!"),
                     Operation::StopGradient(a) => continue,
@@ -113,7 +115,13 @@ impl Context {
                     }
 
                     Operation::Transpose(a, p) => {
-                        
+                        if a == with_respect_to {
+                            let next_pullback = self.diff(output, dependent_node)?;
+                            let inv_perm = Context::inv_perm(&p);
+
+                            let pullback = self.transpose(next_pullback, &inv_perm)?;
+                            dependent_pullbacks.push(pullback);
+                        }
                     }
 
                     Operation::ZerosLike(_) => continue,

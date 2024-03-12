@@ -577,6 +577,17 @@ impl Context {
         }
     }
 
+    pub(crate) fn inv_perm(index_perm: &[i64]) -> Vec<i64> {
+        let mut res = vec![0i64; index_perm.len()];
+
+        
+        for (idx, val) in index_perm.iter().enumerate() {
+            res[*val as usize] = idx as i64;
+        }
+
+        res
+    }
+
     pub fn transpose(&mut self, a: NodeIdentifier, index_perm: &[i64]) -> Result<NodeIdentifier> {
         let a_shape = self.nodes[a].shape.clone();
         let index_perms_deref = index_perm.to_vec();

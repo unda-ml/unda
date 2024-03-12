@@ -22,7 +22,8 @@ impl Context {
         let deps = self.collect_deps(to_remove);
 
         for dep_node in deps {
-            match self.nodes[dep_node].operation {
+            //Again, clone here is pretty bad
+            match self.nodes[dep_node].operation.clone() {
                 Operation::Add(a, b) => {
                     if to_remove == a && a == b {
                         self.nodes[dep_node].operation = Operation::Add(rep_with, rep_with);
