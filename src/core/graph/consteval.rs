@@ -72,6 +72,18 @@ impl Context {
                         changed = true;
                     }
                 }
+                Operation::MatMul(a, b) => {
+                    if to_remove == a && a == b {
+                        self.nodes[dep_node].operation = Operation::MatMul(rep_with, rep_with);
+                        changed = true;
+                    } else if a == to_remove {
+                        self.nodes[dep_node].operation = Operation::MatMul(rep_with, b);
+                        changed = true;
+                    } else if b == to_remove {
+                        self.nodes[dep_node].operation = Operation::MatMul(a, rep_with);
+                        changed = true;
+                    }
+                }
                 Operation::Div(a, b) => {
                     if to_remove == a && a == b {
                         self.nodes[dep_node].operation = Operation::Div(rep_with, rep_with);
@@ -450,7 +462,8 @@ impl Context {
                 | Operation::Equal(a, b)
                 | Operation::NotEqual(a, b)
                 | Operation::Div(a, b)
-                | Operation::Pow(a, b) => {
+                | Operation::Pow(a, b)
+                | Operation::MatMul(a, b) => {
                     if let None = self.nodes[a].is_const() {
                         to_visit.push(a);
                     }

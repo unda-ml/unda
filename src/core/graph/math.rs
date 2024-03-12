@@ -195,6 +195,64 @@ impl Context {
         }
     }
 
+    pub(crate) fn compatible_dims(a: &Shape, b: &Shape) -> bool {
+        if a.ndims() != b.ndims() {
+            false
+        } else {
+            let (a_size, b_size) = (&a.sizes, &b.sizes);
+            //TODO: still need to now check the dimensions and make sure they are good for matmul
+            true
+        }
+    }
+
+    pub fn matmul(&mut self, a: NodeIdentifier, b: NodeIdentifier) -> Result<NodeIdentifier> {
+        let node_a = &self.nodes[a];
+        let node_b = &self.nodes[b];
+
+        if node_a.dtype != node_b.dtype {
+            Err(ContextError::IncompatibleOperandTypes(
+                node_a.dtype,
+                node_b.dtype,
+                callsite!(1),
+            ))
+        } else if !Context::compatible_dims(&node_a.shape, &node_b.shape) {
+            Err(ContextError::IncompatibleOperandShapes(
+                node_a.shape.clone(), 
+                node_b.shape.clone(),
+                callsite!(1)
+            ))
+        } else {
+            match node_a.shape.broadcast(&node_b.shape) {
+                None => Err(ContextError::IncompatibleOperandShapes(
+                    node_a.shape.clone(),
+                    node_b.shape.clone(),
+                    callsite!(1),
+                )),
+                Some(s) => {
+                    let node = Node {
+                        callsite: callsite!(1),
+                        shape: s,
+                        operation: Operation::MatMul(a, b),
+                        dtype: node_a.dtype,
+                    };
+                    let node_id = self.nodes.insert(node);
+                    self.dependent_nodes
+                        .entry(a)
+                        .or_insert(Vec::new())
+                        .push(node_id);
+                    if a != b {
+                        self.dependent_nodes
+                            .entry(b)
+                            .or_insert(Vec::new())
+                            .push(node_id);
+                    }
+                    Ok(node_id)
+                }
+            }
+        }
+    }
+
+
     pub fn mul(&mut self, a: NodeIdentifier, b: NodeIdentifier) -> Result<NodeIdentifier> {
         let node_a = &self.nodes[a];
         let node_b = &self.nodes[b];
