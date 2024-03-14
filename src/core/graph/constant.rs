@@ -101,6 +101,31 @@ impl Context {
         Ok(node_id)
     }
 
+    pub fn tensor_4d<T: xla::ArrayElement + xla::NativeType, const N: usize, const M: usize, const K: usize>(
+        &mut self,
+        values: [[[T; M]; N]; K],
+        dtype: xla::ElementType,
+    ) -> Result<NodeIdentifier> {
+        let vec = values
+            .into_iter()
+            .flat_map(|f| f.into_iter()
+                      .flat_map(|k| k.into_iter()))
+            .collect::<Vec<T>>();
+        let slice = vec.as_slice();
+        let value = xla::Literal::vec1(slice).convert(dtype.primitive_type())?;
+        let reshaped = value.reshape(&[N as i64, M as i64, K as i64])?;
+        let casted = reshaped.convert(dtype.primitive_type())?;
+        let node_id = self.nodes.insert(Node {
+            callsite: callsite!(1),
+            shape: [N as u32, M as u32, K as u32].into(),
+            operation: Operation::Constant(ConstantBinding { value: casted }),
+            dtype: T::TY,
+        });
+        self.constants.push(node_id);
+        Ok(node_id)
+    }
+
+
     pub fn zeroes<S: Into<Shape>>(&mut self, shape: S, dtype: xla::ElementType) -> Result<NodeIdentifier> {
         let shape = shape.into();
         let vec = (0..shape.size())

@@ -76,6 +76,16 @@ mod tests {
 
 
     #[test]
+    fn test_mat_mul_batch() {
+        let mut ctx = Context::new();
+        let mat_a = ctx.tensor_4d([[[1,2], [3,4], [5,6]],[[7,8],[9,10],[11,12]]], xla::ElementType::S32).expect("initial batch mat");
+        let mat_b = ctx.matrix([[7,8,9], [10,11,12]], xla::ElementType::S32).expect("initial mat");
+
+        let mul = ctx.matmul(mat_a, mat_b).expect("MatMul A x B");
+
+        assert_eq!(&ctx.nodes[mul].shape.sizes.as_slice(), &[3,2,3])
+    }
+    #[test]
     fn test_mat_mul() {
         let mut ctx = Context::new();
         let mat_a = ctx.matrix([[1,2], [3,4], [5,6]], xla::ElementType::S32).expect("initial mat");
