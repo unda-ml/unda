@@ -66,6 +66,48 @@ mod tests {
     create_test!(test_sub_1_2, sub, F32, 1f32, 2f32, -1f32);
 
     #[test]
+    fn test_mat_mul_panics() {
+        let mut ctx = Context::new();
+        let mat_a = ctx.matrix([[1,2], [3,4], [5,6]], xla::ElementType::S32).expect("initial mat");
+        let mat_b = ctx.matrix([[7,8], [9, 10], [11, 12]], xla::ElementType::S32).expect("initial mat");
+
+        assert!(ctx.matmul(mat_a, mat_b).is_err());
+    }
+
+
+    #[test]
+    fn test_mat_mul() {
+        let mut ctx = Context::new();
+        let mat_a = ctx.matrix([[1,2], [3,4], [5,6]], xla::ElementType::S32).expect("initial mat");
+        let mat_b = ctx.matrix([[7,8,9], [10,11,12]], xla::ElementType::S32).expect("initial mat");
+
+        let mul = ctx.matmul(mat_a, mat_b).expect("MatMul A x B");
+
+        let client = xla::PjRtClient::cpu().expect("client");
+        let name = "test";
+        let executable = ctx.compile(&name, [mul], &client).expect("executable");
+
+        let device_result = executable.execute::<Literal>(&[]).expect("execute");
+        let host_result = device_result[0][0]
+            .to_literal_sync()
+            .expect("to_literal_sync");
+        let untupled_result = host_result.to_tuple1().expect("untuple");
+        let rust_result = untupled_result.to_vec::<i32>().expect("to_vec");
+        println!("{:?}", rust_result);
+
+        match untupled_result.shape().unwrap() {
+            Shape::Array(shape) => {
+                assert_eq!(shape.dims(), &[3,3]);
+            },
+            _ => {
+                panic!("matrix transpose result is not an ArrayShape");
+            }
+        }
+        //assert_eq!(untupled_result.shape()?, [3, 2]);
+        assert_eq!(rust_result.as_slice(), &[27,30,33,61,68,75,95,106,117]);
+    }
+
+    #[test]
     fn test_transpose() {
         let mut ctx = Context::new();
         let mat = ctx.matrix([[1,2,3], [4,5,6]], xla::ElementType::F32).expect("initial mat");

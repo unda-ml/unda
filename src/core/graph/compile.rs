@@ -140,6 +140,21 @@ impl Context {
                         }
                     }
 
+                    Operation::MatMul(a, b) => {
+                        if unda_xla_map.contains_key(&a)
+                            && unda_xla_map.contains_key(&b)
+                            && xla_op_slotmap.contains_key(unda_xla_map[&a])
+                            && xla_op_slotmap.contains_key(unda_xla_map[&b])
+                        {
+                            let xla_op = xla_op_slotmap[unda_xla_map[&a]]
+                                .matmul(&xla_op_slotmap[unda_xla_map[&b]])?;
+                            let xla_id = xla_op_slotmap.insert(xla_op);
+                            unda_xla_map.insert(*dependent_op, xla_id);
+                            unda_op_queue.push_back(*dependent_op);
+                            covered_ops.insert(*dependent_op);
+                        }
+                    }
+
                     Operation::Div(a, b) => {
                         if unda_xla_map.contains_key(&a)
                             && unda_xla_map.contains_key(&b)
