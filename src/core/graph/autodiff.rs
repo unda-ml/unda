@@ -160,6 +160,19 @@ impl Context {
                         }
                     }
 
+                    Operation::MatMul(a, b) => {
+                        let next_pullback = self.diff(output, dependent_node)?;
+                        if a == with_respect_to {
+                            let transpose = self.transpose(b, &[1,0])?;
+                            let this_pullback = self.mul(transpose, next_pullback)?;
+                            dependent_pullbacks.push(this_pullback);
+                        } else if b == with_respect_to {
+                            let transpose = self.transpose(a, &[1,0])?;
+                            let this_pullback = self.mul(transpose, next_pullback)?;
+                            dependent_pullbacks.push(this_pullback);
+                        }
+                    }
+
                     Operation::Div(a, b) => {
                         let next_pullback = self.diff(output, dependent_node)?;
                         if a == with_respect_to {
