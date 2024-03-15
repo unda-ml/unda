@@ -579,6 +579,16 @@ impl Context {
         self.maximum(const_zero, a)
     }
 
+    pub fn softmax(&mut self, a: NodeIdentifier, dim: i64) -> Result<NodeIdentifier> {
+        let max = self.reduce_max(a, dim, true)?;
+        let unnormalized = self.sub(a, max)?;
+        let unnormalized_exp = self.exp(unnormalized)?;
+
+        let sum = self.reduce_sum(unnormalized_exp, dim, true)?;
+
+        self.div(unnormalized_exp, sum)
+    }
+
     pub fn type_cast(&mut self, a: NodeIdentifier, dtype: xla::ElementType) -> NodeIdentifier {
         let a_shape = self.nodes[a].shape.clone();
         let node_id = self.nodes.insert(Node {
