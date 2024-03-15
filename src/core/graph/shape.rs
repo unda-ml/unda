@@ -64,6 +64,26 @@ impl Shape {
         }
     }
 
+    pub fn matmul_shape(&self, dim2: &[u32]) -> Option<Vec<u32>> {
+        let dim1 = &self.sizes;
+        if dim1.last()? == dim2.get(dim2.len().saturating_sub(2))? {
+            let mut result_shape = Vec::new();
+
+            for &dim in dim1.iter().take(dim1.len() - 1) {
+                result_shape.push(dim);
+            }
+
+            for (i, &dim) in dim2.iter().enumerate() {
+                if i != dim2.len() - 2 {
+                    result_shape.push(dim);
+                }
+            }
+            Some(result_shape)
+        } else {
+            None
+        }
+    }
+
     pub fn broadcast(&self, shape: &Shape) -> Option<Shape> {
         if self.sizes.len() == 0 || shape.sizes.len() == 0 {
             Some(Shape::new())

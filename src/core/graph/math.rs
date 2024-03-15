@@ -195,6 +195,48 @@ impl Context {
         }
     }
 
+    pub fn matmul(&mut self, a: NodeIdentifier, b: NodeIdentifier) -> Result<NodeIdentifier> {
+        let node_a = &self.nodes[a];
+        let node_b = &self.nodes[b];
+
+        if node_a.dtype != node_b.dtype {
+            Err(ContextError::IncompatibleOperandTypes(
+                node_a.dtype,
+                node_b.dtype,
+                callsite!(1),
+            ))
+        } else {
+            match node_a.shape.matmul_shape(&node_b.shape.sizes) {
+                None => Err(ContextError::IncompatibleOperandShapes(
+                    node_a.shape.clone(),
+                    node_b.shape.clone(),
+                    callsite!(1),
+                )),
+                Some(s) => {
+                    let node = Node {
+                        callsite: callsite!(1),
+                        shape: Shape::from(s.as_slice()),
+                        operation: Operation::MatMul(a, b),
+                        dtype: node_a.dtype,
+                    };
+                    let node_id = self.nodes.insert(node);
+                    self.dependent_nodes
+                        .entry(a)
+                        .or_insert(Vec::new())
+                        .push(node_id);
+                    if a != b {
+                        self.dependent_nodes
+                            .entry(b)
+                            .or_insert(Vec::new())
+                            .push(node_id);
+                    }
+                    Ok(node_id)
+                }
+            }
+        }
+    }
+
+
     pub fn mul(&mut self, a: NodeIdentifier, b: NodeIdentifier) -> Result<NodeIdentifier> {
         let node_a = &self.nodes[a];
         let node_b = &self.nodes[b];
