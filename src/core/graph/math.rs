@@ -579,6 +579,15 @@ impl Context {
         self.maximum(const_zero, a)
     }
 
+    pub fn leaky_relu(&mut self, a: NodeIdentifier) -> Result<NodeIdentifier> {
+        let a_dtype = self.nodes[a].dtype;
+        //TODO: force dtype to be floating point or else this just becomes normal relu
+        let const_small = self.scalar(0.001, a_dtype)?;
+        let small_x = self.mul(a, const_small)?;
+
+        self.maximum(small_x, a)
+    }
+
     pub fn sigmoid(&mut self, a: NodeIdentifier) -> Result<NodeIdentifier> {
         let a_dtype = self.nodes[a].dtype;
         let one = self.scalar(1, a_dtype)?;
@@ -598,6 +607,18 @@ impl Context {
         let sum = self.reduce_sum(unnormalized_exp, 0, true)?;
 
         self.div(unnormalized_exp, sum)
+    }
+
+    pub fn tanh(&mut self, a: NodeIdentifier) -> Result<NodeIdentifier> {
+        let a_dtype = self.nodes[a].dtype;
+        let two = self.scalar(2, a_dtype)?;
+        let one = self.scalar(1, a_dtype)?;
+
+        let two_a = self.mul(two, a)?;
+        let sigmoid_a_2 = self.sigmoid(two_a)?;
+
+        let two_sigmoid = self.mul(two, sigmoid_a_2)?;
+        self.sub(two_sigmoid, one)
     }
 
     pub fn type_cast(&mut self, a: NodeIdentifier, dtype: xla::ElementType) -> NodeIdentifier {
