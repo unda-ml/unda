@@ -590,12 +590,12 @@ impl Context {
         self.div(one, one_p_exp_x)
     }
 
-    pub fn softmax(&mut self, a: NodeIdentifier, dim: i64) -> Result<NodeIdentifier> {
-        let max = self.reduce_max(a, dim, true)?;
+    pub fn softmax(&mut self, a: NodeIdentifier) -> Result<NodeIdentifier> {
+        let max = self.reduce_max(a, 0, true)?;
         let unnormalized = self.sub(a, max)?;
         let unnormalized_exp = self.exp(unnormalized)?;
 
-        let sum = self.reduce_sum(unnormalized_exp, dim, true)?;
+        let sum = self.reduce_sum(unnormalized_exp, 0, true)?;
 
         self.div(unnormalized_exp, sum)
     }
