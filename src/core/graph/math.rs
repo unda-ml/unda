@@ -579,6 +579,27 @@ impl Context {
         self.maximum(const_zero, a)
     }
 
+    pub fn sigmoid(&mut self, a: NodeIdentifier) -> Result<NodeIdentifier> {
+        let a_dtype = self.nodes[a].dtype;
+        let one = self.scalar(1, a_dtype)?;
+        let neg_x = self.neg(a);
+        let exp_x = self.exp(neg_x)?;
+
+        let one_p_exp_x = self.add(one, exp_x)?;
+
+        self.div(one, one_p_exp_x)
+    }
+
+    pub fn softmax(&mut self, a: NodeIdentifier) -> Result<NodeIdentifier> {
+        let max = self.reduce_max(a, 0, true)?;
+        let unnormalized = self.sub(a, max)?;
+        let unnormalized_exp = self.exp(unnormalized)?;
+
+        let sum = self.reduce_sum(unnormalized_exp, 0, true)?;
+
+        self.div(unnormalized_exp, sum)
+    }
+
     pub fn type_cast(&mut self, a: NodeIdentifier, dtype: xla::ElementType) -> NodeIdentifier {
         let a_shape = self.nodes[a].shape.clone();
         let node_id = self.nodes.insert(Node {

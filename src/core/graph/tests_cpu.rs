@@ -400,6 +400,27 @@ mod tests {
     }
 
     #[test]
+    fn test_softmax() {
+        let mut ctx = Context::new();
+
+        let test_const = ctx.vector([100f32,100f32,40f32,10f32], xla::ElementType::F32).expect("test_const");
+        let relu = ctx.softmax(test_const).expect("softmax");
+
+        let client = xla::PjRtClient::cpu().expect("client");//gpu(0.7, false).expect("client");
+        let name = "test";
+        let executable = ctx.compile(&name, [relu], &client).expect("executable");
+
+        let device_result = executable.execute::<xla::Literal>(&[]).expect("execute");
+        let host_result = device_result[0][0]
+            .to_literal_sync()
+            .expect("to_literal_sync");
+        let untupled_result = host_result.to_tuple1().expect("untuple");
+        let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
+        println!("{:?}", rust_result);
+        assert_eq!(rust_result.as_slice(), &[0.5, 0.5, 4.3782554e-27, 4.097e-40]);
+    }
+
+    #[test]
     fn test_slice_in_dim() {
         let mut ctx = Context::new();
 
@@ -419,6 +440,70 @@ mod tests {
         println!("{:?}", rust_result);
         assert_eq!(rust_result.as_slice(), &[0, 4, 4, 0]);
     }
+
+    #[test]
+    fn test_gradient_descent_polynomial_pows() {
+        let mut ctx = Context::new();
+
+        let x = ctx.parameter("x", [], xla::ElementType::F32).expect("x");
+
+        let two = ctx.scalar(2, xla::ElementType::F32).expect("2");
+        let four = ctx.scalar(4, xla::ElementType::F32).expect("4");
+
+        let x2 = ctx.pow(x, two).expect("x2");
+        let x4 = ctx.pow(x, four).expect("x4");
+        let half = ctx.scalar(0.5, xla::ElementType::F32).expect("half");
+        let quadratic_term = ctx.mul(half, x2).expect("quadratic_term");
+        let quarter = ctx.scalar(0.25, xla::ElementType::F32).expect("half");
+        let quartic_term = ctx.mul(quarter, x4).expect("quartic_term");
+
+        let y = ctx.sub(quartic_term, quadratic_term).expect("y");
+
+        let dydx = ctx.diff(y, x.into()).expect("dydx");
+        println!("{}", ctx.to_string(dydx));
+        let lr = ctx.scalar(0.75, xla::ElementType::F32).expect("lr");
+        let update = ctx.mul(lr, dydx).expect("update");
+        let new_x = ctx.sub(x, update).expect("new_x");
+
+        let client = xla::PjRtClient::cpu().expect("client");//gpu(0.7, false).expect("client");
+        let name = "test";
+        let executable = ctx
+            .compile(&name, [y, dydx, new_x], &client)
+            .expect("executable");
+
+        let mut x_rust = 0.5f32;
+        println!("x = {}", x_rust);
+        let y_vals: [f32; 5] = [
+            -0.109375,
+            -0.21204352,
+            -0.24990776,
+            -0.24997526,
+            -0.24999407,
+        ];
+
+        for i in 0..5 {
+            let x_xla = xla::Literal::scalar(x_rust);
+            let buffers = executable.execute(&[x_xla]).expect("execute");
+            let literals = buffers[0][0].to_literal_sync().expect("to_literal_sync");
+            let (y, dydx, x) = literals.to_tuple3().expect("untuple");
+            let y_rust = y.to_vec::<f32>().expect("to_vec")[0];
+            let dydx_rust = dydx.to_vec::<f32>().expect("to_vec")[0];
+            x_rust = x.to_vec::<f32>().expect("to_vec")[0];
+            println!("y = {}", y_rust);
+            assert_eq!(y_rust, y_vals[i]);
+            println!("dydx = {}", dydx_rust);
+            println!("x = {}", x_rust);
+        }
+        let x_xla = xla::Literal::scalar(x_rust);
+        let buffers = executable.execute(&[x_xla]).expect("execute");
+        let literals = buffers[0][0].to_literal_sync().expect("to_literal_sync");
+        let (y, dydx, x) = literals.to_tuple3().expect("untuple");
+        let y_rust = y.to_vec::<f32>().expect("to_vec")[0];
+        let dydx_rust = dydx.to_vec::<f32>().expect("to_vec")[0];
+        println!("y = {}", y_rust);
+        println!("dydx = {}", dydx_rust);
+    }
+
 
     #[test]
     fn test_gradient_descent_polynomial() {
