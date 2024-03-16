@@ -66,6 +66,39 @@ mod tests {
     create_test!(test_sub_1_2, sub, F32, 1f32, 2f32, -1f32);
 
     #[test]
+    fn test_leaky_relu(){ 
+     let mut ctx = Context::new();
+        let x = ctx.parameter("x", [], xla::ElementType::F32).expect("x");
+
+        let lr = ctx.leaky_relu(x).expect("leaky_relu x");
+
+        let client = xla::PjRtClient::cpu().expect("client");
+        let name = "test";
+        let executable = ctx.compile(&name, [lr], &client).expect("executable");
+
+        let x_input = xla::Literal::scalar(2f32);
+        let device_result = executable.execute(&[x_input]).expect("execute");
+        let host_result = device_result[0][0]
+            .to_literal_sync()
+            .expect("to_literal_sync");
+        let untupled_result = host_result.to_tuple1().expect("untuple");
+        let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
+        println!("{:?}", rust_result);
+
+        assert_eq!(rust_result[0], 2f32);
+        let x_input = xla::Literal::scalar(-2f32);
+        let device_result = executable.execute(&[x_input]).expect("execute");
+        let host_result = device_result[0][0]
+            .to_literal_sync()
+            .expect("to_literal_sync");
+        let untupled_result = host_result.to_tuple1().expect("untuple");
+        let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
+        println!("{:?}", rust_result);
+
+        assert_eq!(rust_result[0], -0.002);
+    }
+    
+    #[test]
     fn test_mat_mul_panics() {
         let mut ctx = Context::new();
         let mat_a = ctx.matrix([[1,2], [3,4], [5,6]], xla::ElementType::S32).expect("initial mat");
