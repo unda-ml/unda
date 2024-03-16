@@ -66,8 +66,34 @@ mod tests {
     create_test!(test_sub_1_2, sub, F32, 1f32, 2f32, -1f32);
 
     #[test]
+    fn test_tanh(){
+        let mut ctx = Context::new();
+        let x = ctx.parameter("x", [], xla::ElementType::F32).expect("x");
+
+        let lr = ctx.tanh(x).expect("tanh(x)");
+
+        let client = xla::PjRtClient::cpu().expect("client");
+        let name = "test";
+        let executable = ctx.compile(&name, [lr], &client).expect("executable");
+
+        for i in -10..10 {
+            let x_input = xla::Literal::scalar(i as f32);
+            let device_result = executable.execute(&[x_input]).expect("execute");
+            let host_result = device_result[0][0]
+                .to_literal_sync()
+                .expect("to_literal_sync");
+            let untupled_result = host_result.to_tuple1().expect("untuple");
+            let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
+            println!("{:?}", rust_result);
+
+            assert!((rust_result[0] - f32::tanh(i as f32)) <= 0.0000001);
+        }
+
+    }
+
+    #[test]
     fn test_leaky_relu(){ 
-     let mut ctx = Context::new();
+        let mut ctx = Context::new();
         let x = ctx.parameter("x", [], xla::ElementType::F32).expect("x");
 
         let lr = ctx.leaky_relu(x).expect("leaky_relu x");
