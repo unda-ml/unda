@@ -4,9 +4,7 @@ use super::*;
 
 impl Context {
     fn collect_deps(&self, node: NodeIdentifier) -> Vec<NodeIdentifier> {
-        self.dependent_nodes[&node]
-            .iter().copied()
-            .collect::<Vec<NodeIdentifier>>()
+        self.dependent_nodes[&node].to_vec()
     }
 
     fn replace_index(
