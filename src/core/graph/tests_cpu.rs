@@ -1,3 +1,4 @@
+#[allow(unused_macros)]
 macro_rules! create_test {
     ($name:ident, $op:ident, $dtype:ident, $in1:expr, $in2:expr, $exp:expr) => {
         #[test]

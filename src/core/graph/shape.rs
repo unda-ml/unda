@@ -85,7 +85,7 @@ impl Shape {
     }
 
     pub fn broadcast(&self, shape: &Shape) -> Option<Shape> {
-        if self.sizes.len() == 0 || shape.sizes.len() == 0 {
+        if self.sizes.is_empty() || shape.sizes.is_empty() {
             Some(Shape::new())
         } else if self.sizes.len() != shape.sizes.len() {
             None

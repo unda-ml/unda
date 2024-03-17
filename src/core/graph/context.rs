@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use super::*;
-use itertools::Itertools;
+
 use slotmap::SlotMap;
 
 /// XLA computation graph context.

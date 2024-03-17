@@ -32,12 +32,12 @@ impl Context {
                     let node_id = self.nodes.insert(node);
                     self.dependent_nodes
                         .entry(a)
-                        .or_insert(Vec::new())
+                        .or_default()
                         .push(node_id);
                     if a != b {
                         self.dependent_nodes
                             .entry(b)
-                            .or_insert(Vec::new())
+                            .or_default()
                             .push(node_id);
                     }
                     Ok(node_id)
@@ -73,12 +73,12 @@ impl Context {
                     let node_id = self.nodes.insert(node);
                     self.dependent_nodes
                         .entry(a)
-                        .or_insert(Vec::new())
+                        .or_default()
                         .push(node_id);
                     if a != b {
                         self.dependent_nodes
                             .entry(b)
-                            .or_insert(Vec::new())
+                            .or_default()
                             .push(node_id);
                     }
                     Ok(node_id)
@@ -97,7 +97,7 @@ impl Context {
         let node_id = self.nodes.insert(node);
         self.dependent_nodes
             .entry(a)
-            .or_insert(Vec::new())
+            .or_default()
             .push(node_id);
         node_id
     }
@@ -112,7 +112,7 @@ impl Context {
         let node_id = self.nodes.insert(node);
         self.dependent_nodes
             .entry(a)
-            .or_insert(Vec::new())
+            .or_default()
             .push(node_id);
         Ok(node_id)
     }
@@ -128,7 +128,7 @@ impl Context {
         let node_id = self.nodes.insert(node);
         self.dependent_nodes
             .entry(a)
-            .or_insert(Vec::new())
+            .or_default()
             .push(node_id);
         Ok(node_id)
     }
@@ -160,12 +160,12 @@ impl Context {
                     let node_id = self.nodes.insert(node);
                     self.dependent_nodes
                         .entry(a)
-                        .or_insert(Vec::new())
+                        .or_default()
                         .push(node_id);
                     if a != b {
                         self.dependent_nodes
                             .entry(b)
-                            .or_insert(Vec::new())
+                            .or_default()
                             .push(node_id);
                     }
                     Ok(node_id)
@@ -222,12 +222,12 @@ impl Context {
                     let node_id = self.nodes.insert(node);
                     self.dependent_nodes
                         .entry(a)
-                        .or_insert(Vec::new())
+                        .or_default()
                         .push(node_id);
                     if a != b {
                         self.dependent_nodes
                             .entry(b)
-                            .or_insert(Vec::new())
+                            .or_default()
                             .push(node_id);
                     }
                     Ok(node_id)
@@ -264,12 +264,12 @@ impl Context {
                     let node_id = self.nodes.insert(node);
                     self.dependent_nodes
                         .entry(a)
-                        .or_insert(Vec::new())
+                        .or_default()
                         .push(node_id);
                     if a != b {
                         self.dependent_nodes
                             .entry(b)
-                            .or_insert(Vec::new())
+                            .or_default()
                             .push(node_id);
                     }
                     Ok(node_id)
@@ -305,12 +305,12 @@ impl Context {
                     let node_id = self.nodes.insert(node);
                     self.dependent_nodes
                         .entry(a)
-                        .or_insert(Vec::new())
+                        .or_default()
                         .push(node_id);
                     if a != b {
                         self.dependent_nodes
                             .entry(b)
-                            .or_insert(Vec::new())
+                            .or_default()
                             .push(node_id);
                     }
                     Ok(node_id)
@@ -346,11 +346,11 @@ impl Context {
                     let node_id = self.nodes.insert(node);
                     self.dependent_nodes
                         .entry(a)
-                        .or_insert(Vec::new())
+                        .or_default()
                         .push(node_id);
                     self.dependent_nodes
                         .entry(b)
-                        .or_insert(Vec::new())
+                        .or_default()
                         .push(node_id);
                     Ok(node_id)
                 }
@@ -385,12 +385,12 @@ impl Context {
                     let node_id = self.nodes.insert(node);
                     self.dependent_nodes
                         .entry(a)
-                        .or_insert(Vec::new())
+                        .or_default()
                         .push(node_id);
                     if a != b {
                         self.dependent_nodes
                             .entry(b)
-                            .or_insert(Vec::new())
+                            .or_default()
                             .push(node_id);
                     }
                     Ok(node_id)
@@ -426,12 +426,12 @@ impl Context {
                     let node_id = self.nodes.insert(node);
                     self.dependent_nodes
                         .entry(a)
-                        .or_insert(Vec::new())
+                        .or_default()
                         .push(node_id);
                     if a != b {
                         self.dependent_nodes
                             .entry(b)
-                            .or_insert(Vec::new())
+                            .or_default()
                             .push(node_id);
                     }
                     Ok(node_id)
@@ -467,12 +467,12 @@ impl Context {
                     let node_id = self.nodes.insert(node);
                     self.dependent_nodes
                         .entry(a)
-                        .or_insert(Vec::new())
+                        .or_default()
                         .push(node_id);
                     if a != b {
                         self.dependent_nodes
                             .entry(b)
-                            .or_insert(Vec::new())
+                            .or_default()
                             .push(node_id);
                     }
                     Ok(node_id)
@@ -508,12 +508,12 @@ impl Context {
                     let node_id = self.nodes.insert(node);
                     self.dependent_nodes
                         .entry(a)
-                        .or_insert(Vec::new())
+                        .or_default()
                         .push(node_id);
                     if a != b {
                         self.dependent_nodes
                             .entry(b)
-                            .or_insert(Vec::new())
+                            .or_default()
                             .push(node_id);
                     }
                     Ok(node_id)
@@ -549,12 +549,12 @@ impl Context {
                     let node_id = self.nodes.insert(node);
                     self.dependent_nodes
                         .entry(a)
-                        .or_insert(Vec::new())
+                        .or_default()
                         .push(node_id);
                     if a != b {
                         self.dependent_nodes
                             .entry(b)
-                            .or_insert(Vec::new())
+                            .or_default()
                             .push(node_id);
                     }
                     Ok(node_id)
@@ -627,11 +627,11 @@ impl Context {
             callsite: callsite!(1),
             shape: a_shape,
             operation: Operation::TypeCast(a, dtype),
-            dtype: dtype,
+            dtype,
         });
         self.dependent_nodes
             .entry(a)
-            .or_insert(Vec::new())
+            .or_default()
             .push(node_id);
         node_id
     }
@@ -649,13 +649,13 @@ impl Context {
         } else {
             let node_id = self.nodes.insert(Node {
                 callsite: callsite!(1),
-                shape: shape,
+                shape,
                 operation: Operation::Reshape(a),
                 dtype: self.nodes[a].dtype,
             });
             self.dependent_nodes
                 .entry(a)
-                .or_insert(Vec::new())
+                .or_default()
                 .push(node_id);
             Ok(node_id)
         }
@@ -682,7 +682,7 @@ impl Context {
         });
         self.dependent_nodes
             .entry(a)
-            .or_insert(Vec::new())
+            .or_default()
             .push(node_id);
         Ok(node_id)
     }
@@ -709,16 +709,16 @@ impl Context {
             shape: s,
             operation: Operation::SliceInDim {
                 node: a,
-                start: start,
-                stop: stop,
-                stride: stride,
-                dim: dim,
+                start,
+                stop,
+                stride,
+                dim,
             },
             dtype: self.nodes[a].dtype,
         });
         self.dependent_nodes
             .entry(a)
-            .or_insert(Vec::new())
+            .or_default()
             .push(node_id);
         Ok(node_id)
     }
@@ -743,14 +743,14 @@ impl Context {
             shape: s,
             operation: Operation::TileInDim {
                 node: a,
-                n_tiles: n_tiles,
-                dim: dim,
+                n_tiles,
+                dim,
             },
             dtype: self.nodes[a].dtype,
         });
         self.dependent_nodes
             .entry(a)
-            .or_insert(Vec::new())
+            .or_default()
             .push(node_id);
         Ok(node_id)
     }
@@ -764,7 +764,7 @@ impl Context {
         });
         self.dependent_nodes
             .entry(a)
-            .or_insert(Vec::new())
+            .or_default()
             .push(node_id);
         node_id
     }
@@ -786,13 +786,13 @@ impl Context {
             shape: s,
             operation: Operation::ReduceMax {
                 node: a,
-                dim: dim,
+                dim,
             },
             dtype: self.nodes[a].dtype,
         });
         self.dependent_nodes
             .entry(a)
-            .or_insert(Vec::new())
+            .or_default()
             .push(node_id);
         if keepdims {
             let mut s_keepdim = Shape::new();
@@ -826,13 +826,13 @@ impl Context {
             shape: s,
             operation: Operation::ReduceSum {
                 node: a,
-                dim: dim,
+                dim,
             },
             dtype: self.nodes[a].dtype,
         });
         self.dependent_nodes
             .entry(a)
-            .or_insert(Vec::new())
+            .or_default()
             .push(node_id);
         if keepdims {
             let mut s_keepdim = Shape::new();
@@ -866,13 +866,13 @@ impl Context {
             shape: s,
             operation: Operation::ReduceMean {
                 node: a,
-                dim: dim,
+                dim,
             },
             dtype: self.nodes[a].dtype,
         });
         self.dependent_nodes
             .entry(a)
-            .or_insert(Vec::new())
+            .or_default()
             .push(node_id);
         if keepdims {
             let mut s_keepdim = Shape::new();

@@ -1,15 +1,10 @@
 use std::collections::HashSet;
 
-use xla::ElementType;
-
 use super::*;
 
 impl Context {
     fn collect_deps(&self, node: NodeIdentifier) -> Vec<NodeIdentifier> {
-        self.dependent_nodes[&node]
-            .iter()
-            .map(|node| node.clone())
-            .collect::<Vec<NodeIdentifier>>()
+        self.dependent_nodes[&node].to_vec()
     }
 
     fn replace_index(
@@ -206,7 +201,7 @@ impl Context {
                         changed = true;
                     }
                 }
-                Operation::TypeCast(a, t) => {
+                Operation::TypeCast(_, t) => {
                     changed = true;
                     self.nodes[dep_node].operation = Operation::TypeCast(rep_with, t)
                 }
@@ -428,7 +423,7 @@ impl Context {
                             }
                         }
                     }
-                    if let None = self.nodes[a].is_const() {
+                    if self.nodes[a].is_const().is_none() {
                         to_visit.push(a);
                     }
                     if let None = self.nodes[b].is_const() {
@@ -464,7 +459,7 @@ impl Context {
                 | Operation::Div(a, b)
                 | Operation::Pow(a, b)
                 | Operation::MatMul(a, b) => {
-                    if let None = self.nodes[a].is_const() {
+                    if self.nodes[a].is_const().is_none() {
                         to_visit.push(a);
                     }
 
@@ -485,10 +480,10 @@ impl Context {
                     on_true,
                     on_false,
                 } => {
-                    if let None = self.nodes[pred].is_const() {
+                    if self.nodes[pred].is_const().is_none() {
                         to_visit.push(pred)
                     }
-                    if let None = self.nodes[on_true].is_const() {
+                    if self.nodes[on_true].is_const().is_none() {
                         to_visit.push(on_true)
                     }
                     if let None = self.nodes[on_false].is_const() {

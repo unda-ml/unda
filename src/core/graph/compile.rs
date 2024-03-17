@@ -1,5 +1,4 @@
 use super::*;
-use serde_json::de;
 use slotmap::SlotMap;
 use smallvec::SmallVec;
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -73,7 +72,7 @@ impl Context {
             };
 
             let xla_param =
-                builder.parameter(i as i64, node.dtype, shape.as_slice(), &param_name)?;
+                builder.parameter(i as i64, node.dtype, shape.as_slice(), param_name)?;
 
             let xla_id = xla_op_slotmap.insert(xla_param);
             unda_xla_map.insert(*unda_id, xla_id);
@@ -98,7 +97,7 @@ impl Context {
         // using the set of bottom up dependencies we constructed
         // loop through a queue of all operations in the context
         // and add them to the XLA context
-        while unda_op_queue.len() > 0 {
+        while !unda_op_queue.is_empty() {
             let unda_id = unda_op_queue.pop_front().unwrap();
 
             let Some(dependent_ops) = self.dependent_nodes.get(&unda_id) else {
@@ -494,9 +493,9 @@ impl Context {
         }
         let xla_return_vec: Vec<&xla::XlaOp> = returns
             .into_iter()
-            .map(|i| &xla_op_slotmap[unda_xla_map[&i.into()]])
+            .map(|i| &xla_op_slotmap[unda_xla_map[&i]])
             .collect();
-        let xla_return_tuple = builder.tuple(&xla_return_vec.as_slice())?;
+        let xla_return_tuple = builder.tuple(xla_return_vec.as_slice())?;
 
         let xla_computation = xla_return_tuple.build()?;
 
