@@ -1,7 +1,5 @@
 use std::collections::HashSet;
 
-use xla::ElementType;
-
 use super::*;
 
 impl Context {
@@ -206,7 +204,7 @@ impl Context {
                         changed = true;
                     }
                 }
-                Operation::TypeCast(a, t) => {
+                Operation::TypeCast(_, t) => {
                     changed = true;
                     self.nodes[dep_node].operation = Operation::TypeCast(rep_with, t)
                 }
