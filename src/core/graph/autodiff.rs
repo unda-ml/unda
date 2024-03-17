@@ -12,7 +12,7 @@ impl Context {
         });
         self.dependent_nodes
             .entry(node)
-            .or_insert(Vec::new())
+            .or_default()
             .push(new_node);
         new_node
     }

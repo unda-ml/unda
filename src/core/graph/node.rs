@@ -1,10 +1,10 @@
-use crate::core::data;
+
 
 use super::*;
 use rand_distr::num_traits::Zero;
 use slotmap::new_key_type;
 use xla::Literal;
-use std::{fmt::{Display, Formatter, Result}, error::Error};
+use std::{fmt::{Display, Formatter, Result}};
 
 use half::bf16;
 use half::f16;
@@ -33,14 +33,14 @@ impl Node {
     /// Identifies constant operation node for easier
     /// constant folding in context.rs
     pub(crate) fn is_const(&self) -> Option<Literal> {
-        return match &self.operation {
+        match &self.operation {
             Operation::Constant(a) => Some(a.value.clone()),
             _ => None,
-        };
+        }
     }
     pub(crate) fn is_one(&self) -> super::Result<bool> {
         //TODO! Convert type to primative type so we can collect the values
-        return match &self.operation {
+        match &self.operation {
             Operation::Constant(a) => {
                 match a.value.element_type()? {
                     xla::ElementType::Pred => {
@@ -165,11 +165,11 @@ impl Node {
                 Ok(true)
             },
             _ => Ok(false),
-        };
+        }
     }
     pub(crate) fn is_zero(&self) -> super::Result<bool> {
         //TODO! Convert type to primative type so we can collect the values
-        return match &self.operation {
+        match &self.operation {
             Operation::Constant(a) => {
                 match a.value.element_type()? {
                     xla::ElementType::Pred => {
@@ -294,7 +294,7 @@ impl Node {
                 Ok(true)
             },
             _ => Ok(false),
-        };
+        }
     }
 }
 

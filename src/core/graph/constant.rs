@@ -129,7 +129,7 @@ impl Context {
     pub fn zeroes<S: Into<Shape>>(&mut self, shape: S, dtype: xla::ElementType) -> Result<NodeIdentifier> {
         let shape = shape.into();
         let vec = (0..shape.size())
-            .map(|i| 0)
+            .map(|_i| 0)
             .collect::<Vec<i64>>();
         let slice = vec.as_slice();
         let value = xla::Literal::vec1(slice).convert(dtype.primitive_type())?;
@@ -142,9 +142,9 @@ impl Context {
         let reshaped = value.reshape(i64_slice)?;
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
-            shape: shape,
+            shape,
             operation: Operation::Constant(ConstantBinding { value: reshaped }),
-            dtype: dtype,
+            dtype,
         });
         self.constants.push(node_id);
         Ok(node_id)
@@ -181,7 +181,7 @@ impl Context {
             .map(|d| *d as i64)
             .collect::<Vec<i64>>();
         let i64_slice = i64_vec.as_slice();
-        let new_value = value.reshape(&i64_slice)?;
+        let new_value = value.reshape(i64_slice)?;
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: new_shape,
