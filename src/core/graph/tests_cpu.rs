@@ -134,7 +134,6 @@ mod tests {
         assert!(ctx.matmul(mat_a, mat_b).is_err());
     }
 
-
     #[test]
     fn test_mat_mul_batch() {
         let mut ctx = Context::new();

@@ -162,12 +162,25 @@ impl Context {
 
                     Operation::MatMul(a, b) => {
                         let next_pullback = self.diff(output, dependent_node)?;
+
+                        let mut transpose_vec: Vec<i64> = vec![];
+
                         if a == with_respect_to {
-                            let transpose = self.transpose(b, &[1,0])?;
+
+ 
+                            //TODO: Multidim check where basically the transpose will always just
+                            //be the last two elems
+
+
+                            let transpose = self.transpose(b, &transpose_vec)?;
                             let this_pullback = self.mul(transpose, next_pullback)?;
                             dependent_pullbacks.push(this_pullback);
                         } else if b == with_respect_to {
-                            let transpose = self.transpose(a, &[1,0])?;
+
+                            //TODO: Multidim check where basically the transpose will always just
+                            //be the last two elems
+
+                            let transpose = self.transpose(a, &transpose_vec)?;
                             let this_pullback = self.mul(transpose, next_pullback)?;
                             dependent_pullbacks.push(this_pullback);
                         }
