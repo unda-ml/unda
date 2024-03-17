@@ -80,14 +80,14 @@ impl Context {
                 match self.nodes[dependent_node].operation.clone() {
                     Operation::Constant(_) => panic!("Constant found as dependent node!"),
                     Operation::Parameter(_) => panic!("Parameter found as dependent node!"),
-                    Operation::StopGradient(a) => continue,
+                    Operation::StopGradient(_) => continue,
 
-                    Operation::Equal(a, b)
-                    | Operation::NotEqual(a, b)
-                    | Operation::LessThan(a, b)
-                    | Operation::LessThanEq(a, b)
-                    | Operation::GreaterThan(a, b)
-                    | Operation::GreaterThanEq(a, b) => {
+                    Operation::Equal(_, _)
+                    | Operation::NotEqual(_, _)
+                    | Operation::LessThan(_, _)
+                    | Operation::LessThanEq(_, _)
+                    | Operation::GreaterThan(_, _)
+                    | Operation::GreaterThanEq(_, _) => {
                         if self.gradient_is_dependent(output, dependent_node) {
                             return Err(ContextError::NonDifferentiableOpError(
                                 self.nodes[dependent_node].callsite.clone(),
@@ -97,7 +97,7 @@ impl Context {
                         }
                     }
 
-                    Operation::TypeCast(a, _) => {
+                    Operation::TypeCast(_, _) => {
                         if self.gradient_is_dependent(output, dependent_node) {
                             return Err(ContextError::NonDifferentiableOpError(
                                 self.nodes[dependent_node].callsite.clone(),
@@ -252,10 +252,10 @@ impl Context {
 
                     Operation::SliceInDim {
                         node,
-                        start,
-                        stop,
-                        stride,
-                        dim,
+                        start: _,
+                        stop: _,
+                        stride: _,
+                        dim: _,
                     } => {
                         if self.gradient_is_dependent(node, dependent_node) {
                             panic!(
@@ -268,7 +268,7 @@ impl Context {
 
                     Operation::ReduceMax {
                         node,
-                        dim,
+                        dim: _,
                     } => {
                         if self.gradient_is_dependent(node, dependent_node) {
                             panic!(
