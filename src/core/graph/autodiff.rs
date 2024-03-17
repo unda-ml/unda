@@ -163,7 +163,7 @@ impl Context {
                     Operation::MatMul(a, b) => {
                         let next_pullback = self.diff(output, dependent_node)?;
 
-                        let mut transpose_vec: Vec<i64> = vec![];
+                        let transpose_vec: Vec<i64> = vec![];
 
                         if a == with_respect_to {
 
