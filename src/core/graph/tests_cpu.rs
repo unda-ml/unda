@@ -93,7 +93,7 @@ mod tests {
     }
 
     #[test]
-    fn test_leaky_relu(){ 
+    fn test_leaky_relu(){
         let mut ctx = Context::new();
         let x = ctx.parameter("x", [], xla::ElementType::F32).expect("x");
 
@@ -124,7 +124,7 @@ mod tests {
 
         assert_eq!(rust_result[0], -0.002);
     }
-    
+
     #[test]
     fn test_mat_mul_panics() {
         let mut ctx = Context::new();
@@ -512,7 +512,38 @@ mod tests {
 
         let x = ctx.parameter("x", [4],xla::ElementType::F32).expect("test_const");
         let softmax = ctx.softmax(x).expect("softmax");
+        println!("{}", ctx.nodes[softmax].shape);
         let dydx = ctx.diff(softmax, x).expect("dy/dx");
+        println!("{:?}\n", ctx.to_string(softmax));
+        println!("{:?}", ctx.to_string(dydx));
+
+        let client = xla::PjRtClient::cpu().expect("client");//gpu(0.7, false).expect("client");
+        let name = "test";
+        let executable = ctx.compile(&name, [dydx], &client).expect("executable");
+
+        let x_input = xla::Literal::vec1(&[1.0f32,3.0f32,4.0f32,0.5f32]);
+
+        let device_result = executable.execute::<Literal>(&[x_input]).expect("execute");
+        let host_result = device_result[0][0]
+            .to_literal_sync()
+            .expect("to_literal_sync");
+        let untupled_result = host_result.to_tuple1().expect("untuple");
+        let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
+        println!("{:?}", rust_result);
+    }
+
+    #[test]
+    fn test_reducesum_diff() {
+        let mut ctx = Context::new();
+
+        let x = ctx.parameter("x", [4],xla::ElementType::F32).expect("test_const");
+        //let softmax = ctx.softmax(x).expect("softmax");
+        let sum = ctx.reduce_sum(x, 0, true).expect("sum");
+        let div = ctx.div(x, sum).expect("div");
+        //println!("{}", ctx.nodes[div].shape);
+        let dydx = ctx.diff(div, x).expect("dy/dx");
+        println!("{:?}\n", ctx.to_string(div));
+        println!("{:?}", ctx.to_string(dydx));
 
         let client = xla::PjRtClient::cpu().expect("client");//gpu(0.7, false).expect("client");
         let name = "test";
@@ -549,7 +580,7 @@ mod tests {
         println!("{:?}", rust_result);
         assert_eq!(rust_result.as_slice(), &[0.5, 0.5, 4.3782554e-27, 4.097e-40]);
     }
-    
+
     #[test]
     fn test_slice_in_dim() {
         let mut ctx = Context::new();

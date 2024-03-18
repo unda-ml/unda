@@ -604,8 +604,10 @@ impl Context {
         let stop_grad = self.stop_gradient(max);
         let unnormalized = self.sub(a, stop_grad)?;
         let unnormalized_exp = self.exp(unnormalized)?;
+        println!("{}", self.nodes[max].shape);
 
         let sum = self.reduce_sum(unnormalized_exp, 0, true)?;
+        println!("{}", self.nodes[sum].shape);
 
         self.div(unnormalized_exp, sum)
     }
@@ -664,7 +666,7 @@ impl Context {
 
     pub(crate) fn inv_perm(index_perm: &[i64]) -> Vec<i64> {
         let mut res = vec![0i64; index_perm.len()];
-        
+
         for (idx, val) in index_perm.iter().enumerate() {
             res[*val as usize] = idx as i64;
         }
@@ -770,6 +772,16 @@ impl Context {
         node_id
     }
 
+    fn maybe_keepdims(&mut self, a: NodeIdentifier, dim: i64, keepdims: bool) -> Result<NodeIdentifier> {
+        if keepdims {
+            let mut s_keepdim = self.nodes[a].shape.clone();
+            s_keepdim.sizes.insert(dim as usize, 1u32);
+            self.reshape(a, s_keepdim)
+        } else {
+            Ok(a)
+        }
+    }
+
     pub fn reduce_max(
         &mut self,
         a: NodeIdentifier,
@@ -795,19 +807,7 @@ impl Context {
             .entry(a)
             .or_default()
             .push(node_id);
-        if keepdims {
-            let mut s_keepdim = Shape::new();
-            for d in (0..self.nodes[a].shape.ndims()).rev() {
-                if d as i64 == dim {
-                    s_keepdim.sizes.push(1u32)
-                } else {
-                    s_keepdim.sizes.push(self.nodes[a].shape.sizes[d])
-                }
-            }
-            self.reshape(node_id, s_keepdim)
-        } else {
-            Ok(node_id)
-        }
+        self.maybe_keepdims(node_id, dim, keepdims)
     }
 
     pub fn reduce_sum(
@@ -835,19 +835,7 @@ impl Context {
             .entry(a)
             .or_default()
             .push(node_id);
-        if keepdims {
-            let mut s_keepdim = Shape::new();
-            for d in (0..self.nodes[a].shape.ndims()).rev() {
-                if d as i64 == dim {
-                    s_keepdim.sizes.push(1u32)
-                } else {
-                    s_keepdim.sizes.push(self.nodes[a].shape.sizes[d])
-                }
-            }
-            self.reshape(node_id, s_keepdim)
-        } else {
-            Ok(node_id)
-        }
+        self.maybe_keepdims(node_id, dim, keepdims)
     }
 
     pub fn reduce_mean(
@@ -875,18 +863,6 @@ impl Context {
             .entry(a)
             .or_default()
             .push(node_id);
-        if keepdims {
-            let mut s_keepdim = Shape::new();
-            for d in (0..self.nodes[a].shape.ndims()).rev() {
-                if d as i64 == dim {
-                    s_keepdim.sizes.push(1u32)
-                } else {
-                    s_keepdim.sizes.push(self.nodes[a].shape.sizes[d])
-                }
-            }
-            self.reshape(node_id, s_keepdim)
-        } else {
-            Ok(node_id)
-        }
+        self.maybe_keepdims(node_id, dim, keepdims)
     }
 }
