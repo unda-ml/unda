@@ -601,7 +601,8 @@ impl Context {
 
     pub fn softmax(&mut self, a: NodeIdentifier) -> Result<NodeIdentifier> {
         let max = self.reduce_max(a, 0, true)?;
-        let unnormalized = self.sub(a, max)?;
+        let stop_grad = self.stop_gradient(max);
+        let unnormalized = self.sub(a, stop_grad)?;
         let unnormalized_exp = self.exp(unnormalized)?;
 
         let sum = self.reduce_sum(unnormalized_exp, 0, true)?;
