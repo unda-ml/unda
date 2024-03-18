@@ -162,12 +162,33 @@ impl Context {
 
                     Operation::MatMul(a, b) => {
                         let next_pullback = self.diff(output, dependent_node)?;
+
                         if a == with_respect_to {
-                            let transpose = self.transpose(b, &[1,0])?;
+                            let mut transpose_dims: Vec<i64> = vec![];
+
+                            let size = self.nodes[b].shape.sizes.len();
+
+                            for &dim in self.nodes[b].shape.sizes.iter() {
+                                transpose_dims.push(dim as i64);
+                            }
+
+                            transpose_dims.swap(size - 2, size - 1);
+
+                            let transpose = self.transpose(b, &transpose_dims)?;
                             let this_pullback = self.mul(transpose, next_pullback)?;
                             dependent_pullbacks.push(this_pullback);
                         } else if b == with_respect_to {
-                            let transpose = self.transpose(a, &[1,0])?;
+                            let mut transpose_dims: Vec<i64> = vec![];
+
+                            let size = self.nodes[a].shape.sizes.len();
+
+                            for &dim in self.nodes[a].shape.sizes.iter() {
+                                transpose_dims.push(dim as i64);
+                            }
+
+                            transpose_dims.swap(size - 2, size - 1);
+
+                            let transpose = self.transpose(a, &transpose_dims)?;
                             let this_pullback = self.mul(transpose, next_pullback)?;
                             dependent_pullbacks.push(this_pullback);
                         }
@@ -187,7 +208,7 @@ impl Context {
                             dependent_pullbacks.push(this_pullback);
                         }
                     }
-                    
+
                     Operation::Pow(a, b) => {
                         let next_pullback = self.diff(output, dependent_node)?;
                         if a == with_respect_to {
@@ -196,10 +217,10 @@ impl Context {
 
                             let new_pow = self.pow(a, b_min_one)?;
                             let power_rule = self.mul(b, new_pow)?;
-                            
+
                             let this_pullback = self.mul(power_rule, next_pullback)?;
                             dependent_pullbacks.push(this_pullback);
-                        } 
+                        }
                         if b == with_respect_to {
                             let log_a = self.log(a)?;
                             let log_times_orig = self.mul(log_a, dependent_node)?;
@@ -223,7 +244,7 @@ impl Context {
                     Operation::Neg(_) => {
                         let next_pullback = self.diff(output, dependent_node)?;
                         dependent_pullbacks.push(self.neg(next_pullback));
-                    }, 
+                    },
 
                     Operation::Exp(a) => {
                         if a == with_respect_to {
@@ -286,18 +307,10 @@ impl Context {
                         let next_pullback = self.diff(output, dependent_node)?;
                         let n_tiles = self.nodes[node].shape.sizes[dim as usize] as i64;
 
-                        let mut new_sizes = SmallVec::new();
-                        for i in (0..self.nodes[next_pullback].shape.ndims()).rev() {
-                            new_sizes.push(self.nodes[next_pullback].shape.sizes[i]);
-                            if i as i64 == dim {
-                                new_sizes.push(1u32);
-                            }
-                        }
-                        if self.nodes[next_pullback].shape.ndims() == 0 {
-                            new_sizes.push(1u32);
-                        }
+                        let mut new_shape = self.nodes[next_pullback].shape.clone();
+                        new_shape.sizes.insert(dim as usize, 1u32);
                         let reshaped_pullback =
-                            self.reshape(next_pullback, Shape { sizes: new_sizes })?;
+                            self.reshape(next_pullback, new_shape)?;
                         let tiled_pullback = self.tile_in_dim(reshaped_pullback, n_tiles, dim)?;
 
                         dependent_pullbacks.push(tiled_pullback);
