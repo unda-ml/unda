@@ -111,7 +111,6 @@ impl Context {
                         let next_pullback = self.diff(output, dependent_node)?;
                         let node_sh = self.nodes[node].shape.clone();
                         let pullback = self.reshape(next_pullback, node_sh)?;
-                        println!("Reshape {}", self.nodes[pullback].shape);
                         dependent_pullbacks.push(pullback);
                     }
 
@@ -206,8 +205,6 @@ impl Context {
                             let div = self.div(a, mul)?;
                             let neg = self.neg(div);
                             let this_pullback = self.mul(neg, next_pullback)?;
-                            println!("Div {}", self.nodes[this_pullback].shape);
-                            println!("Div {}", self.nodes[next_pullback].shape);
                             dependent_pullbacks.push(this_pullback);
                         }
                     }
@@ -308,18 +305,14 @@ impl Context {
                         dim,
                     } => {
                         let next_pullback = self.diff(output, dependent_node)?;
-                        println!("{}", self.nodes[next_pullback].shape);
                         let n_tiles = self.nodes[node].shape.sizes[dim as usize] as i64;
 
                         let mut new_shape = self.nodes[next_pullback].shape.clone();
                         new_shape.sizes.insert(dim as usize, 1u32);
-                        println!("{}", new_shape.clone());
                         let reshaped_pullback =
                             self.reshape(next_pullback, new_shape)?;
-                        println!("{}", self.nodes[reshaped_pullback].shape);
                         let tiled_pullback = self.tile_in_dim(reshaped_pullback, n_tiles, dim)?;
 
-                        println!("ReduceSum {}", self.nodes[tiled_pullback].shape);
                         dependent_pullbacks.push(tiled_pullback);
                     }
 

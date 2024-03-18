@@ -604,10 +604,8 @@ impl Context {
         let stop_grad = self.stop_gradient(max);
         let unnormalized = self.sub(a, stop_grad)?;
         let unnormalized_exp = self.exp(unnormalized)?;
-        println!("{}", self.nodes[max].shape);
 
         let sum = self.reduce_sum(unnormalized_exp, 0, true)?;
-        println!("{}", self.nodes[sum].shape);
 
         self.div(unnormalized_exp, sum)
     }
