@@ -163,24 +163,32 @@ impl Context {
                     Operation::MatMul(a, b) => {
                         let next_pullback = self.diff(output, dependent_node)?;
 
-                        let transpose_vec: Vec<i64> = vec![];
-
                         if a == with_respect_to {
+                            let mut transpose_dims: Vec<i64> = vec![];
 
- 
-                            //TODO: Multidim check where basically the transpose will always just
-                            //be the last two elems
+                            let size = self.nodes[b].shape.sizes.len();
 
+                            for &dim in self.nodes[b].shape.sizes.iter() {
+                                transpose_dims.push(dim as i64);
+                            }
 
-                            let transpose = self.transpose(b, &transpose_vec)?;
+                            transpose_dims.swap(size - 2, size - 1);
+
+                            let transpose = self.transpose(b, &transpose_dims)?;
                             let this_pullback = self.mul(transpose, next_pullback)?;
                             dependent_pullbacks.push(this_pullback);
                         } else if b == with_respect_to {
+                            let mut transpose_dims: Vec<i64> = vec![];
 
-                            //TODO: Multidim check where basically the transpose will always just
-                            //be the last two elems
+                            let size = self.nodes[a].shape.sizes.len();
 
-                            let transpose = self.transpose(a, &transpose_vec)?;
+                            for &dim in self.nodes[a].shape.sizes.iter() {
+                                transpose_dims.push(dim as i64);
+                            }
+
+                            transpose_dims.swap(size - 2, size - 1);
+
+                            let transpose = self.transpose(a, &transpose_dims)?;
                             let this_pullback = self.mul(transpose, next_pullback)?;
                             dependent_pullbacks.push(this_pullback);
                         }

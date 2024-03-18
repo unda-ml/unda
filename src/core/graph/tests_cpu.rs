@@ -480,6 +480,11 @@ mod tests {
     }
 
     #[test]
+    fn softmax_backwards() {
+
+    }
+
+    #[test]
     fn test_slice_in_dim() {
         let mut ctx = Context::new();
 
