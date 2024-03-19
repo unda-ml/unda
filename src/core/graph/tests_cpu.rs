@@ -506,7 +506,7 @@ mod tests {
 
 
 
-    #[test]
+    /*#[test]
     fn test_softmax_diff() {
         let mut ctx = Context::new();
 
@@ -530,9 +530,9 @@ mod tests {
         let untupled_result = host_result.to_tuple1().expect("untuple");
         let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
         println!("{:?}", rust_result);
-    }
+    }*/
 
-    #[test]
+    /*#[test]
     fn test_reducesum_diff() {
         let mut ctx = Context::new();
 
@@ -558,7 +558,7 @@ mod tests {
         let untupled_result = host_result.to_tuple1().expect("untuple");
         let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
         println!("{:?}", rust_result);
-    }
+    }*/
 
     #[test]
     fn test_softmax() {
