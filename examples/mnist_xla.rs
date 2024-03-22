@@ -1,23 +1,29 @@
-use unda::core::graph::*;
-use xla::{ElementType::*, PjRtLoadedExecutable};
-use std::io;
 use std::fs::File;
+use std::io;
 use std::os::unix::fs::*;
-use byteorder::{LittleEndian, ReadBytesExt};
+use unda::core::graph::*;
+use xla::{ElementType::*, PjRtClient, PjRtLoadedExecutable};
+
+const USE_CPU: bool = false;
+const MNIST_DIRECTORY: &str = "/home/ekadile/mnist";
+const EPOCHS: usize = 20;
+const INIT_LEARNING_RATE: f32 = 1e-3;
+const LEARNING_RATE_DECAY: f32 = 0.95;
 
 // ABSTRACT API REQUIREMENT 1: Automatic Layer Construction
 // We should have functions like this which, for a given layer type,
 // automatically resolve shapes and dtypes and construct nodes for
 // the parameters and outputs of a layer. In the final version,
 // a function like this should also take an "initialization" parameter
-// and run random initialization for the weights and bias.
+// and run random initialization for the weights and bias using XLA's
+// random number generation functions.
 fn dense(
     model: &mut Context,
     input_node: NodeIdentifier,
     out_size: u32,
     name: &str,
 ) -> Result<(NodeIdentifier, (NodeIdentifier, NodeIdentifier))> {
-    let shape = model.nodes[input_node].shape;
+    let shape = model.nodes[input_node].shape.clone();
     let last_dim = shape.sizes[shape.ndims() - 1];
     let dtype = model.nodes[input_node].dtype;
 
@@ -60,7 +66,7 @@ fn build_model_and_optimizer(client: &xla::PjRtClient) -> Result<PjRtLoadedExecu
     let scale = model.scalar(1f32 / 255f32, F32)?;
     let image_rescaled = model.div(image_fp, scale)?;
 
-    let sparse_labels = model.parameter("sparse_labels", [100], S64)?;
+    let sparse_labels = model.parameter("sparse_labels", [100], U8)?;
     let one_hot_labels = model.one_hot(sparse_labels, 10, F32)?;
 
     let (d1, (w1, b1)) = dense(&mut model, image_rescaled, 784, "layer1")?;
@@ -116,51 +122,138 @@ fn build_model_and_optimizer(client: &xla::PjRtClient) -> Result<PjRtLoadedExecu
         model.mul(learning_rate, b_out_grad)?,
     );
     // apply updates
-    let (w1_new, b1_new ) = (
-        model.sub(w1, w1_update)?,
-        model.sub(b1, b1_update)?,
-    );
-    let (w2_new, b2_new ) = (
-        model.sub(w2, w2_update)?,
-        model.sub(b2, b2_update)?,
-    );
-    let (w3_new, b3_new ) = (
-        model.sub(w3, w3_update)?,
-        model.sub(b3, b3_update)?,
-    );
-    let (w_out_new, b_out_new ) = (
+    let (w1_new, b1_new) = (model.sub(w1, w1_update)?, model.sub(b1, b1_update)?);
+    let (w2_new, b2_new) = (model.sub(w2, w2_update)?, model.sub(b2, b2_update)?);
+    let (w3_new, b3_new) = (model.sub(w3, w3_update)?, model.sub(b3, b3_update)?);
+    let (w_out_new, b_out_new) = (
         model.sub(w_out, w_out_update)?,
         model.sub(b_out, b_out_update)?,
     );
 
-    model.compile("train_step",
-    [loss, accuracy, w1_new, b1_new, w2_new, b2_new, w3_new, b3_new, w_out_new, b_out_new],
-    client)
+    model.compile(
+        "train_step",
+        [
+            loss, accuracy, w1_new, b1_new, w2_new, b2_new, w3_new, b3_new, w_out_new, b_out_new,
+        ],
+        client,
+    )
 }
 
-// ABSTRACT API REQUIREMENT 5: Data prefetching
+// This relates directly to ABSTRACT API REQUIREMENT 1
+fn init_param(shape: Shape) -> xla::Literal {
+    let size = shape.size();
+
+    // this is a goofy initialization which I just thought of
+    // nobody uses this, but it doesn't matter because MNIST is simple
+    let amplitude = 1f32 / (size as f32).sqrt();
+    let mut vec = Vec::new();
+    for i in 0..size {
+        if i % 2 == 0 {
+            vec.push(amplitude);
+        } else {
+            vec.push(-amplitude);
+        };
+    }
+    let vec1 = xla::Literal::vec1(vec.as_slice());
+
+    let xla_shape = shape.sizes.iter().map(|d| *d as i64).collect::<Vec<i64>>();
+    match vec1.reshape(xla_shape.as_slice()) {
+        Ok(x) => x,
+        _ => panic!("Failed to reshape initial paramter value!"),
+    }
+}
+
+// ABSTRACT API REQUIREMENT 5: Parameter structure abstraction
+// This relates closely with ABSTRACT API REQUIREMENT 1
+// This example works because I know the exact order in which parameters
+// are declared in the model context. This becomes insanely hard
+// to keep track of as the architecture grows, and the user shouldn't
+// have to worry about it.
+fn init_params() -> (
+    xla::Literal,
+    xla::Literal,
+    xla::Literal,
+    xla::Literal,
+    xla::Literal,
+    xla::Literal,
+    xla::Literal,
+    xla::Literal,
+) {
+    (
+        init_param(Shape::from([28 * 28, 784])),
+        init_param(Shape::from([1, 784])),
+        init_param(Shape::from([784, 256])),
+        init_param(Shape::from([1, 256])),
+        init_param(Shape::from([256, 64])),
+        init_param(Shape::from([1, 64])),
+        init_param(Shape::from([64, 10])),
+        init_param(Shape::from([1, 10])),
+    )
+}
+
+// ABSTRACT API REQUIREMENT 6: Data prefetching
 // Data input to the training loop should be in the form of an iterator.
 // These iterators could be finite or infinite.
 // In the finite case, we should support random shuffling.
-// In either case, batches of data should be pre-fetched in parallel
+// In either case, batches of data should be pre-fetched and queued in parallel
 // (and potentially preprocessed by the CPU) as the training loop is executing.
-fn load_mnist_batch(images: File, labels: File, batch_idx: u64) -> io::Result<(xla::Literal, xla::Literal)> {
-    let mut image_bytes = [0u8; 100*28*28];
-    images.read_exact_at(&mut image_bytes, 100*28*28*batch_idx)?;
+fn load_mnist_batch(
+    images: &File,
+    labels: &File,
+    batch_idx: u64,
+) -> io::Result<(xla::Literal, xla::Literal)> {
+    let mut image_bytes = [0u8; 100 * 28 * 28];
+    images.read_exact_at(&mut image_bytes, 100 * 28 * 28 * batch_idx)?;
     let mut images_xla = xla::Literal::vec1(&image_bytes);
-    images_xla = match images_xla.reshape(&[100, 28*28]) {
+    images_xla = match images_xla.reshape(&[100, 28 * 28]) {
         Ok(x) => x,
-        Err(_) => panic!("Failed to reshape MNIST image batch!")
+        Err(_) => panic!("Failed to reshape MNIST image batch!"),
     };
 
-    let mut label_bytes = [0u8; 100*4];
-    labels.read_exact_at(&mut label_bytes, 100*4*batch_idx)?;
-    let labels_u32 = label_bytes.chunks(4).map(|c| u32::from_le_bytes(c.try_into().unwrap())).collect::<Vec<u32>>();
-    let labels_xla = xla::Literal::vec1(labels_u32.as_slice());
+    let mut label_bytes = [0u8; 100 * 4];
+    labels.read_exact_at(&mut label_bytes, 100 * 4 * batch_idx)?;
+    let labels_xla = xla::Literal::vec1(&label_bytes);
 
     Ok((images_xla, labels_xla))
 }
 
 fn main() {
+    let client = if USE_CPU {
+        PjRtClient::cpu().expect("Failed to construct CPU client")
+    } else {
+        PjRtClient::gpu(0.9, false).expect("Failed to construct GPU client")
+    };
+
+    let mut train_img_path = MNIST_DIRECTORY.to_owned();
+    train_img_path.push_str("/train-images-idx3-ubyte");
+    let train_images = File::open(train_img_path).expect("Failed to open training image file");
+
+    let mut train_lbl_path = MNIST_DIRECTORY.to_owned();
+    train_lbl_path.push_str("/train-labels-idx1-ubyte");
+    let train_labels = File::open(train_lbl_path).expect("Failed to open training label file");
+
+    let mut test_img_path = MNIST_DIRECTORY.to_owned();
+    test_img_path.push_str("/t10k-images-idx3-ubyte");
+    let test_images = File::open(test_img_path).expect("Failed to open training image file");
+
+    let mut test_lbl_path = MNIST_DIRECTORY.to_owned();
+    test_lbl_path.push_str("/t10k-labels-idx1-ubyte");
+    let test_labels = File::open(test_lbl_path).expect("Failed to open training label file");
+
+    let executable =
+        build_model_and_optimizer(&client).expect("Failed to build model and optimizer");
+
+    let (mut w1, mut b1, mut w2, mut b2, mut w3, mut b3, mut w_out, mut b_out) = init_params();
+
+    for epoch in 0..EPOCHS {
+        for batch_idx in 0..600 {
+            let (train_imgs, train_lbls) =
+                load_mnist_batch(&train_images, &train_labels, batch_idx)
+                    .expect("Failed to load MNIST batch");
+            let lr_literal =
+                xla::Literal::scalar(INIT_LEARNING_RATE * (LEARNING_RATE_DECAY.powf(epoch as f32)));
+        }
+    }
+
     println!("Not yet implemented!");
 }
