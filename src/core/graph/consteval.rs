@@ -221,6 +221,20 @@ impl Context {
                         }
                     }
                 }
+                Operation::ReduceArgmax {
+                    node,
+                    dim,
+                    keepdims,
+                } => {
+                    if node == to_remove {
+                        changed = true;
+                        self.nodes[dep_node].operation = Operation::ReduceArgmax {
+                            node: rep_with,
+                            dim,
+                            keepdims,
+                        }
+                    }
+                }
                 Operation::SliceInDim {
                     node,
                     start,
@@ -396,6 +410,16 @@ impl Context {
                     }
                 }
                 Operation::ReduceMax {
+                    node,
+                    dim,
+                    keepdims,
+                } => {
+                    if let None = self.nodes[node].is_const() {
+                        to_visit.push(node);
+                    }
+                }
+                Operation::Constant(_) | Operation::Parameter(_) => {}
+                Operation::ReduceArgmax {
                     node,
                     dim,
                     keepdims,

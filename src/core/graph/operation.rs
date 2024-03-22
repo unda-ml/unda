@@ -28,6 +28,7 @@ pub enum Operation {
     ZerosLike(NodeIdentifier),
 
     ReduceMax{ node: NodeIdentifier, dim: i64, keepdims: bool },
+    ReduceArgmax{ node: NodeIdentifier, dim: i64, keepdims: bool },
 
     OneHot(NodeIdentifier),
 }

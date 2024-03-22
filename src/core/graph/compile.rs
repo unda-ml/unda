@@ -355,6 +355,20 @@ impl Context {
                             covered_ops.insert(*dependent_op);
                         }
                     }
+                    Operation::ReduceArgmax {
+                        node,
+                        dim,
+                        keepdims,
+                    } => {
+                        if xla_op_slotmap.contains_key(unda_xla_map[&node]) {
+                            let xla_op =
+                                xla_op_slotmap[unda_xla_map[&node]].reduce_argmax(dim, keepdims)?;
+                            let xla_id = xla_op_slotmap.insert(xla_op);
+                            unda_xla_map.insert(*dependent_op, xla_id);
+                            unda_op_queue.push_back(*dependent_op);
+                            covered_ops.insert(*dependent_op);
+                        }
+                    }
                 }
             }
         }

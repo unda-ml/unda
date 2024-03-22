@@ -143,7 +143,17 @@ impl Context {
                 node,
                 dim,
                 keepdims,
-            } => format!("SliceInDim {} {} {}", self.to_string(node), dim, keepdims),
+            } => format!("ReduceMax {} {} {}", self.to_string(node), dim, keepdims),
+            Operation::ReduceMax {
+                node,
+                dim,
+                keepdims,
+            } => format!("ReduceMax {} {} {}", self.to_string(node), dim, keepdims),
+            Operation::ReduceArgmax {
+                node,
+                dim,
+                keepdims,
+            } => format!("ReduceArgmax {} {} {}", self.to_string(node), dim, keepdims),
         }
     }
 }

@@ -542,6 +542,40 @@ impl Context {
         node_id
     }
 
+    pub fn reduce_argmax(&mut self, a: NodeIdentifier, dim: i64, keepdims: bool) -> NodeIdentifier {
+        let a = a.into();
+        let mut s = Shape::new();
+        for d in (0..self.nodes[a].shape.ndims()).rev() {
+            if d as i64 == dim && keepdims {
+                s.sizes.push(1)
+            } else {
+                s.sizes.push(self.nodes[a].shape.sizes[d])
+            }
+        }
+        let node_id = self.nodes.insert(Node {
+            callsite: callsite!(1),
+            shape: s,
+            operation: Operation::ReduceArgmax {
+                node: a,
+                dim: dim,
+                keepdims: keepdims,
+            },
+            dtype: xla::ElementType::S64,
+        });
+        self.dependent_nodes
+            .entry(a)
+            .or_insert(Vec::new())
+            .push(node_id);
+        node_id
+    }
+
+    pub fn accuracy(&mut self, dense_predictions: NodeIdentifier, sparse_label_vector: NodeIdentifier) -> Result<NodeIdentifier> {
+        let sparse_predictions = self.reduce_argmax(dense_predictions, 1, false);
+        let compare = self.eq(sparse_predictions, sparse_label_vector)?;
+        let converted = self.type_cast(comparse, xla::ElementType::F32);
+        self.reduce_mean(converted, 0, false);
+    }
+
     pub fn one_hot(&mut self, sparse_label_vector: NodeIdentifier, n_classes: usize, dtype: xla::ElementType) -> Result<NodeIdentifier> {
         if self.nodes[sparse_label_vector].shape.ndims() != 1 {
             return Err(ContextError::RankError(1, self.nodes[sparse_label_vector].shape.ndims(), callsite!(1)))
