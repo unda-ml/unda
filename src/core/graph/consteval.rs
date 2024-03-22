@@ -492,7 +492,8 @@ impl Context {
                 Operation::StopGradient(a)
                 | Operation::TypeCast(a, _)
                 | Operation::Reshape(a)
-                | Operation::ZerosLike(a) => {
+                | Operation::ZerosLike(a)
+                | Operation::OneHot(a) => {
                     if let None = self.nodes[a].is_const() {
                         to_visit.push(a);
                     }
@@ -530,7 +531,8 @@ impl Context {
                 }
                 Operation::ReduceMax { node, dim: _ }
                 | Operation::ReduceSum { node, dim: _ }
-                | Operation::ReduceMean { node, dim:_  } => {
+                | Operation::ReduceMean { node, dim:_  }
+                | Operation:: ReduceArgmax { node, dim: _ } => {
                     if let None = self.nodes[node].is_const() {
                         to_visit.push(node);
                     }

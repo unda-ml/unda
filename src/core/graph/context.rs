@@ -158,6 +158,10 @@ impl Context {
                 node,
                 dim,
             } => format!("ReduceMax {} {}", self.to_string(node), dim),
+            Operation::ReduceArgmax {
+                node,
+                dim,
+            } => format!("ReduceArgmax {} {}", self.to_string(node), dim),
             Operation::ReduceSum {
                 node,
                 dim,

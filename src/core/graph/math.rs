@@ -30,15 +30,9 @@ impl Context {
                         dtype: node_a.dtype,
                     };
                     let node_id = self.nodes.insert(node);
-                    self.dependent_nodes
-                        .entry(a)
-                        .or_default()
-                        .push(node_id);
+                    self.dependent_nodes.entry(a).or_default().push(node_id);
                     if a != b {
-                        self.dependent_nodes
-                            .entry(b)
-                            .or_default()
-                            .push(node_id);
+                        self.dependent_nodes.entry(b).or_default().push(node_id);
                     }
                     Ok(node_id)
                 }
@@ -71,15 +65,9 @@ impl Context {
                         dtype: node_a.dtype,
                     };
                     let node_id = self.nodes.insert(node);
-                    self.dependent_nodes
-                        .entry(a)
-                        .or_default()
-                        .push(node_id);
+                    self.dependent_nodes.entry(a).or_default().push(node_id);
                     if a != b {
-                        self.dependent_nodes
-                            .entry(b)
-                            .or_default()
-                            .push(node_id);
+                        self.dependent_nodes.entry(b).or_default().push(node_id);
                     }
                     Ok(node_id)
                 }
@@ -95,10 +83,7 @@ impl Context {
             dtype: self.nodes[a].dtype,
         };
         let node_id = self.nodes.insert(node);
-        self.dependent_nodes
-            .entry(a)
-            .or_default()
-            .push(node_id);
+        self.dependent_nodes.entry(a).or_default().push(node_id);
         node_id
     }
 
@@ -110,13 +95,9 @@ impl Context {
             dtype: self.nodes[a].dtype,
         };
         let node_id = self.nodes.insert(node);
-        self.dependent_nodes
-            .entry(a)
-            .or_default()
-            .push(node_id);
+        self.dependent_nodes.entry(a).or_default().push(node_id);
         Ok(node_id)
     }
-
 
     pub fn exp(&mut self, a: NodeIdentifier) -> Result<NodeIdentifier> {
         let node = Node {
@@ -126,14 +107,11 @@ impl Context {
             dtype: self.nodes[a].dtype,
         };
         let node_id = self.nodes.insert(node);
-        self.dependent_nodes
-            .entry(a)
-            .or_default()
-            .push(node_id);
+        self.dependent_nodes.entry(a).or_default().push(node_id);
         Ok(node_id)
     }
 
-    pub fn pow(&mut self, a: NodeIdentifier, b : NodeIdentifier) -> Result<NodeIdentifier> {
+    pub fn pow(&mut self, a: NodeIdentifier, b: NodeIdentifier) -> Result<NodeIdentifier> {
         let node_a = &self.nodes[a];
         let node_b = &self.nodes[b];
 
@@ -158,15 +136,9 @@ impl Context {
                         dtype: node_a.dtype,
                     };
                     let node_id = self.nodes.insert(node);
-                    self.dependent_nodes
-                        .entry(a)
-                        .or_default()
-                        .push(node_id);
+                    self.dependent_nodes.entry(a).or_default().push(node_id);
                     if a != b {
-                        self.dependent_nodes
-                            .entry(b)
-                            .or_default()
-                            .push(node_id);
+                        self.dependent_nodes.entry(b).or_default().push(node_id);
                     }
                     Ok(node_id)
                 }
@@ -220,22 +192,15 @@ impl Context {
                         dtype: node_a.dtype,
                     };
                     let node_id = self.nodes.insert(node);
-                    self.dependent_nodes
-                        .entry(a)
-                        .or_default()
-                        .push(node_id);
+                    self.dependent_nodes.entry(a).or_default().push(node_id);
                     if a != b {
-                        self.dependent_nodes
-                            .entry(b)
-                            .or_default()
-                            .push(node_id);
+                        self.dependent_nodes.entry(b).or_default().push(node_id);
                     }
                     Ok(node_id)
                 }
             }
         }
     }
-
 
     pub fn mul(&mut self, a: NodeIdentifier, b: NodeIdentifier) -> Result<NodeIdentifier> {
         let node_a = &self.nodes[a];
@@ -262,15 +227,9 @@ impl Context {
                         dtype: node_a.dtype,
                     };
                     let node_id = self.nodes.insert(node);
-                    self.dependent_nodes
-                        .entry(a)
-                        .or_default()
-                        .push(node_id);
+                    self.dependent_nodes.entry(a).or_default().push(node_id);
                     if a != b {
-                        self.dependent_nodes
-                            .entry(b)
-                            .or_default()
-                            .push(node_id);
+                        self.dependent_nodes.entry(b).or_default().push(node_id);
                     }
                     Ok(node_id)
                 }
@@ -303,15 +262,9 @@ impl Context {
                         dtype: node_a.dtype,
                     };
                     let node_id = self.nodes.insert(node);
-                    self.dependent_nodes
-                        .entry(a)
-                        .or_default()
-                        .push(node_id);
+                    self.dependent_nodes.entry(a).or_default().push(node_id);
                     if a != b {
-                        self.dependent_nodes
-                            .entry(b)
-                            .or_default()
-                            .push(node_id);
+                        self.dependent_nodes.entry(b).or_default().push(node_id);
                     }
                     Ok(node_id)
                 }
@@ -344,14 +297,8 @@ impl Context {
                         dtype: xla::ElementType::Pred,
                     };
                     let node_id = self.nodes.insert(node);
-                    self.dependent_nodes
-                        .entry(a)
-                        .or_default()
-                        .push(node_id);
-                    self.dependent_nodes
-                        .entry(b)
-                        .or_default()
-                        .push(node_id);
+                    self.dependent_nodes.entry(a).or_default().push(node_id);
+                    self.dependent_nodes.entry(b).or_default().push(node_id);
                     Ok(node_id)
                 }
             }
@@ -383,15 +330,9 @@ impl Context {
                         dtype: xla::ElementType::Pred,
                     };
                     let node_id = self.nodes.insert(node);
-                    self.dependent_nodes
-                        .entry(a)
-                        .or_default()
-                        .push(node_id);
+                    self.dependent_nodes.entry(a).or_default().push(node_id);
                     if a != b {
-                        self.dependent_nodes
-                            .entry(b)
-                            .or_default()
-                            .push(node_id);
+                        self.dependent_nodes.entry(b).or_default().push(node_id);
                     }
                     Ok(node_id)
                 }
@@ -424,15 +365,9 @@ impl Context {
                         dtype: xla::ElementType::Pred,
                     };
                     let node_id = self.nodes.insert(node);
-                    self.dependent_nodes
-                        .entry(a)
-                        .or_default()
-                        .push(node_id);
+                    self.dependent_nodes.entry(a).or_default().push(node_id);
                     if a != b {
-                        self.dependent_nodes
-                            .entry(b)
-                            .or_default()
-                            .push(node_id);
+                        self.dependent_nodes.entry(b).or_default().push(node_id);
                     }
                     Ok(node_id)
                 }
@@ -465,15 +400,9 @@ impl Context {
                         dtype: xla::ElementType::Pred,
                     };
                     let node_id = self.nodes.insert(node);
-                    self.dependent_nodes
-                        .entry(a)
-                        .or_default()
-                        .push(node_id);
+                    self.dependent_nodes.entry(a).or_default().push(node_id);
                     if a != b {
-                        self.dependent_nodes
-                            .entry(b)
-                            .or_default()
-                            .push(node_id);
+                        self.dependent_nodes.entry(b).or_default().push(node_id);
                     }
                     Ok(node_id)
                 }
@@ -506,15 +435,9 @@ impl Context {
                         dtype: xla::ElementType::Pred,
                     };
                     let node_id = self.nodes.insert(node);
-                    self.dependent_nodes
-                        .entry(a)
-                        .or_default()
-                        .push(node_id);
+                    self.dependent_nodes.entry(a).or_default().push(node_id);
                     if a != b {
-                        self.dependent_nodes
-                            .entry(b)
-                            .or_default()
-                            .push(node_id);
+                        self.dependent_nodes.entry(b).or_default().push(node_id);
                     }
                     Ok(node_id)
                 }
@@ -547,15 +470,9 @@ impl Context {
                         dtype: xla::ElementType::Pred,
                     };
                     let node_id = self.nodes.insert(node);
-                    self.dependent_nodes
-                        .entry(a)
-                        .or_default()
-                        .push(node_id);
+                    self.dependent_nodes.entry(a).or_default().push(node_id);
                     if a != b {
-                        self.dependent_nodes
-                            .entry(b)
-                            .or_default()
-                            .push(node_id);
+                        self.dependent_nodes.entry(b).or_default().push(node_id);
                     }
                     Ok(node_id)
                 }
@@ -630,10 +547,7 @@ impl Context {
             operation: Operation::TypeCast(a, dtype),
             dtype,
         });
-        self.dependent_nodes
-            .entry(a)
-            .or_default()
-            .push(node_id);
+        self.dependent_nodes.entry(a).or_default().push(node_id);
         node_id
     }
 
@@ -654,10 +568,7 @@ impl Context {
                 operation: Operation::Reshape(a),
                 dtype: self.nodes[a].dtype,
             });
-            self.dependent_nodes
-                .entry(a)
-                .or_default()
-                .push(node_id);
+            self.dependent_nodes.entry(a).or_default().push(node_id);
             Ok(node_id)
         }
     }
@@ -681,10 +592,7 @@ impl Context {
             operation: Operation::Transpose(a, index_perms_deref),
             dtype: self.nodes[a].dtype,
         });
-        self.dependent_nodes
-            .entry(a)
-            .or_default()
-            .push(node_id);
+        self.dependent_nodes.entry(a).or_default().push(node_id);
         Ok(node_id)
     }
 
@@ -717,10 +625,7 @@ impl Context {
             },
             dtype: self.nodes[a].dtype,
         });
-        self.dependent_nodes
-            .entry(a)
-            .or_default()
-            .push(node_id);
+        self.dependent_nodes.entry(a).or_default().push(node_id);
         Ok(node_id)
     }
 
@@ -749,10 +654,7 @@ impl Context {
             },
             dtype: self.nodes[a].dtype,
         });
-        self.dependent_nodes
-            .entry(a)
-            .or_default()
-            .push(node_id);
+        self.dependent_nodes.entry(a).or_default().push(node_id);
         Ok(node_id)
     }
 
@@ -763,14 +665,16 @@ impl Context {
             operation: Operation::ZerosLike(a),
             dtype: self.nodes[a].dtype,
         });
-        self.dependent_nodes
-            .entry(a)
-            .or_default()
-            .push(node_id);
+        self.dependent_nodes.entry(a).or_default().push(node_id);
         node_id
     }
 
-    fn maybe_keepdims(&mut self, a: NodeIdentifier, dim: i64, keepdims: bool) -> Result<NodeIdentifier> {
+    fn maybe_keepdims(
+        &mut self,
+        a: NodeIdentifier,
+        dim: i64,
+        keepdims: bool,
+    ) -> Result<NodeIdentifier> {
         if keepdims {
             let mut s_keepdim = self.nodes[a].shape.clone();
             s_keepdim.sizes.insert(dim as usize, 1u32);
@@ -795,16 +699,10 @@ impl Context {
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: s,
-            operation: Operation::ReduceMax {
-                node: a,
-                dim,
-            },
+            operation: Operation::ReduceMax { node: a, dim },
             dtype: self.nodes[a].dtype,
         });
-        self.dependent_nodes
-            .entry(a)
-            .or_default()
-            .push(node_id);
+        self.dependent_nodes.entry(a).or_default().push(node_id);
         self.maybe_keepdims(node_id, dim, keepdims)
     }
 
@@ -823,16 +721,10 @@ impl Context {
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: s,
-            operation: Operation::ReduceSum {
-                node: a,
-                dim,
-            },
+            operation: Operation::ReduceSum { node: a, dim },
             dtype: self.nodes[a].dtype,
         });
-        self.dependent_nodes
-            .entry(a)
-            .or_default()
-            .push(node_id);
+        self.dependent_nodes.entry(a).or_default().push(node_id);
         self.maybe_keepdims(node_id, dim, keepdims)
     }
 
@@ -851,20 +743,19 @@ impl Context {
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: s,
-            operation: Operation::ReduceMean {
-                node: a,
-                dim,
-            },
+            operation: Operation::ReduceMean { node: a, dim },
             dtype: self.nodes[a].dtype,
         });
-        self.dependent_nodes
-            .entry(a)
-            .or_default()
-            .push(node_id);
+        self.dependent_nodes.entry(a).or_default().push(node_id);
         self.maybe_keepdims(node_id, dim, keepdims)
     }
 
-    pub fn reduce_argmax(&mut self, a: NodeIdentifier, dim: i64, keepdims: bool) -> NodeIdentifier {
+    pub fn reduce_argmax(
+        &mut self,
+        a: NodeIdentifier,
+        dim: i64,
+        keepdims: bool,
+    ) -> Result<NodeIdentifier> {
         let a = a.into();
         let mut s = Shape::new();
         for d in (0..self.nodes[a].shape.ndims()).rev() {
@@ -877,30 +768,39 @@ impl Context {
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: s,
-            operation: Operation::ReduceArgmax {
-                node: a,
-                dim: dim,
-                keepdims: keepdims,
-            },
+            operation: Operation::ReduceArgmax { node: a, dim: dim },
             dtype: xla::ElementType::S64,
         });
         self.dependent_nodes
             .entry(a)
             .or_insert(Vec::new())
             .push(node_id);
-        node_id
+        self.maybe_keepdims(node_id, dim, keepdims)
     }
 
-    pub fn accuracy(&mut self, dense_predictions: NodeIdentifier, sparse_label_vector: NodeIdentifier) -> Result<NodeIdentifier> {
-        let sparse_predictions = self.reduce_argmax(dense_predictions, 1, false);
+    pub fn accuracy(
+        &mut self,
+        dense_predictions: NodeIdentifier,
+        sparse_label_vector: NodeIdentifier,
+    ) -> Result<NodeIdentifier> {
+        let sparse_predictions = self.reduce_argmax(dense_predictions, 1, false)?;
         let compare = self.eq(sparse_predictions, sparse_label_vector)?;
-        let converted = self.type_cast(comparse, xla::ElementType::F32);
-        self.reduce_mean(converted, 0, false);
+        let converted = self.type_cast(compare, xla::ElementType::F32);
+        self.reduce_mean(converted, 0, false)
     }
 
-    pub fn one_hot(&mut self, sparse_label_vector: NodeIdentifier, n_classes: usize, dtype: xla::ElementType) -> Result<NodeIdentifier> {
+    pub fn one_hot(
+        &mut self,
+        sparse_label_vector: NodeIdentifier,
+        n_classes: usize,
+        dtype: xla::ElementType,
+    ) -> Result<NodeIdentifier> {
         if self.nodes[sparse_label_vector].shape.ndims() != 1 {
-            return Err(ContextError::RankError(1, self.nodes[sparse_label_vector].shape.ndims(), callsite!(1)))
+            return Err(ContextError::RankError(
+                1,
+                self.nodes[sparse_label_vector].shape.ndims(),
+                callsite!(1),
+            ));
         }
         let label_len = self.nodes[sparse_label_vector].shape.sizes[0];
 
@@ -913,12 +813,12 @@ impl Context {
             | xla::ElementType::U32
             | xla::ElementType::S32
             | xla::ElementType::U64 => self.type_cast(sparse_label_vector, xla::ElementType::S64),
-            _ => return Err(ContextError::IntegralTypeError(callsite!(1)))
+            _ => return Err(ContextError::IntegralTypeError(callsite!(1))),
         };
 
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
-            shape: Shape::from([label_len, n_classes as u16]),
+            shape: Shape::from([label_len, n_classes as u32]),
             operation: Operation::OneHot(converted),
             dtype: dtype,
         });

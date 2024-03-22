@@ -108,11 +108,11 @@ impl Context {
                 if covered_ops.contains(dependent_op) {
                     continue;
                 }
-                let node = &self.nodes[*dependent_op];
+                let this_node = &self.nodes[*dependent_op];
                 //TODO: Clone here is not great, we could & the node operation
                 //or come up with a better way of storing the Vec<i64> that Transpose
                 //uses(that's what causes the borrow checker error if we dont clone)
-                match node.operation.clone() {
+                match this_node.operation.clone() {
                     Operation::Parameter(_) => {
                         unreachable!("Parameters can't depend on other nodes")
                     }
@@ -390,7 +390,7 @@ impl Context {
                             && xla_op_slotmap.contains_key(unda_xla_map[&node])
                         {
                             let xla_op = xla_op_slotmap[unda_xla_map[&node]].reshape(
-                                self.nodes[*dependent_op]
+                                this_node
                                     .shape
                                     .sizes
                                     .iter()
@@ -505,11 +505,10 @@ impl Context {
                     Operation::ReduceArgmax {
                         node,
                         dim,
-                        keepdims,
                     } => {
                         if xla_op_slotmap.contains_key(unda_xla_map[&node]) {
                             let xla_op =
-                                xla_op_slotmap[unda_xla_map[&node]].reduce_argmax(dim, keepdims)?;
+                                xla_op_slotmap[unda_xla_map[&node]].reduce_argmax(dim, false)?;
                             let xla_id = xla_op_slotmap.insert(xla_op);
                             unda_xla_map.insert(*dependent_op, xla_id);
                             unda_op_queue.push_back(*dependent_op);
