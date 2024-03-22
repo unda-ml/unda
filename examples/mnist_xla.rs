@@ -34,7 +34,7 @@ fn dense(
 
     let mut bias_shape = Shape::new();
     bias_shape.sizes.push(out_size);
-    for i in 0..(shape.ndims() - 1) {
+    for _ in 0..(shape.ndims() - 1) {
         bias_shape.sizes.push(1u32);
     }
     let mut bias_name = name.to_owned();
@@ -246,14 +246,131 @@ fn main() {
     let (mut w1, mut b1, mut w2, mut b2, mut w3, mut b3, mut w_out, mut b_out) = init_params();
 
     for epoch in 0..EPOCHS {
+        let mut train_accuracy = 0f32;
+        let mut train_loss = 0f32;
+
         for batch_idx in 0..600 {
             let (train_imgs, train_lbls) =
                 load_mnist_batch(&train_images, &train_labels, batch_idx)
                     .expect("Failed to load MNIST batch");
-            let lr_literal =
+
+            let lr =
                 xla::Literal::scalar(INIT_LEARNING_RATE * (LEARNING_RATE_DECAY.powf(epoch as f32)));
+
+            // This is where ABSTRACT API REQUIREMENT 5 becomes pertinent
+            // The user should not have to explicitly reference a dozen parameters like this
+            let xla_buffer = executable
+                .execute(&[
+                    &train_imgs,
+                    &train_lbls,
+                    &w1,
+                    &b1,
+                    &w2,
+                    &b2,
+                    &w3,
+                    &b3,
+                    &w_out,
+                    &b_out,
+                    &lr,
+                ])
+                .expect("Failed to run PjRt executable");
+
+            // This is where ABSTRACT API REQUIREMENT 4 becomes pertinent
+            // The user should not have to move all this junk to the host just to get accuracy and loss
+            let xla_literal = xla_buffer[0][0]
+                .to_literal_sync()
+                .expect("Failed to copy buffer to host");
+            let untupled_literals = xla_literal
+                .to_tuple()
+                .expect("Failed to untuple XLA literals");
+
+            let loss = untupled_literals[0]
+                .to_vec::<f32>()
+                .expect("Failed vector conversion of loss")[0];
+            train_loss += loss;
+            let accuracy = untupled_literals[1]
+                .to_vec::<f32>()
+                .expect("Failed vector conversion of accuracy")[0];
+            train_accuracy += accuracy;
+
+            // This is really very silly. Because model/optimizer are not separate
+            // we move the weights to the CPU just to move them back
+            // Even without that, is there a way to get rid of the clone??
+            (w1, b1, w2, b2, w3, b3, w_out, b_out) = (
+                untupled_literals[2].clone(),
+                untupled_literals[3].clone(),
+                untupled_literals[4].clone(),
+                untupled_literals[5].clone(),
+                untupled_literals[6].clone(),
+                untupled_literals[7].clone(),
+                untupled_literals[8].clone(),
+                untupled_literals[9].clone()
+            );
         }
+        println!(
+            "Epoch {}: Training loss = {}; Training accuracy = {}",
+            epoch,
+            train_loss / 600f32,
+            train_accuracy / 600f32
+        );
     }
 
-    println!("Not yet implemented!");
+    // ABSTRACT API REQUIREMENT 7: Serialization
+    // The model is not worth very much if it disappears after our training loop.
+    // My main suggestion is to serialize the compute graph using XLA HLO
+    // and serialize the paramters using the npz format.
+
+    let mut test_accuracy = 0f32;
+    let mut test_loss = 0f32;
+
+    for batch_idx in 0..100 {
+        let (test_imgs, test_lbls) =
+            load_mnist_batch(&test_images, &test_labels, batch_idx)
+                .expect("Failed to load MNIST batch");
+
+        // GOOFY!!
+        // Another consequence of ABSTRACT API REQUIREMENT 4 Not being implemented
+        // To prevent the model from training on the testing data, I have to
+        // set the learning rate to zero
+        let lr = xla::Literal::scalar(0f32);
+
+        let xla_buffer = executable
+            .execute(&[
+                &test_imgs,
+                &test_lbls,
+                &w1,
+                &b1,
+                &w2,
+                &b2,
+                &w3,
+                &b3,
+                &w_out,
+                &b_out,
+                &lr,
+            ])
+            .expect("Failed to run PjRt executable");
+
+        // This is where ABSTRACT API REQUIREMENT 4 becomes pertinent
+        // The user should not have to move all this junk to the host just to get accuracy and loss
+        let xla_literal = xla_buffer[0][0]
+            .to_literal_sync()
+            .expect("Failed to copy buffer to host");
+        let untupled_literals = xla_literal
+            .to_tuple()
+            .expect("Failed to untuple XLA literals");
+
+        let loss = untupled_literals[0]
+            .to_vec::<f32>()
+            .expect("Failed vector conversion of loss")[0];
+        test_loss += loss;
+        let accuracy = untupled_literals[1]
+            .to_vec::<f32>()
+            .expect("Failed vector conversion of accuracy")[0];
+        test_accuracy += accuracy;
+    }
+    println!(
+        "Testing loss = {}; Testing accuracy = {}",
+        test_loss / 100f32,
+        test_accuracy / 100f32
+    );
 }
