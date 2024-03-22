@@ -8,10 +8,7 @@ impl Context {
         on_true: NodeIdentifier,
         on_false: NodeIdentifier,
     ) -> Result<NodeIdentifier> {
-        let pred = pred.into();
         let pred = self.stop_gradient(pred);
-        let on_true = on_true.into();
-        let on_false = on_false.into();
         let node_pred = &self.nodes[pred];
         let node_true = &self.nodes[on_true];
         let node_false = &self.nodes[on_false];
@@ -40,25 +37,25 @@ impl Context {
                             callsite: callsite!(1),
                             shape: sh,
                             operation: Operation::Select {
-                                pred: pred,
-                                on_true: on_true,
-                                on_false: on_false,
+                                pred,
+                                on_true,
+                                on_false,
                             },
                             dtype: node_true.dtype,
                         };
                         let node_id = self.nodes.insert(node);
                         self.dependent_nodes
                             .entry(pred)
-                            .or_insert(Vec::new())
+                            .or_default()
                             .push(node_id);
                         self.dependent_nodes
                             .entry(on_true)
-                            .or_insert(Vec::new())
+                            .or_default()
                             .push(node_id);
                         if on_true != on_false {
                             self.dependent_nodes
                                 .entry(on_false)
-                                .or_insert(Vec::new())
+                                .or_default()
                                 .push(node_id);
                         }
                         Ok(node_id)

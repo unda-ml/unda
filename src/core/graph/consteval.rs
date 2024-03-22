@@ -1,15 +1,10 @@
 use std::collections::HashSet;
 
-use xla::ElementType;
-
 use super::*;
 
 impl Context {
     fn collect_deps(&self, node: NodeIdentifier) -> Vec<NodeIdentifier> {
-        self.dependent_nodes[&node]
-            .iter()
-            .map(|node| node.clone())
-            .collect::<Vec<NodeIdentifier>>()
+        self.dependent_nodes[&node].to_vec()
     }
 
     fn replace_index(
@@ -22,9 +17,10 @@ impl Context {
         let deps = self.collect_deps(to_remove);
 
         for dep_node in deps {
-            match self.nodes[dep_node].operation {
+            //Again, clone here is pretty bad
+            match self.nodes[dep_node].operation.clone() {
                 Operation::Add(a, b) => {
-                    if a == b {
+                    if to_remove == a && a == b {
                         self.nodes[dep_node].operation = Operation::Add(rep_with, rep_with);
                         changed = true;
                     } else if a == to_remove {
@@ -35,8 +31,20 @@ impl Context {
                         changed = true;
                     }
                 }
+                Operation::Pow(a, b) => {
+                    if a == to_remove && a == b {
+                        self.nodes[dep_node].operation = Operation::Pow(rep_with, rep_with);
+                        changed = true;
+                    } else if a == to_remove {
+                        self.nodes[dep_node].operation = Operation::Pow(rep_with, b);
+                        changed = true;
+                    } else if b == to_remove {
+                        self.nodes[dep_node].operation = Operation::Pow(a, rep_with);
+                        changed = true;
+                    }
+                }
                 Operation::Sub(a, b) => {
-                    if a == b {
+                    if to_remove == a && a == b {
                         self.nodes[dep_node].operation = Operation::Sub(rep_with, rep_with);
                         changed = true;
                     } else if a == to_remove {
@@ -48,7 +56,7 @@ impl Context {
                     }
                 }
                 Operation::Mul(a, b) => {
-                    if a == b {
+                    if to_remove == a && a == b {
                         self.nodes[dep_node].operation = Operation::Mul(rep_with, rep_with);
                         changed = true;
                     } else if a == to_remove {
@@ -59,8 +67,32 @@ impl Context {
                         changed = true;
                     }
                 }
+                Operation::MatMul(a, b) => {
+                    if to_remove == a && a == b {
+                        self.nodes[dep_node].operation = Operation::MatMul(rep_with, rep_with);
+                        changed = true;
+                    } else if a == to_remove {
+                        self.nodes[dep_node].operation = Operation::MatMul(rep_with, b);
+                        changed = true;
+                    } else if b == to_remove {
+                        self.nodes[dep_node].operation = Operation::MatMul(a, rep_with);
+                        changed = true;
+                    }
+                }
+                Operation::Div(a, b) => {
+                    if to_remove == a && a == b {
+                        self.nodes[dep_node].operation = Operation::Div(rep_with, rep_with);
+                        changed = true;
+                    } else if a == to_remove {
+                        self.nodes[dep_node].operation = Operation::Div(rep_with, b);
+                        changed = true;
+                    } else if b == to_remove {
+                        self.nodes[dep_node].operation = Operation::Div(a, rep_with);
+                        changed = true;
+                    }
+                }
                 Operation::GreaterThan(a, b) => {
-                    if a == b {
+                    if to_remove == a && a == b {
                         self.nodes[dep_node].operation = Operation::GreaterThan(rep_with, rep_with);
                         changed = true;
                     } else if a == to_remove {
@@ -73,7 +105,7 @@ impl Context {
                 }
 
                 Operation::GreaterThanEq(a, b) => {
-                    if a == b {
+                    if to_remove == a && a == b {
                         self.nodes[dep_node].operation =
                             Operation::GreaterThanEq(rep_with, rep_with);
                         changed = true;
@@ -86,7 +118,7 @@ impl Context {
                     }
                 }
                 Operation::Equal(a, b) => {
-                    if a == b {
+                    if to_remove == a && a == b {
                         self.nodes[dep_node].operation = Operation::Equal(rep_with, rep_with);
                         changed = true;
                     } else if a == to_remove {
@@ -98,7 +130,7 @@ impl Context {
                     }
                 }
                 Operation::NotEqual(a, b) => {
-                    if a == b {
+                    if to_remove == a && a == b {
                         self.nodes[dep_node].operation = Operation::NotEqual(rep_with, rep_with);
                         changed = true;
                     } else if a == to_remove {
@@ -110,7 +142,7 @@ impl Context {
                     }
                 }
                 Operation::LessThan(a, b) => {
-                    if a == b {
+                    if to_remove == a && a == b {
                         self.nodes[dep_node].operation = Operation::LessThan(rep_with, rep_with);
                         changed = true;
                     } else if a == to_remove {
@@ -123,7 +155,7 @@ impl Context {
                 }
 
                 Operation::LessThanEq(a, b) => {
-                    if a == b {
+                    if to_remove == a && a == b {
                         self.nodes[dep_node].operation = Operation::LessThanEq(rep_with, rep_with);
                         changed = true;
                     } else if a == to_remove {
@@ -149,6 +181,20 @@ impl Context {
                         changed = true;
                     }
                 }
+                Operation::Exp(a) => {
+                    if a == to_remove {
+                        self.nodes[dep_node].operation = Operation::Exp(rep_with);
+                        changed = true;
+                    }
+                }
+
+                Operation::Log(a) => {
+                    if a == to_remove {
+                        self.nodes[dep_node].operation = Operation::Log(rep_with);
+                        changed = true;
+                    }
+                }
+
                 Operation::ZerosLike(a) => {
                     if a == to_remove {
                         self.nodes[dep_node].operation = Operation::ZerosLike(rep_with);
@@ -161,14 +207,22 @@ impl Context {
                         changed = true;
                     }
                 }
-                Operation::TypeCast(_, t) => {
-                    changed = true;
-                    self.nodes[dep_node].operation = Operation::TypeCast(rep_with, t)
+                Operation::TypeCast(node, t) => {
+                    if node == to_remove {
+                        self.nodes[dep_node].operation = Operation::TypeCast(rep_with, t);
+                        changed = true;
+                    }
+                }
+                Operation::Reshape(node) => {
+                    if node == to_remove {
+                        self.nodes[dep_node].operation = Operation::Reshape(rep_with);
+                        changed = true;
+                    }
                 }
                 Operation::Select {
                     pred,
-                    on_true,
                     on_false,
+                    on_true,
                 } => {
                     if pred == to_remove {
                         if pred == on_true {
@@ -207,32 +261,49 @@ impl Context {
                         }
                     }
                 }
-                Operation::ReduceMax {
-                    node,
-                    dim,
-                    keepdims,
-                } => {
+                Operation::ReduceMax { node, dim } => {
                     if node == to_remove {
                         changed = true;
                         self.nodes[dep_node].operation = Operation::ReduceMax {
                             node: rep_with,
                             dim,
-                            keepdims,
                         }
                     }
                 }
                 Operation::ReduceArgmax {
                     node,
                     dim,
-                    keepdims,
                 } => {
                     if node == to_remove {
                         changed = true;
                         self.nodes[dep_node].operation = Operation::ReduceArgmax {
                             node: rep_with,
                             dim,
-                            keepdims,
                         }
+                    }
+                }
+                Operation::ReduceSum { node, dim } => {
+                    if node == to_remove {
+                        changed = true;
+                        self.nodes[dep_node].operation = Operation::ReduceSum {
+                            node: rep_with,
+                            dim,
+                        }
+                    }
+                }
+                Operation::ReduceMean { node, dim } => {
+                    if node == to_remove {
+                        changed = true;
+                        self.nodes[dep_node].operation = Operation::ReduceMean {
+                            node: rep_with,
+                            dim,
+                        }
+                    }
+                }
+                Operation::Transpose(a, dim) => {
+                    if a == to_remove {
+                        self.nodes[dep_node].operation = Operation::Transpose(rep_with, dim.clone());
+                        changed = true;
                     }
                 }
                 Operation::SliceInDim {
@@ -249,6 +320,16 @@ impl Context {
                             start,
                             stop,
                             stride,
+                            dim,
+                        }
+                    }
+                }
+                Operation::TileInDim { node, n_tiles, dim } => {
+                    if node == to_remove {
+                        changed = true;
+                        self.nodes[dep_node].operation = Operation::TileInDim {
+                            node: rep_with,
+                            n_tiles,
                             dim,
                         }
                     }
@@ -310,21 +391,29 @@ impl Context {
                         modifications += 1;
                         changed = true;
                     }
-                    if let Some(literal) = self.nodes[a].is_const() {
-                        //Check for mul by 1
-                        let floating_literal: Vec<f32> =
-                            literal.convert(xla::PrimitiveType::F32)?.to_vec()?;
-                        let mut all_one = true;
-                        floating_literal.iter().for_each(|elem| {
-                            if *elem != 1f32 {
-                                all_one = false;
-                            }
-                        });
-                        if all_one {
-                            //a is all ones, replace node_id with a
+                    if self.nodes[a].is_one()? {
+                        self.replace_index(node_id, b)?;
+                        modifications += 1;
+                        changed = true;
+                    }
+                    // TODO: Clean this up! Too many cases!!
+                    if let Operation::TileInDim { node, n_tiles: _, dim: _ } = self.nodes[a].operation {
+                        if self.nodes[node].is_one()? {
                             self.replace_index(node_id, b)?;
                             modifications += 1;
                             changed = true;
+                        } else if let Operation::Reshape(x) = self.nodes[node].operation {
+                            if self.nodes[x].is_one()? {
+                                self.replace_index(node_id, b)?;
+                                modifications += 1;
+                                changed = true;
+                            } else if let Operation::Reshape(y) = self.nodes[x].operation {
+                                if self.nodes[y].is_one()? {
+                                    self.replace_index(node_id, b)?;
+                                    modifications += 1;
+                                    changed = true;
+                                }
+                            }
                         }
                     }
                     if self.nodes[b].is_zero()? {
@@ -332,24 +421,31 @@ impl Context {
                         modifications += 1;
                         changed = true;
                     }
-                    if let Some(literal) = self.nodes[b].is_const() {
-                        //Check for mul by 1
-                        let floating_literal: Vec<f32> =
-                            literal.convert(xla::PrimitiveType::F32)?.to_vec()?;
-                        let mut all_one = true;
-                        floating_literal.iter().for_each(|elem| {
-                            if *elem != 1f32 {
-                                all_one = false;
-                            }
-                        });
-                        if all_one {
-                            //b is all ones, replace node_id with a
+                    if self.nodes[b].is_one()? {
+                        self.replace_index(node_id, a)?;
+                        modifications += 1;
+                        changed = true;
+                    }
+                    if let Operation::TileInDim { node, n_tiles: _, dim: _ } = self.nodes[b].operation {
+                        if self.nodes[node].is_one()? {
                             self.replace_index(node_id, a)?;
                             modifications += 1;
                             changed = true;
+                        } else if let Operation::Reshape(x) = self.nodes[node].operation {
+                            if self.nodes[x].is_one()? {
+                                self.replace_index(node_id, a)?;
+                                modifications += 1;
+                                changed = true;
+                            } else if let Operation::Reshape(y) = self.nodes[x].operation {
+                                if self.nodes[y].is_one()? {
+                                    self.replace_index(node_id, a)?;
+                                    modifications += 1;
+                                    changed = true;
+                                }
+                            }
                         }
                     }
-                    if let None = self.nodes[a].is_const() {
+                    if self.nodes[a].is_const().is_none() {
                         to_visit.push(a);
                     }
                     if let None = self.nodes[b].is_const() {
@@ -361,13 +457,31 @@ impl Context {
                         to_visit.push(a);
                     }
                 }
+                Operation::Exp(a) => {
+                    if let None = self.nodes[a].is_const() {
+                        to_visit.push(a);
+                    }
+                }
+                Operation::Log(a) => {
+                    if let None = self.nodes[a].is_const() {
+                        to_visit.push(a);
+                    }
+                }
+                Operation::Transpose(a, _) => {
+                    if let None = self.nodes[a].is_const() {
+                        to_visit.push(a);
+                    }
+                }
                 Operation::GreaterThan(a, b)
                 | Operation::GreaterThanEq(a, b)
                 | Operation::LessThan(a, b)
                 | Operation::LessThanEq(a, b)
                 | Operation::Equal(a, b)
-                | Operation::NotEqual(a, b) => {
-                    if let None = self.nodes[a].is_const() {
+                | Operation::NotEqual(a, b)
+                | Operation::Div(a, b)
+                | Operation::Pow(a, b)
+                | Operation::MatMul(a, b) => {
+                    if self.nodes[a].is_const().is_none() {
                         to_visit.push(a);
                     }
 
@@ -377,8 +491,8 @@ impl Context {
                 }
                 Operation::StopGradient(a)
                 | Operation::TypeCast(a, _)
-                | Operation::ZerosLike(a)
-                | Operation::OneHot(a) => {
+                | Operation::Reshape(a)
+                | Operation::ZerosLike(a) => {
                     if let None = self.nodes[a].is_const() {
                         to_visit.push(a);
                     }
@@ -388,10 +502,10 @@ impl Context {
                     on_true,
                     on_false,
                 } => {
-                    if let None = self.nodes[pred].is_const() {
+                    if self.nodes[pred].is_const().is_none() {
                         to_visit.push(pred)
                     }
-                    if let None = self.nodes[on_true].is_const() {
+                    if self.nodes[on_true].is_const().is_none() {
                         to_visit.push(on_true)
                     }
                     if let None = self.nodes[on_false].is_const() {
@@ -400,30 +514,23 @@ impl Context {
                 }
                 Operation::SliceInDim {
                     node,
-                    start,
-                    stop,
-                    stride,
-                    dim,
+                    start: _,
+                    stop: _,
+                    stride: _,
+                    dim: _,
                 } => {
                     if let None = self.nodes[node].is_const() {
                         to_visit.push(node);
                     }
                 }
-                Operation::ReduceMax {
-                    node,
-                    dim,
-                    keepdims,
-                } => {
+                Operation::TileInDim { node, n_tiles: _, dim: _ } => {
                     if let None = self.nodes[node].is_const() {
                         to_visit.push(node);
                     }
                 }
-                Operation::Constant(_) | Operation::Parameter(_) => {}
-                Operation::ReduceArgmax {
-                    node,
-                    dim,
-                    keepdims,
-                } => {
+                Operation::ReduceMax { node, dim: _ }
+                | Operation::ReduceSum { node, dim: _ }
+                | Operation::ReduceMean { node, dim:_  } => {
                     if let None = self.nodes[node].is_const() {
                         to_visit.push(node);
                     }

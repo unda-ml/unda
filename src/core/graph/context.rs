@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use super::*;
+
 use slotmap::SlotMap;
 
 /// XLA computation graph context.
@@ -72,8 +73,8 @@ impl Context {
         }
     }
 
-    pub fn to_string<A: Into<NodeIdentifier> + Copy>(&self, input: A) -> String {
-        let input_node = &self.nodes[input.into()];
+    pub fn to_string(&self, input: NodeIdentifier) -> String {
+        let input_node = &self.nodes[input];
 
         match input_node.operation.clone() {
             Operation::Constant(a) => format!("Constant {} {}", input_node.shape, a),
@@ -84,7 +85,13 @@ impl Context {
             Operation::Add(a, b) => format!("Add ({}) ({})", self.to_string(a), self.to_string(b)),
             Operation::Sub(a, b) => format!("Sub ({}) ({})", self.to_string(a), self.to_string(b)),
             Operation::Mul(a, b) => format!("Mul ({}) ({})", self.to_string(a), self.to_string(b)),
+            Operation::MatMul(a, b) => format!("MatMul ({}) ({})", self.to_string(a), self.to_string(b)),
+            Operation::Div(a, b) => format!("Div ({}) ({})", self.to_string(a), self.to_string(b)),
+            Operation::Pow(a, b) => format!("Pow ({}) ({})", self.to_string(a), self.to_string(b)),
             Operation::Neg(a) => format!("Neg ({})", self.to_string(a)),
+            Operation::Exp(a) => format!("Exp ({})", self.to_string(a)),
+            Operation::Log(a) => format!("Log ({})", self.to_string(a)),
+            Operation::Transpose(a, b) => format!("Transpose: ({}) ({:?})", self.to_string(a), b),
             Operation::Equal(a, b) => {
                 format!("LessThan ({}) ({})", self.to_string(a), self.to_string(b))
             }
@@ -118,6 +125,11 @@ impl Context {
                 self.to_string(on_false)
             ),
             Operation::TypeCast(a, ty) => format!("TypeCast ({}) {}", self.to_string(a), ty),
+            Operation::Reshape(a) => format!(
+                "Reshape ({}) {}",
+                self.to_string(a),
+                self.nodes[input].shape
+            ),
             Operation::SliceInDim {
                 node,
                 start,
@@ -132,6 +144,9 @@ impl Context {
                 stride,
                 dim
             ),
+            Operation::TileInDim { node, n_tiles, dim } => {
+                format!("TileInDim ({}) {} {}", self.to_string(node), n_tiles, dim)
+            }
             Operation::ZerosLike(node) => format!("ZerosLike {}", self.to_string(node)),
             Operation::OneHot(node) => format!(
                 "OneHot ({}) {} {}",
@@ -142,18 +157,15 @@ impl Context {
             Operation::ReduceMax {
                 node,
                 dim,
-                keepdims,
-            } => format!("ReduceMax {} {} {}", self.to_string(node), dim, keepdims),
-            Operation::ReduceMax {
+            } => format!("ReduceMax {} {}", self.to_string(node), dim),
+            Operation::ReduceSum {
                 node,
                 dim,
-                keepdims,
-            } => format!("ReduceMax {} {} {}", self.to_string(node), dim, keepdims),
-            Operation::ReduceArgmax {
+            } => format!("ReduceSum {} {}", self.to_string(node), dim),
+            Operation::ReduceMean {
                 node,
                 dim,
-                keepdims,
-            } => format!("ReduceArgmax {} {} {}", self.to_string(node), dim, keepdims),
+            } => format!("ReduceMean {} {}", self.to_string(node), dim),
         }
     }
 }

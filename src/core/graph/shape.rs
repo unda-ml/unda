@@ -1,5 +1,7 @@
 use smallvec::SmallVec;
 
+use super::callsite::Callsite;
+
 /// array of sizes along each axis
 /// scalar would be an []
 /// 3d vector would be [3]
@@ -7,7 +9,7 @@ use smallvec::SmallVec;
 #[derive(Debug, Clone, PartialEq)]
 pub struct Shape {
     /// smallvec to avoid indirection in the common case of dimension <= 8
-    pub sizes: SmallVec<[u16; 8]>,
+    pub sizes: SmallVec<[u32; 4]>,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -16,18 +18,20 @@ pub enum ShapeConversionError {
     UnexpectedTupleShape,
     #[error("Expected Array Shape but got Unsupported Shape")]
     UnexpectedUnsupportedShape,
+    #[error("Shapes {0} and {1} are of different sizes at {2}.")]
+    MismatchedSizes(Shape, Shape, Callsite),
 }
 
-impl From<&[u16]> for Shape {
-    fn from(value: &[u16]) -> Self {
+impl From<&[u32]> for Shape {
+    fn from(value: &[u32]) -> Self {
         Shape {
             sizes: SmallVec::from_slice(value),
         }
     }
 }
 
-impl<const N: usize> From<[u16; N]> for Shape {
-    fn from(value: [u16; N]) -> Self {
+impl<const N: usize> From<[u32; N]> for Shape {
+    fn from(value: [u32; N]) -> Self {
         Shape {
             sizes: SmallVec::from_slice(&value),
         }
@@ -55,14 +59,36 @@ impl Shape {
             xla::Shape::Tuple(_) => Err(ShapeConversionError::UnexpectedTupleShape),
             xla::Shape::Unsupported(_) => Err(ShapeConversionError::UnexpectedUnsupportedShape),
             xla::Shape::Array(s) => Ok(Shape {
-                sizes: s.dims().iter().map(|d| *d as u16).collect(),
+                sizes: s.dims().iter().map(|d| *d as u32).collect(),
             }),
         }
     }
 
+    pub fn matmul_shape(&self, dim2: &[u32]) -> Option<Vec<u32>> {
+        let dim1 = &self.sizes;
+        if dim1.last()? == dim2.get(dim2.len().saturating_sub(2))? {
+            let mut result_shape = Vec::new();
+
+            for &dim in dim1.iter().take(dim1.len() - 1) {
+                result_shape.push(dim);
+            }
+
+            for (i, &dim) in dim2.iter().enumerate() {
+                if i != dim2.len() - 2 {
+                    result_shape.push(dim);
+                }
+            }
+            Some(result_shape)
+        } else {
+            None
+        }
+    }
+
     pub fn broadcast(&self, shape: &Shape) -> Option<Shape> {
-        if self.sizes.len() == 0 || shape.sizes.len() == 0 {
-            Some(Shape::new())
+        if self.sizes.is_empty() {
+            Some(shape.clone())
+        } else if shape.sizes.is_empty() {
+            Some(self.clone())
         } else if self.sizes.len() != shape.sizes.len() {
             None
         } else {

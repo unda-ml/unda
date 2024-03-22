@@ -69,12 +69,12 @@ impl MnistEntry {
 
         let count_div = 1000;
 
-        stdout().flush(); print!("[");
+        let _ = stdout().flush(); print!("[");
 
         let mut images = Vec::with_capacity(num_items as usize);
         for i in 0..num_items {
             if i % count_div == 0{
-                stdout().flush(); print!("#");
+                let _ = stdout().flush(); print!("#");
             }
             let mut image = Vec::with_capacity((num_rows * num_cols) as usize);
             for _ in 0..(num_rows * num_cols) {

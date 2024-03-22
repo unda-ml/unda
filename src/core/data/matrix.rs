@@ -419,7 +419,7 @@ mod tests {
         let mat_a = Matrix::from_sized(vec![1.0,0.0,0.5,0.25], 4, 1);
         let mat_b = Matrix::from_sized(vec![0.0,0.0,0.5,0.5], 2, 2);
 
-        mat_a + &mat_b;
+        let _ = mat_a + &mat_b;
     }
     #[test]
     fn test_transpose() {
@@ -454,14 +454,14 @@ mod tests {
         let mat_a = Matrix::from_sized(vec![1.0,0.0,0.0,1.0], 2, 2);
         let mat_b = Matrix::from_sized(vec![1.0,0.0,0.0,1.0], 4, 1);
 
-        mat_a * &mat_b;
+        let _ = mat_a * &mat_b;
     }
     #[test]
     fn test_mul(){
         let mat_a = Matrix::new_empty(2, 5);
         let mat_b = Matrix::new_empty(5, 10);
 
-        mat_a * &mat_b;
+        let _ = mat_a * &mat_b;
     }
     #[test]
     fn test_mul_vals(){
