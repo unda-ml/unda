@@ -98,7 +98,7 @@ impl Context {
                     }
 
                     Operation::OneHot(node)
-                    | Operation::ReduceArgmax { node: node, dim: _ } => {
+                    | Operation::ReduceArgmax { node, dim: _ } => {
                         if self.gradient_is_dependent(node, dependent_node) {
                             return Err(ContextError::NonDifferentiableOpError(
                                 self.nodes[dependent_node].callsite.clone(),

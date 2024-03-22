@@ -35,6 +35,7 @@ strum_macros = "0.26"
 xla = { git = "https://github.com/Ebanflo42/xla-rs", version = "0.1.6" , branch = "dev" }
 thiserror = "1"
 half = "2.4.0"
+byteorder = "1.5"
 
 [features]
 default = ["util"]

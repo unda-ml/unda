@@ -7,7 +7,7 @@ use slotmap::SlotMap;
 /// XLA computation graph context.
 // TODO: rename this to something meaningful
 pub struct Context {
-    pub(crate) nodes: SlotMap<NodeIdentifier, Node>,
+    pub nodes: SlotMap<NodeIdentifier, Node>,
     pub(crate) constants: Vec<NodeIdentifier>,
     pub(crate) parameters: Vec<NodeIdentifier>,
     pub(crate) dependent_nodes: HashMap<NodeIdentifier, Vec<NodeIdentifier>>,
@@ -33,7 +33,7 @@ pub enum ContextError {
     #[error("Tried to call typecast_const on non-constant node at {0}")]
     NonConstantTypecast(Callsite),
 
-    #[error("XLA error: {0}")]
+    #[error("XLA internal error: {0}. Unless this is a device error, Unda should not produce internal XLA errors. Please create a github issue.")]
     Xla(#[from] xla::Error),
 
     #[error("Unda internal graph processing error {0}")]
@@ -54,8 +54,11 @@ pub enum ContextError {
     #[error("Type is not differentiable, differentiable types are F16, Bf16, F32, F64, C64, C128")]
     NonDifferentiableTypeError(Callsite),
 
-    #[error("Expected integral type")]
-    IntegralTypeError(Callsite),
+    #[error("Expected integral type, got {0}. Integral types are S8, S16, S32, S64, U8, U16, U32, U64")]
+    IntegralTypeError(xla::ElementType, Callsite),
+
+    #[error("Expected real type, got {0}. Real types are F16, Bf16, F32, F64")]
+    RealTypeError(xla::ElementType, Callsite),
 
     #[error("Expected tensor of rank {0}, got {1}")]
     RankError(usize, usize, Callsite),

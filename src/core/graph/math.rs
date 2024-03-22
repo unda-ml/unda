@@ -778,6 +778,8 @@ impl Context {
         self.maybe_keepdims(node_id, dim, keepdims)
     }
 
+    // assumes dense_predictions is rank 2 with dimension 0 being batch and dimension 1 being predictions
+    // assumes sparse_label_vector is rank 1 i64 of class labels
     pub fn accuracy(
         &mut self,
         dense_predictions: NodeIdentifier,
@@ -813,7 +815,12 @@ impl Context {
             | xla::ElementType::U32
             | xla::ElementType::S32
             | xla::ElementType::U64 => self.type_cast(sparse_label_vector, xla::ElementType::S64),
-            _ => return Err(ContextError::IntegralTypeError(callsite!(1))),
+            _ => {
+                return Err(ContextError::IntegralTypeError(
+                    self.nodes[sparse_label_vector].dtype,
+                    callsite!(1),
+                ))
+            }
         };
 
         let node_id = self.nodes.insert(Node {
@@ -827,5 +834,37 @@ impl Context {
             .or_insert(Vec::new())
             .push(node_id);
         Ok(node_id)
+    }
+
+    pub fn mean_cross_entropy(
+        &mut self,
+        prediction_probabilities: NodeIdentifier,
+        one_hot_labels: NodeIdentifier,
+    ) -> Result<NodeIdentifier> {
+        let dtype = self.nodes[prediction_probabilities].dtype;
+        if dtype != self.nodes[one_hot_labels].dtype {
+            return Err(ContextError::IncompatibleOperandTypes(
+                dtype,
+                self.nodes[one_hot_labels].dtype,
+                callsite!(1),
+            ));
+        }
+        match dtype {
+            xla::ElementType::F16
+            | xla::ElementType::Bf16
+            | xla::ElementType::F32
+            | xla::ElementType::F64 => {}
+            _ => return Err(ContextError::RealTypeError(dtype, callsite!(1))),
+        }
+
+        let eps = self.scalar(1e-8, xla::ElementType::F32)?;
+        let eps = self.type_cast(eps, dtype);
+        // prevent logarithm of zero
+        let offset = self.add(prediction_probabilities, eps)?;
+        let log = self.log(offset)?;
+        let neglog = self.neg(log);
+        let mul = self.mul(one_hot_labels, neglog)?;
+        let sum = self.reduce_sum(mul, 1, false)?;
+        self.reduce_mean(sum, 0, false)
     }
 }

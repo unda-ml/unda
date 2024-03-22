@@ -4,7 +4,7 @@ use super::*;
 use rand_distr::num_traits::Zero;
 use slotmap::new_key_type;
 use xla::Literal;
-use std::{fmt::{Display, Formatter, Result}};
+use std::fmt::{Display, Formatter, Result};
 
 use half::bf16;
 use half::f16;
@@ -16,11 +16,11 @@ pub struct Node {
     // TODO: gate this so its not present at all in release builds
     pub(crate) callsite: Callsite,
     /// shape of the output of this node
-    pub(crate) shape: Shape,
+    pub shape: Shape,
     /// the operation this node performs
     pub(crate) operation: Operation,
     //// output type of the operation
-    pub(crate) dtype: xla::ElementType,
+    pub dtype: xla::ElementType,
 }
 
 
@@ -50,7 +50,7 @@ impl Node {
                                 return Ok(false);
                             }
                         }
-  
+
                     },
                     xla::ElementType::F16 => {
                         let data_ref = a.value.to_vec::<f16>()?;
@@ -179,7 +179,7 @@ impl Node {
                                 return Ok(false);
                             }
                         }
-  
+
                     },
                     xla::ElementType::F16 => {
                         let data_ref = a.value.to_vec::<f16>()?;
