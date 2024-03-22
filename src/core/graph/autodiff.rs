@@ -91,6 +91,16 @@ impl Context {
                         }
                     }
 
+                    Operation::OneHot(node) => {
+                        if self.gradient_is_dependent(node, dependent_node) {
+                            return Err(ContextError::NonDifferentiableOpError(
+                                self.nodes[dependent_node].callsite.clone(),
+                            ));
+                        } else {
+                            continue;
+                        }
+                    }
+
                     Operation::TypeCast(a, _) => {
                         if self.gradient_is_dependent(node, dependent_node) {
                             return Err(ContextError::NonDifferentiableOpError(

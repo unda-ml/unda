@@ -28,6 +28,8 @@ pub enum Operation {
     ZerosLike(NodeIdentifier),
 
     ReduceMax{ node: NodeIdentifier, dim: i64, keepdims: bool },
+
+    OneHot(NodeIdentifier),
 }
 
 impl Display for Operation {

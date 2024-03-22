@@ -52,6 +52,12 @@ pub enum ContextError {
 
     #[error("Type is not differentiable, differentiable types are F16, Bf16, F32, F64, C64, C128")]
     NonDifferentiableTypeError(Callsite),
+
+    #[error("Expected integral type")]
+    IntegralTypeError(Callsite),
+
+    #[error("Expected tensor of rank {0}, got {1}")]
+    RankError(usize, usize, Callsite),
 }
 
 pub type Result<T> = std::result::Result<T, ContextError>;
@@ -120,17 +126,24 @@ impl Context {
                 dim,
             } => format!(
                 "SliceInDim ({}) {} {} {} {}",
-                self.to_string(node), start, stop, stride, dim
+                self.to_string(node),
+                start,
+                stop,
+                stride,
+                dim
             ),
             Operation::ZerosLike(node) => format!("ZerosLike {}", self.to_string(node)),
+            Operation::OneHot(node) => format!(
+                "OneHot ({}) {} {}",
+                self.to_string(node),
+                input_node.shape.sizes[1],
+                input_node.dtype
+            ),
             Operation::ReduceMax {
                 node,
                 dim,
                 keepdims,
-            } => format!(
-                "SliceInDim {} {} {}",
-                self.to_string(node), dim, keepdims
-            ),
+            } => format!("SliceInDim {} {} {}", self.to_string(node), dim, keepdims),
         }
     }
 }

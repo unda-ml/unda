@@ -541,4 +541,35 @@ impl Context {
             .push(node_id);
         node_id
     }
+
+    pub fn one_hot(&mut self, sparse_label_vector: NodeIdentifier, n_classes: usize, dtype: xla::ElementType) -> Result<NodeIdentifier> {
+        if self.nodes[sparse_label_vector].shape.ndims() != 1 {
+            return Err(ContextError::RankError(1, self.nodes[sparse_label_vector].shape.ndims(), callsite!(1)))
+        }
+        let label_len = self.nodes[sparse_label_vector].shape.sizes[0];
+
+        let converted = match self.nodes[sparse_label_vector].dtype {
+            xla::ElementType::S64 => sparse_label_vector,
+            xla::ElementType::U8
+            | xla::ElementType::S8
+            | xla::ElementType::U16
+            | xla::ElementType::S16
+            | xla::ElementType::U32
+            | xla::ElementType::S32
+            | xla::ElementType::U64 => self.type_cast(sparse_label_vector, xla::ElementType::S64),
+            _ => return Err(ContextError::IntegralTypeError(callsite!(1)))
+        };
+
+        let node_id = self.nodes.insert(Node {
+            callsite: callsite!(1),
+            shape: Shape::from([label_len, n_classes as u16]),
+            operation: Operation::OneHot(converted),
+            dtype: dtype,
+        });
+        self.dependent_nodes
+            .entry(converted)
+            .or_insert(Vec::new())
+            .push(node_id);
+        Ok(node_id)
+    }
 }
