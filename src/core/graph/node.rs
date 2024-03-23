@@ -10,7 +10,7 @@ use half::bf16;
 use half::f16;
 
 /// A node in the compute graph
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Node {
     /// helps identify where in the user's source code this node originated
     // TODO: gate this so its not present at all in release builds
