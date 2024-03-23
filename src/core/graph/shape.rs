@@ -6,7 +6,7 @@ use super::callsite::Callsite;
 /// scalar would be an []
 /// 3d vector would be [3]
 /// 4x3 matrix would be [4,3]
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Hash)]
 pub struct Shape {
     /// smallvec to avoid indirection in the common case of dimension <= 8
     pub sizes: SmallVec<[u32; 4]>,

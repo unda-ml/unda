@@ -4,7 +4,7 @@ use super::*;
 use rand_distr::num_traits::Zero;
 use slotmap::new_key_type;
 use xla::Literal;
-use std::{fmt::{Display, Formatter, Result}};
+use std::{fmt::{Display, Formatter, Result}, hash::Hash};
 
 use half::bf16;
 use half::f16;
@@ -26,6 +26,14 @@ pub struct Node {
 
 new_key_type! {
     pub struct NodeIdentifier;
+}
+
+impl Hash for Node {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.shape.hash(state);
+        self.operation.hash(state);
+        self.dtype.hash(state);
+    }
 }
 
 

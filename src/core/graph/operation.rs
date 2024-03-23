@@ -2,7 +2,7 @@ use super::*;
 use std::fmt::{Display, Formatter, Result};
 use strum_macros::EnumDiscriminants;
 
-#[derive(Debug, Clone, EnumDiscriminants)]
+#[derive(Debug, Clone, EnumDiscriminants, Hash)]
 pub enum Operation {
     Constant(ConstantBinding),
     Parameter(String),
