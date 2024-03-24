@@ -7,7 +7,7 @@ impl Context {
         self.dependent_nodes[&node].to_vec()
     }
 
-    fn replace_index(
+    pub(crate) fn replace_index(
         &mut self,
         to_remove: NodeIdentifier,
         rep_with: NodeIdentifier,
