@@ -84,8 +84,7 @@ impl Context {
         if !changed {
             return Ok(false);
         } else {
-            self.extract_subterms(outputs, modification_limit - modifications)?;
+            return Ok(changed || self.extract_subterms(outputs, modification_limit - modifications)?);
         }
-        Ok(changed)
     }
 }
