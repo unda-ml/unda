@@ -80,6 +80,12 @@ impl Context {
             }
         }
 
+        //Recursive recall if we changed something and modifications are still available
+        if !changed {
+            return Ok(false);
+        } else {
+            self.extract_subterms(outputs, modification_limit - modifications)?;
+        }
         Ok(changed)
     }
 }
