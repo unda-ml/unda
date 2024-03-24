@@ -756,15 +756,8 @@ impl Context {
         dim: i64,
         keepdims: bool,
     ) -> Result<NodeIdentifier> {
-        let a = a.into();
-        let mut s = Shape::new();
-        for d in (0..self.nodes[a].shape.ndims()).rev() {
-            if d as i64 == dim && keepdims {
-                s.sizes.push(1)
-            } else {
-                s.sizes.push(self.nodes[a].shape.sizes[d])
-            }
-        }
+        let mut s = self.nodes[a].shape.clone();
+        s.sizes.remove(dim as usize);
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: s,
@@ -785,8 +778,24 @@ impl Context {
         dense_predictions: NodeIdentifier,
         sparse_label_vector: NodeIdentifier,
     ) -> Result<NodeIdentifier> {
+        let converted_labels = match self.nodes[sparse_label_vector].dtype {
+            xla::ElementType::S64 => sparse_label_vector,
+            xla::ElementType::U8
+            | xla::ElementType::S8
+            | xla::ElementType::U16
+            | xla::ElementType::S16
+            | xla::ElementType::U32
+            | xla::ElementType::S32
+            | xla::ElementType::U64 => self.type_cast(sparse_label_vector, xla::ElementType::S64),
+            _ => {
+                return Err(ContextError::IntegralTypeError(
+                    self.nodes[sparse_label_vector].dtype,
+                    callsite!(1),
+                ))
+            }
+        };
         let sparse_predictions = self.reduce_argmax(dense_predictions, 1, false)?;
-        let compare = self.eq(sparse_predictions, sparse_label_vector)?;
+        let compare = self.eq(sparse_predictions, converted_labels)?;
         let converted = self.type_cast(compare, xla::ElementType::F32);
         self.reduce_mean(converted, 0, false)
     }

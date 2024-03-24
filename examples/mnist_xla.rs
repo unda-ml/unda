@@ -5,10 +5,10 @@ use unda::core::graph::*;
 use xla::{ElementType::*, PjRtClient, PjRtLoadedExecutable};
 
 const USE_CPU: bool = false;
-const MNIST_DIRECTORY: &str = "/home/ekadile/mnist";
+const MNIST_DIRECTORY: &str = "/home/medusa/mnist";
 const EPOCHS: usize = 20;
 const INIT_LEARNING_RATE: f32 = 1e-3;
-const LEARNING_RATE_DECAY: f32 = 0.95;
+const LEARNING_RATE_DECAY: f32 = 0.9;
 
 // ABSTRACT API REQUIREMENT 1: Automatic Layer Construction
 // We should have functions like this which, for a given layer type,
@@ -24,24 +24,27 @@ fn dense(
     name: &str,
 ) -> Result<(NodeIdentifier, (NodeIdentifier, NodeIdentifier))> {
     let shape = model.nodes[input_node].shape.clone();
+    //println!("{:?}", shape.sizes);
     let last_dim = shape.sizes[shape.ndims() - 1];
     let dtype = model.nodes[input_node].dtype;
 
-    let weights_shape = Shape::from([out_size, last_dim]);
+    //println!("weight shape {} {}", last_dim, out_size);
+    let weights_shape = Shape::from([last_dim, out_size]);
     let mut weights_name = name.to_owned();
     weights_name.push_str("_weights");
     let weights = model.parameter(weights_name, weights_shape, dtype)?;
 
     let mut bias_shape = Shape::new();
-    bias_shape.sizes.push(out_size);
     for _ in 0..(shape.ndims() - 1) {
         bias_shape.sizes.push(1u32);
     }
+    bias_shape.sizes.push(out_size);
+    //println!("bias shape {:?}", bias_shape.sizes);
     let mut bias_name = name.to_owned();
     bias_name.push_str("_bias");
     let bias = model.parameter(bias_name, bias_shape, dtype)?;
 
-    let matmul_node = model.matmul(weights, input_node)?;
+    let matmul_node = model.matmul(input_node, weights)?;
     let dense_node = model.add(matmul_node, bias)?;
 
     Ok((dense_node, (weights, bias)))
@@ -88,6 +91,7 @@ fn build_model_and_optimizer(client: &xla::PjRtClient) -> Result<PjRtLoadedExecu
     // Part of this issue should be the implementation of optional
     // gradient clipping on the backward pass.
     let (w1_grad, b1_grad) = (model.diff(loss, w1)?, model.diff(loss, b1)?);
+    println!("got here");
     let (w2_grad, b2_grad) = (model.diff(loss, w2)?, model.diff(loss, b2)?);
     let (w3_grad, b3_grad) = (model.diff(loss, w3)?, model.diff(loss, b3)?);
     let (w_out_grad, b_out_grad) = (model.diff(loss, w_out)?, model.diff(loss, b_out)?);
@@ -203,7 +207,7 @@ fn load_mnist_batch(
     batch_idx: u64,
 ) -> io::Result<(xla::Literal, xla::Literal)> {
     let mut image_bytes = [0u8; 100 * 28 * 28];
-    images.read_exact_at(&mut image_bytes, 100 * 28 * 28 * batch_idx)?;
+    images.read_exact_at(&mut image_bytes, 8 + 100 * 28 * 28 * batch_idx)?;
     let mut images_xla = xla::Literal::vec1(&image_bytes);
     images_xla = match images_xla.reshape(&[100, 28 * 28]) {
         Ok(x) => x,
@@ -211,7 +215,7 @@ fn load_mnist_batch(
     };
 
     let mut label_bytes = [0u8; 100 * 4];
-    labels.read_exact_at(&mut label_bytes, 100 * 4 * batch_idx)?;
+    labels.read_exact_at(&mut label_bytes, 8 + 100 * 4 * batch_idx)?;
     let labels_xla = xla::Literal::vec1(&label_bytes);
 
     Ok((images_xla, labels_xla))
