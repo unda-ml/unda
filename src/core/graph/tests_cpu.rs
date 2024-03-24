@@ -55,7 +55,9 @@ macro_rules! create_test {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::graph::Context;
+    use std::collections::HashMap;
+
+    use crate::core::graph::{Context, Node};
     use xla::{FromRawBytes, Literal, Shape};
 
     create_test!(test_pow_f32_100_squared, pow, F32, 10f32, 2f32, 100f32);
@@ -65,6 +67,25 @@ mod tests {
     create_test!(test_ln_e, log, F32, 1f32, 0f32);
     create_test!(test_add_1_2, add, F32, 1f32, 2f32, 3f32);
     create_test!(test_sub_1_2, sub, F32, 1f32, 2f32, -1f32);
+
+    #[test]
+    fn test_hash_node() {
+        let mut ctx = Context::new();
+        let mut hash_map: HashMap<Node, f32> = HashMap::new();
+        let x = ctx.parameter("x", [], xla::ElementType::F32).expect("x");
+
+        let three = ctx.scalar(3, xla::ElementType::F32).expect("three");
+        let three_x_b = ctx.mul(three, x).expect("3x");
+        let three_x_a = ctx.mul(three, x).expect("3x again");
+
+        let node_a = ctx.nodes[three_x_a].clone();
+        let node_b = ctx.nodes[three_x_b].clone();
+
+        hash_map.insert(node_a, 1.0);
+        hash_map.insert(node_b, 2.0);
+
+        assert_eq!(hash_map.keys().len(), 1)
+    }
 
     #[test]
     fn test_tanh(){
