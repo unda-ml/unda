@@ -78,8 +78,8 @@ mod tests {
         let three_x_b = ctx.mul(three, x).expect("3x");
         let three_x_a = ctx.mul(three, x).expect("3x again");
 
-        let node_a = ctx.nodes[three_x_a];
-        let node_b = ctx.nodes[three_x_b];
+        let node_a = ctx.nodes[three_x_a].clone();
+        let node_b = ctx.nodes[three_x_b].clone();
 
         hash_map.insert(node_a, 1.0);
         hash_map.insert(node_b, 2.0);

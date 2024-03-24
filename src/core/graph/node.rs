@@ -10,7 +10,7 @@ use half::bf16;
 use half::f16;
 
 /// A node in the compute graph
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct Node {
     /// helps identify where in the user's source code this node originated
     // TODO: gate this so its not present at all in release builds
@@ -28,11 +28,18 @@ new_key_type! {
     pub struct NodeIdentifier;
 }
 
+impl PartialEq for Node {
+    fn eq(&self, other: &Self) -> bool {
+        self.shape == other.shape && self.operation == other.operation
+    }
+}
+
+impl Eq for Node {}
+
 impl Hash for Node {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.shape.hash(state);
         self.operation.hash(state);
-        self.dtype.hash(state);
     }
 }
 

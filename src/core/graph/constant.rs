@@ -2,7 +2,7 @@ use super::*;
 use std::{path::Path, hash::Hash};
 use xla::FromRawBytes;
 
-#[derive(Debug, Clone, Hash, Eq, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct ConstantBinding {
     /// unstructured float data. only makes sense combined with Node::dimension
     pub(crate) value: xla::Literal,
