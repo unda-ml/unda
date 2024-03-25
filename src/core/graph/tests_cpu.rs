@@ -362,6 +362,12 @@ mod tests {
         let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
         println!("{:?}", rust_result);*/
         let fold_const = ctx.fold_consts(product, usize::MAX).expect("fold it");
+        ctx.compile(name, [product], &client).expect("Compile");
+        println!("{}", ctx.to_string(product));
+
+        for (_, val) in ctx.nodes {
+            println!("{}", val.to_string());
+        }
 
         assert!(fold_const);
     }
