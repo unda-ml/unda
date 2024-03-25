@@ -62,6 +62,9 @@ pub enum ContextError {
 
     #[error("Expected tensor of rank {0}, got {1}")]
     RankError(usize, usize, Callsite),
+
+    #[error("Invalid permutation passed to transpose. Expected permutation of length {0}, got {1}")]
+    TransposeLenError(usize, usize, Callsite),
 }
 
 pub type Result<T> = std::result::Result<T, ContextError>;

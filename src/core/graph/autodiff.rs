@@ -104,9 +104,8 @@ impl Context {
                             let node_sh = self.nodes[node].shape.clone();
                             if self.nodes[next_pullback].shape.size() == node_sh.size() {
                                 let pullback = self.reshape(next_pullback, node_sh)?;
-                                println!("Reshape {}", self.nodes[next_pullback].shape);
                                 dependent_pullbacks.push(pullback);
-                            } else if let Some(s) = self.nodes[next_pullback]
+                            } else if let Some(_s) = self.nodes[next_pullback]
                                 .shape
                                 .broadcast(&self.nodes[dependent_node].shape)
                             {
@@ -117,7 +116,6 @@ impl Context {
                                     for _ in 0..self.nodes[next_pullback].shape.ndims() {
                                         sum_pullback = self.reduce_sum(next_pullback, 0, false)?;
                                     }
-                                    println!("Reshape {}", self.nodes[sum_pullback].shape);
                                     dependent_pullbacks.push(sum_pullback);
                                 } else {
                                     for d in 0..self.nodes[next_pullback].shape.ndims() {
@@ -126,7 +124,6 @@ impl Context {
                                                 self.reduce_sum(next_pullback, d as i64, true)?
                                         }
                                     }
-                                    println!("Reshape {}", self.nodes[sum_pullback].shape);
                                     dependent_pullbacks.push(sum_pullback);
                                 }
                             } else {
@@ -152,7 +149,6 @@ impl Context {
 
                         Operation::Add(a, b) => {
                             let next_pullback = self.diff(output, dependent_node)?;
-                            println!("Add {}", self.nodes[next_pullback].shape);
                             if a == with_respect_to {
                                 dependent_pullbacks.push(next_pullback);
                             }
@@ -173,7 +169,6 @@ impl Context {
 
                         Operation::Mul(a, b) => {
                             let next_pullback = self.diff(output, dependent_node)?;
-                            println!("Mul {} {}", self.nodes[a].shape, self.nodes[b].shape);
                             if a == b && a == with_respect_to {
                                 let two = self.scalar(2, wrt_dtype)?;
                                 let mul = self.mul(two, a)?;
@@ -189,33 +184,24 @@ impl Context {
 
                         Operation::MatMul(a, b) => {
                             let next_pullback = self.diff(output, dependent_node)?;
-                            println!("got to matmul");
 
                             if a == with_respect_to {
-                                let mut transpose_dims = self.nodes[a]
-                                    .shape
-                                    .sizes
-                                    .iter()
-                                    .map(|s| *s as i64)
-                                    .collect::<Vec<i64>>();
-                                let ndims = transpose_dims.len();
-                                transpose_dims.swap(ndims - 2, ndims - 1);
-
-                                let transpose = self.transpose(a, transpose_dims.as_slice())?;
-                                let this_pullback = self.matmul(transpose, next_pullback)?;
-                                dependent_pullbacks.push(this_pullback);
-                            } else if b == with_respect_to {
-                                let mut transpose_dims = self.nodes[b]
-                                    .shape
-                                    .sizes
-                                    .iter()
-                                    .map(|s| *s as i64)
-                                    .collect::<Vec<i64>>();
+                                let mut transpose_dims =
+                                    Vec::from_iter(0..(self.nodes[b].shape.ndims() as i64));
                                 let ndims = transpose_dims.len();
                                 transpose_dims.swap(ndims - 2, ndims - 1);
 
                                 let transpose = self.transpose(b, &transpose_dims)?;
                                 let this_pullback = self.matmul(next_pullback, transpose)?;
+                                dependent_pullbacks.push(this_pullback);
+                            } else if b == with_respect_to {
+                                let mut transpose_dims =
+                                    Vec::from_iter(0..(self.nodes[a].shape.ndims() as i64));
+                                let ndims = transpose_dims.len();
+                                transpose_dims.swap(ndims - 2, ndims - 1);
+
+                                let transpose = self.transpose(a, &transpose_dims)?;
+                                let this_pullback = self.matmul(transpose, next_pullback)?;
                                 dependent_pullbacks.push(this_pullback);
                             }
                         }
@@ -261,20 +247,17 @@ impl Context {
                             let one = self.scalar(1, wrt_dtype)?;
                             let quotient = self.div(one, a)?;
 
-                            println!("Log");
                             let next_pullback = self.mul(quotient, next_pullback)?;
                             dependent_pullbacks.push(next_pullback);
                         }
 
                         Operation::Neg(_) => {
-                            println!("Neg");
                             let next_pullback = self.diff(output, dependent_node)?;
                             dependent_pullbacks.push(self.neg(next_pullback));
                         }
 
                         Operation::Exp(_) => {
                             let next_pullback = self.diff(output, dependent_node)?;
-                            println!("Exp");
                             let this_pullback = self.mul(next_pullback, dependent_node)?;
 
                             dependent_pullbacks.push(this_pullback);
@@ -336,11 +319,9 @@ impl Context {
                             }
                             let reshaped_pullback =
                                 self.reshape(next_pullback, new_shape.clone())?;
-                            println!("{}", new_shape);
                             let tiled_pullback =
                                 self.tile_in_dim(reshaped_pullback, n_tiles, dim)?;
 
-                            println!("ReduceSum {}", self.nodes[tiled_pullback].shape);
                             dependent_pullbacks.push(tiled_pullback);
                         }
 
@@ -352,15 +333,13 @@ impl Context {
                             if new_shape.ndims() != self.nodes[node].shape.ndims() {
                                 new_shape.sizes.insert(dim as usize, 1u32);
                             }
-                            let reshaped_pullback =
-                                self.reshape(next_pullback, new_shape)?;
+                            let reshaped_pullback = self.reshape(next_pullback, new_shape)?;
                             let tiled_pullback =
                                 self.tile_in_dim(reshaped_pullback, n_tiles, dim)?;
 
                             let scale =
                                 self.scalar(1.0 / (n_tiles as f32), self.nodes[node].dtype)?;
                             let rescaled_pullback = self.mul(scale, tiled_pullback)?;
-                            println!("ReduceMean {}", self.nodes[rescaled_pullback].shape);
                             dependent_pullbacks.push(rescaled_pullback);
                         }
 

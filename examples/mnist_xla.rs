@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io;
+use std::time::Instant;
 use std::os::unix::fs::*;
 use unda::core::graph::*;
 use xla::{ElementType::*, PjRtClient, PjRtLoadedExecutable};
@@ -131,7 +132,7 @@ fn build_model_and_optimizer(client: &xla::PjRtClient) -> Result<PjRtLoadedExecu
         model.sub(w_out, w_out_update)?,
         model.sub(b_out, b_out_update)?,
     );
-
+    println!("GOT HERE");
     model.compile(
         "train_step",
         [
@@ -242,11 +243,14 @@ fn main() {
     test_lbl_path.push_str("/t10k-labels-idx1-ubyte");
     let test_labels = File::open(test_lbl_path).expect("Failed to open training label file");
 
+    println!("Building model and optimizer . . .");
     let executable =
         build_model_and_optimizer(&client).expect("Failed to build model and optimizer");
 
     let (mut w1, mut b1, mut w2, mut b2, mut w3, mut b3, mut w_out, mut b_out) = init_params();
 
+    println!("Beginning training.");
+    let now = Instant::now();
     for epoch in 0..EPOCHS {
         let mut train_accuracy = 0f32;
         let mut train_loss = 0f32;
@@ -316,6 +320,7 @@ fn main() {
             train_accuracy / 600f32
         );
     }
+    println!("Finished training after {:.2?}", now.elapsed());
 
     // ABSTRACT API REQUIREMENT 7: Serialization
     // The model is not worth very much if it disappears after our training loop.

@@ -584,11 +584,23 @@ impl Context {
     }
 
     pub fn transpose(&mut self, a: NodeIdentifier, index_perm: &[i64]) -> Result<NodeIdentifier> {
-        let a_shape = self.nodes[a].shape.clone();
+        if index_perm.len() != self.nodes[a].shape.ndims() {
+            return Err(ContextError::TransposeLenError(
+                self.nodes[a].shape.ndims(),
+                index_perm.len(),
+                callsite!(1),
+            ));
+        }
+        let mut new_shape = Shape::new();
+        for d in 0..index_perm.len() {
+            new_shape
+                .sizes
+                .push(self.nodes[a].shape.sizes[index_perm[d] as usize]);
+        }
         let index_perms_deref = index_perm.to_vec();
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
-            shape: a_shape,
+            shape: new_shape,
             operation: Operation::Transpose(a, index_perms_deref),
             dtype: self.nodes[a].dtype,
         });
