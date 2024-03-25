@@ -1,5 +1,7 @@
 use smallvec::SmallVec;
 
+use self::dtypes::*;
+
 use super::*;
 
 impl Context {
@@ -517,12 +519,17 @@ impl Context {
     }
 
     pub fn softmax(&mut self, a: NodeIdentifier) -> Result<NodeIdentifier> {
+        let dtype = check_fp_type(self.nodes[a].dtype)?;
+
         let max = self.reduce_max(a, 0, true)?;
         let stop_grad = self.stop_gradient(max);
         let unnormalized = self.sub(a, stop_grad)?;
         let unnormalized_exp = self.exp(unnormalized)?;
 
         let sum = self.reduce_sum(unnormalized_exp, 0, true)?;
+        let eps = self.scalar(1e-8, dtype)?;
+        // prevent division by 0
+        let sum = self.add(sum, eps)?;
 
         self.div(unnormalized_exp, sum)
     }
@@ -553,6 +560,7 @@ impl Context {
 
     pub fn reshape(&mut self, a: NodeIdentifier, shape: Shape) -> Result<NodeIdentifier> {
         let a_size = self.nodes[a].shape.size();
+        println!("reshape: {} {}", self.nodes[a].shape, shape);
         if a_size != shape.size() {
             Err(ContextError::ShapeConversion(
                 ShapeConversionError::MismatchedSizes(
@@ -783,21 +791,9 @@ impl Context {
         dense_predictions: NodeIdentifier,
         sparse_label_vector: NodeIdentifier,
     ) -> Result<NodeIdentifier> {
-        let converted_labels = match self.nodes[sparse_label_vector].dtype {
-            xla::ElementType::S64 => sparse_label_vector,
-            xla::ElementType::U8
-            | xla::ElementType::S8
-            | xla::ElementType::U16
-            | xla::ElementType::S16
-            | xla::ElementType::U32
-            | xla::ElementType::S32
-            | xla::ElementType::U64 => self.type_cast(sparse_label_vector, xla::ElementType::S64),
-            _ => {
-                return Err(ContextError::IntegralTypeError(
-                    self.nodes[sparse_label_vector].dtype,
-                    callsite!(1),
-                ))
-            }
+        let converted_labels = match check_int_type(self.nodes[sparse_label_vector].dtype) {
+            Ok(_) => self.type_cast(sparse_label_vector, xla::ElementType::S64),
+            _ => unreachable!(),
         };
         let sparse_predictions = self.reduce_argmax(dense_predictions, 1, false)?;
         let compare = self.eq(sparse_predictions, converted_labels)?;
@@ -820,31 +816,19 @@ impl Context {
         }
         let label_len = self.nodes[sparse_label_vector].shape.sizes[0];
 
-        let converted = match self.nodes[sparse_label_vector].dtype {
-            xla::ElementType::S64 => sparse_label_vector,
-            xla::ElementType::U8
-            | xla::ElementType::S8
-            | xla::ElementType::U16
-            | xla::ElementType::S16
-            | xla::ElementType::U32
-            | xla::ElementType::S32
-            | xla::ElementType::U64 => self.type_cast(sparse_label_vector, xla::ElementType::S64),
-            _ => {
-                return Err(ContextError::IntegralTypeError(
-                    self.nodes[sparse_label_vector].dtype,
-                    callsite!(1),
-                ))
-            }
+        let converted_labels = match check_int_type(self.nodes[sparse_label_vector].dtype) {
+            Ok(_) => self.type_cast(sparse_label_vector, xla::ElementType::S64),
+            _ => unreachable!(),
         };
 
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: Shape::from([label_len, n_classes as u32]),
-            operation: Operation::OneHot(converted),
+            operation: Operation::OneHot(converted_labels),
             dtype: dtype,
         });
         self.dependent_nodes
-            .entry(converted)
+            .entry(converted_labels)
             .or_insert(Vec::new())
             .push(node_id);
         Ok(node_id)
@@ -855,20 +839,13 @@ impl Context {
         prediction_probabilities: NodeIdentifier,
         one_hot_labels: NodeIdentifier,
     ) -> Result<NodeIdentifier> {
-        let dtype = self.nodes[prediction_probabilities].dtype;
+        let dtype = check_real_type(self.nodes[prediction_probabilities].dtype)?;
         if dtype != self.nodes[one_hot_labels].dtype {
             return Err(ContextError::IncompatibleOperandTypes(
                 dtype,
                 self.nodes[one_hot_labels].dtype,
                 callsite!(1),
             ));
-        }
-        match dtype {
-            xla::ElementType::F16
-            | xla::ElementType::Bf16
-            | xla::ElementType::F32
-            | xla::ElementType::F64 => {}
-            _ => return Err(ContextError::RealTypeError(dtype, callsite!(1))),
         }
 
         let eps = self.scalar(1e-8, dtype)?;

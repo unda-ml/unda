@@ -263,19 +263,15 @@ impl Context {
                             dependent_pullbacks.push(this_pullback);
                         }
 
+                        // TODO: Test this!
                         Operation::TileInDim { node, n_tiles, dim } => {
                             let next_pullback = self.diff(output, dependent_node)?;
 
-                            let mut new_sizes = SmallVec::new();
-                            for i in (0..self.nodes[node].shape.ndims()).rev() {
-                                new_sizes.push(self.nodes[node].shape.sizes[i]);
-                                if i as i64 == dim {
-                                    new_sizes.push(n_tiles as u32);
-                                }
-                            }
+                            let mut new_shape = self.nodes[node].shape.clone();
+                            new_shape.sizes.insert(dim as usize, n_tiles as u32);
 
                             let reshaped_pullback =
-                                self.reshape(next_pullback, Shape { sizes: new_sizes })?;
+                                self.reshape(next_pullback, new_shape)?;
                             dependent_pullbacks.push(self.reduce_sum(
                                 reshaped_pullback,
                                 dim,

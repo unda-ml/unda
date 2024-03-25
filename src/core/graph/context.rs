@@ -60,6 +60,9 @@ pub enum ContextError {
     #[error("Expected real type, got {0}. Real types are F16, Bf16, F32, F64")]
     RealTypeError(xla::ElementType, Callsite),
 
+    #[error("Expected floating point type, got {0}. Real types are F16, Bf16, F32, F64, C64, C128")]
+    FPTypeError(xla::ElementType, Callsite),
+
     #[error("Expected tensor of rank {0}, got {1}")]
     RankError(usize, usize, Callsite),
 

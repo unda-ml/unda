@@ -31,7 +31,6 @@ impl Context {
             Err(CompileError::NoReturn)?;
         }
 
-
         for a in returns.iter() {
             self.fold_consts(*a, usize::MAX)?;
         }
@@ -185,11 +184,10 @@ impl Context {
                     }
 
                     Operation::Transpose(a, perm_index) => {
-                         if unda_xla_map.contains_key(&a)
+                        if unda_xla_map.contains_key(&a)
                             && xla_op_slotmap.contains_key(unda_xla_map[&a])
                         {
-                            let xla_op = xla_op_slotmap[unda_xla_map[&a]]
-                                .transpose(&perm_index)?;
+                            let xla_op = xla_op_slotmap[unda_xla_map[&a]].transpose(&perm_index)?;
                             let xla_id = xla_op_slotmap.insert(xla_op);
                             unda_xla_map.insert(*dependent_op, xla_id);
                             unda_op_queue.push_back(*dependent_op);
@@ -238,7 +236,6 @@ impl Context {
                             covered_ops.insert(*dependent_op);
                         }
                     }
-
 
                     Operation::Exp(a) => {
                         if unda_xla_map.contains_key(&a)
@@ -389,6 +386,13 @@ impl Context {
                         if unda_xla_map.contains_key(&node)
                             && xla_op_slotmap.contains_key(unda_xla_map[&node])
                         {
+                            println!(
+                                "{} {} {} {}",
+                                self.nodes[node].shape,
+                                this_node.shape,
+                                self.nodes[node].operation,
+                                self.nodes[node].callsite
+                            );
                             let xla_op = xla_op_slotmap[unda_xla_map[&node]].reshape(
                                 this_node
                                     .shape
@@ -463,10 +467,7 @@ impl Context {
                             covered_ops.insert(*dependent_op);
                         }
                     }
-                    Operation::ReduceMax {
-                        node,
-                        dim,
-                    } => {
+                    Operation::ReduceMax { node, dim } => {
                         if xla_op_slotmap.contains_key(unda_xla_map[&node]) {
                             let xla_op =
                                 xla_op_slotmap[unda_xla_map[&node]].reduce_max(&[dim], false)?;
@@ -476,10 +477,7 @@ impl Context {
                             covered_ops.insert(*dependent_op);
                         }
                     }
-                    Operation::ReduceSum {
-                        node,
-                        dim,
-                    } => {
+                    Operation::ReduceSum { node, dim } => {
                         if xla_op_slotmap.contains_key(unda_xla_map[&node]) {
                             let xla_op =
                                 xla_op_slotmap[unda_xla_map[&node]].reduce_sum(&[dim], false)?;
@@ -489,10 +487,7 @@ impl Context {
                             covered_ops.insert(*dependent_op);
                         }
                     }
-                    Operation::ReduceMean {
-                        node,
-                        dim,
-                    } => {
+                    Operation::ReduceMean { node, dim } => {
                         if xla_op_slotmap.contains_key(unda_xla_map[&node]) {
                             let xla_op =
                                 xla_op_slotmap[unda_xla_map[&node]].reduce_mean(&[dim], false)?;
@@ -502,10 +497,7 @@ impl Context {
                             covered_ops.insert(*dependent_op);
                         }
                     }
-                    Operation::ReduceArgmax {
-                        node,
-                        dim,
-                    } => {
+                    Operation::ReduceArgmax { node, dim } => {
                         if xla_op_slotmap.contains_key(unda_xla_map[&node]) {
                             let xla_op =
                                 xla_op_slotmap[unda_xla_map[&node]].reduce_argmax(dim, false)?;
