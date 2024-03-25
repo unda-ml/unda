@@ -747,19 +747,19 @@ impl Context {
         dim: i64,
         keepdims: bool,
     ) -> Result<NodeIdentifier> {
-        let mut s = Shape::new();
-        for d in (0..self.nodes[a].shape.ndims()).rev() {
-            if d as i64 != dim {
-                s.sizes.push(self.nodes[a].shape.sizes[d])
-            }
-        }
+        let dtype = check_fp_type(self.nodes[a].dtype)?;
+
+        let mut s = self.nodes[a].shape.clone();
+        s.sizes.remove(dim as usize);
+
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: s,
             operation: Operation::ReduceMean { node: a, dim },
-            dtype: self.nodes[a].dtype,
+            dtype: dtype,
         });
         self.dependent_nodes.entry(a).or_default().push(node_id);
+
         self.maybe_keepdims(node_id, dim, keepdims)
     }
 
@@ -793,7 +793,7 @@ impl Context {
     ) -> Result<NodeIdentifier> {
         let converted_labels = match check_int_type(self.nodes[sparse_label_vector].dtype) {
             Ok(_) => self.type_cast(sparse_label_vector, xla::ElementType::S64),
-            _ => unreachable!(),
+            Err(e) => return Err(e),
         };
         let sparse_predictions = self.reduce_argmax(dense_predictions, 1, false)?;
         let compare = self.eq(sparse_predictions, converted_labels)?;
