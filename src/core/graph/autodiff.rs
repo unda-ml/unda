@@ -102,9 +102,40 @@ impl Context {
                         Operation::Reshape(node) => {
                             let next_pullback = self.diff(output, dependent_node)?;
                             let node_sh = self.nodes[node].shape.clone();
-                            println!("Reshape {} \n{}", self.to_string(self.dependent_nodes[&dependent_node][0]), self.nodes[dependent_node].shape);
-                            let pullback = self.reshape(next_pullback, node_sh)?;
-                            dependent_pullbacks.push(pullback);
+                            if self.nodes[next_pullback].shape.size() == node_sh.size() {
+                                let pullback = self.reshape(next_pullback, node_sh)?;
+                                println!("Reshape {}", self.nodes[next_pullback].shape);
+                                dependent_pullbacks.push(pullback);
+                            } else if let Some(s) = self.nodes[next_pullback]
+                                .shape
+                                .broadcast(&self.nodes[dependent_node].shape)
+                            {
+                                // this is the case where the gradients picked up some
+                                // broadcasted batch dimensions along the way
+                                let mut sum_pullback = next_pullback;
+                                if self.nodes[dependent_node].shape.sizes.is_empty() {
+                                    for _ in 0..self.nodes[next_pullback].shape.ndims() {
+                                        sum_pullback = self.reduce_sum(next_pullback, 0, false)?;
+                                    }
+                                    println!("Reshape {}", self.nodes[sum_pullback].shape);
+                                    dependent_pullbacks.push(sum_pullback);
+                                } else {
+                                    for d in 0..self.nodes[next_pullback].shape.ndims() {
+                                        if self.nodes[dependent_node].shape.sizes[d] == 1 {
+                                            sum_pullback =
+                                                self.reduce_sum(next_pullback, d as i64, true)?
+                                        }
+                                    }
+                                    println!("Reshape {}", self.nodes[sum_pullback].shape);
+                                    dependent_pullbacks.push(sum_pullback);
+                                }
+                            } else {
+                                return Err(ContextError::IncompatibleOperandShapes(
+                                    self.nodes[next_pullback].shape.clone(),
+                                    self.nodes[dependent_node].shape.clone(),
+                                    callsite!(1),
+                                ));
+                            }
                         }
 
                         Operation::Transpose(a, p) => {
@@ -120,12 +151,13 @@ impl Context {
                         Operation::ZerosLike(_) => continue,
 
                         Operation::Add(a, b) => {
-                            println!("Add");
+                            let next_pullback = self.diff(output, dependent_node)?;
+                            println!("Add {}", self.nodes[next_pullback].shape);
                             if a == with_respect_to {
-                                dependent_pullbacks.push(self.diff(output, dependent_node)?);
+                                dependent_pullbacks.push(next_pullback);
                             }
                             if b == with_respect_to {
-                                dependent_pullbacks.push(self.diff(output, dependent_node)?);
+                                dependent_pullbacks.push(next_pullback);
                             }
                         }
 
@@ -299,13 +331,16 @@ impl Context {
                             let n_tiles = self.nodes[node].shape.sizes[dim as usize] as i64;
 
                             let mut new_shape = self.nodes[next_pullback].shape.clone();
-                            new_shape.sizes.insert(dim as usize, 1u32);
-                            println!("got to reducesum");
+                            if new_shape.ndims() != self.nodes[node].shape.ndims() {
+                                new_shape.sizes.insert(dim as usize, 1u32);
+                            }
                             let reshaped_pullback =
                                 self.reshape(next_pullback, new_shape.clone())?;
+                            println!("{}", new_shape);
                             let tiled_pullback =
                                 self.tile_in_dim(reshaped_pullback, n_tiles, dim)?;
 
+                            println!("ReduceSum {}", self.nodes[tiled_pullback].shape);
                             dependent_pullbacks.push(tiled_pullback);
                         }
 
@@ -313,25 +348,19 @@ impl Context {
                             let next_pullback = self.diff(output, dependent_node)?;
                             let n_tiles = self.nodes[node].shape.sizes[dim as usize] as i64;
 
-                            let mut new_sizes = SmallVec::new();
-                            for i in (0..self.nodes[next_pullback].shape.ndims()).rev() {
-                                new_sizes.push(self.nodes[next_pullback].shape.sizes[i]);
-                                if i as i64 == dim {
-                                    new_sizes.push(1u32);
-                                }
+                            let mut new_shape = self.nodes[next_pullback].shape.clone();
+                            if new_shape.ndims() != self.nodes[node].shape.ndims() {
+                                new_shape.sizes.insert(dim as usize, 1u32);
                             }
-                            if self.nodes[next_pullback].shape.ndims() == 0 {
-                                new_sizes.push(1u32);
-                            }
-                            println!("got to reducemean");
                             let reshaped_pullback =
-                                self.reshape(next_pullback, Shape { sizes: new_sizes })?;
+                                self.reshape(next_pullback, new_shape)?;
                             let tiled_pullback =
                                 self.tile_in_dim(reshaped_pullback, n_tiles, dim)?;
 
                             let scale =
                                 self.scalar(1.0 / (n_tiles as f32), self.nodes[node].dtype)?;
                             let rescaled_pullback = self.mul(scale, tiled_pullback)?;
+                            println!("ReduceMean {}", self.nodes[rescaled_pullback].shape);
                             dependent_pullbacks.push(rescaled_pullback);
                         }
 
