@@ -5,7 +5,7 @@ use unda::core::graph::*;
 use xla::{ElementType::*, PjRtClient, PjRtLoadedExecutable};
 
 const USE_CPU: bool = false;
-const MNIST_DIRECTORY: &str = "/home/medusa/mnist";
+const MNIST_DIRECTORY: &str = "/home/ekadile/mnist";
 const EPOCHS: usize = 20;
 const INIT_LEARNING_RATE: f32 = 1e-3;
 const LEARNING_RATE_DECAY: f32 = 0.9;
@@ -24,11 +24,9 @@ fn dense(
     name: &str,
 ) -> Result<(NodeIdentifier, (NodeIdentifier, NodeIdentifier))> {
     let shape = model.nodes[input_node].shape.clone();
-    //println!("{:?}", shape.sizes);
     let last_dim = shape.sizes[shape.ndims() - 1];
     let dtype = model.nodes[input_node].dtype;
 
-    //println!("weight shape {} {}", last_dim, out_size);
     let weights_shape = Shape::from([last_dim, out_size]);
     let mut weights_name = name.to_owned();
     weights_name.push_str("_weights");
@@ -39,7 +37,6 @@ fn dense(
         bias_shape.sizes.push(1u32);
     }
     bias_shape.sizes.push(out_size);
-    //println!("bias shape {:?}", bias_shape.sizes);
     let mut bias_name = name.to_owned();
     bias_name.push_str("_bias");
     let bias = model.parameter(bias_name, bias_shape, dtype)?;
@@ -81,6 +78,7 @@ fn build_model_and_optimizer(client: &xla::PjRtClient) -> Result<PjRtLoadedExecu
     let (logits, (w_out, b_out)) = dense(&mut model, d3_activation, 10, "out_layer")?;
     let probabilities = model.softmax(logits)?;
     let loss = model.mean_cross_entropy(probabilities, one_hot_labels)?;
+    //println!("{}", model.to_string(loss));
     let accuracy = model.accuracy(probabilities, sparse_labels)?;
 
     // ABSTRACT API REQUIREMENT 3: Separate forward/backward pass
@@ -91,7 +89,6 @@ fn build_model_and_optimizer(client: &xla::PjRtClient) -> Result<PjRtLoadedExecu
     // Part of this issue should be the implementation of optional
     // gradient clipping on the backward pass.
     let (w1_grad, b1_grad) = (model.diff(loss, w1)?, model.diff(loss, b1)?);
-    println!("got here");
     let (w2_grad, b2_grad) = (model.diff(loss, w2)?, model.diff(loss, b2)?);
     let (w3_grad, b3_grad) = (model.diff(loss, w3)?, model.diff(loss, b3)?);
     let (w_out_grad, b_out_grad) = (model.diff(loss, w_out)?, model.diff(loss, b_out)?);
@@ -105,7 +102,8 @@ fn build_model_and_optimizer(client: &xla::PjRtClient) -> Result<PjRtLoadedExecu
     // This will require binding XLA operations Send, Recv,
     // and potentially OptimizationBarrier.
     // Part of this issue should be the implementation of conventional
-    // optimizers (SGD, RMSProp, Adam), and learning rate schedules
+    // optimizers (SGD, RMSProp, Adam), batch normalization (because this layer
+    // has its own type of optimizer), and basic learning rate schedules
     // (ExponentialDecay, ReduceLROnPlateau, CosineAnnealing)
     let learning_rate = model.parameter("learning_rate", [], F32)?;
     // simple SGD updates
@@ -147,9 +145,9 @@ fn build_model_and_optimizer(client: &xla::PjRtClient) -> Result<PjRtLoadedExecu
 fn init_param(shape: Shape) -> xla::Literal {
     let size = shape.size();
 
-    // this is a goofy initialization which I just thought of
+    // deterministic version of xavier initialization
     // nobody uses this, but it doesn't matter because MNIST is simple
-    let amplitude = 1f32 / (size as f32).sqrt();
+    let amplitude = 1f32 / ((shape.sizes[0] + shape.sizes[1]) as f32).sqrt();
     let mut vec = Vec::new();
     for i in 0..size {
         if i % 2 == 0 {

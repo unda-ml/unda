@@ -635,15 +635,8 @@ impl Context {
         n_tiles: i64,
         dim: i64,
     ) -> Result<NodeIdentifier> {
-        let mut s = Shape::new();
-        for d in (0..self.nodes[a].shape.ndims()).rev() {
-            if d as i64 == dim {
-                s.sizes
-                    .push((n_tiles as u32) * self.nodes[a].shape.sizes[d]);
-            } else {
-                s.sizes.push(self.nodes[a].shape.sizes[d]);
-            }
-        }
+        let mut s = self.nodes[a].shape.clone();
+        s.sizes[dim as usize] *= n_tiles as u32;
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: s,
@@ -866,8 +859,7 @@ impl Context {
             _ => return Err(ContextError::RealTypeError(dtype, callsite!(1))),
         }
 
-        let eps = self.scalar(1e-8, xla::ElementType::F32)?;
-        let eps = self.type_cast(eps, dtype);
+        let eps = self.scalar(1e-8, dtype)?;
         // prevent logarithm of zero
         let offset = self.add(prediction_probabilities, eps)?;
         let log = self.log(offset)?;
