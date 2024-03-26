@@ -102,6 +102,9 @@ impl Context {
                         Operation::Reshape(node) => {
                             let next_pullback = self.diff(output, dependent_node)?;
                             let node_sh = self.nodes[node].shape.clone();
+                            let pullback = self.reshape(next_pullback, node_sh)?;
+                            dependent_pullbacks.push(pullback);
+                            /*
                             if self.nodes[next_pullback].shape.size() == node_sh.size() {
                                 let pullback = self.reshape(next_pullback, node_sh)?;
                                 dependent_pullbacks.push(pullback);
@@ -133,6 +136,7 @@ impl Context {
                                     callsite!(1),
                                 ));
                             }
+                            */
                         }
 
                         Operation::Transpose(a, p) => {
@@ -150,19 +154,27 @@ impl Context {
                         Operation::Add(a, b) => {
                             let next_pullback = self.diff(output, dependent_node)?;
                             if a == with_respect_to {
+                                let next_pullback =
+                                    self.sum_to_shape(next_pullback, self.nodes[a].shape.clone())?;
                                 dependent_pullbacks.push(next_pullback);
                             }
                             if b == with_respect_to {
+                                let next_pullback =
+                                    self.sum_to_shape(next_pullback, self.nodes[b].shape.clone())?;
                                 dependent_pullbacks.push(next_pullback);
                             }
                         }
 
                         Operation::Sub(a, b) => {
+                            let next_pullback = self.diff(output, dependent_node)?;
                             if a == with_respect_to {
-                                dependent_pullbacks.push(self.diff(output, dependent_node)?);
+                                let next_pullback =
+                                    self.sum_to_shape(next_pullback, self.nodes[a].shape.clone())?;
+                                dependent_pullbacks.push(next_pullback);
                             }
                             if b == with_respect_to {
-                                let next_pullback = self.diff(output, dependent_node)?;
+                                let next_pullback =
+                                    self.sum_to_shape(next_pullback, self.nodes[b].shape.clone())?;
                                 dependent_pullbacks.push(self.neg(next_pullback));
                             }
                         }
@@ -171,14 +183,21 @@ impl Context {
                             let next_pullback = self.diff(output, dependent_node)?;
                             if a == b && a == with_respect_to {
                                 let two = self.scalar(2, wrt_dtype)?;
-                                let mul = self.mul(two, a)?;
-                                dependent_pullbacks.push(self.mul(mul, next_pullback)?);
+                                let mul2 = self.mul(two, a)?;
+                                let this_pullback = self.mul(mul2, next_pullback)?;
+                                let this_pullback =
+                                    self.sum_to_shape(this_pullback, self.nodes[a].shape.clone())?;
+                                dependent_pullbacks.push(this_pullback);
                             } else if a == with_respect_to {
-                                let mul = self.mul(next_pullback, a)?;
-                                dependent_pullbacks.push(mul);
+                                let this_pullback = self.mul(next_pullback, b)?;
+                                let this_pullback =
+                                    self.sum_to_shape(this_pullback, self.nodes[a].shape.clone())?;
+                                dependent_pullbacks.push(this_pullback);
                             } else if b == with_respect_to {
-                                let mul = self.mul(a, next_pullback)?;
-                                dependent_pullbacks.push(mul);
+                                let this_pullback = self.mul(next_pullback, a)?;
+                                let this_pullback =
+                                    self.sum_to_shape(this_pullback, self.nodes[b].shape.clone())?;
+                                dependent_pullbacks.push(this_pullback);
                             }
                         }
 
@@ -209,18 +228,23 @@ impl Context {
                         Operation::Div(a, b) => {
                             let next_pullback = self.diff(output, dependent_node)?;
                             if a == with_respect_to {
-                                let div = self.div(next_pullback, b)?;
-                                dependent_pullbacks.push(div);
+                                let this_pullback = self.div(next_pullback, b)?;
+                                let this_pullback =
+                                    self.sum_to_shape(this_pullback, self.nodes[a].shape.clone())?;
+                                dependent_pullbacks.push(this_pullback);
                             }
                             if b == with_respect_to {
                                 let mul = self.mul(b, b)?;
                                 let div = self.div(a, mul)?;
                                 let neg = self.neg(div);
                                 let this_pullback = self.mul(neg, next_pullback)?;
+                                let this_pullback =
+                                    self.sum_to_shape(this_pullback, self.nodes[b].shape.clone())?;
                                 dependent_pullbacks.push(this_pullback);
                             }
                         }
 
+                        // TODO: handle potentially broadcasted operands here
                         Operation::Pow(a, b) => {
                             let next_pullback = self.diff(output, dependent_node)?;
                             if a == with_respect_to {
@@ -270,8 +294,7 @@ impl Context {
                             let mut new_shape = self.nodes[node].shape.clone();
                             new_shape.sizes.insert(dim as usize, n_tiles as u32);
 
-                            let reshaped_pullback =
-                                self.reshape(next_pullback, new_shape)?;
+                            let reshaped_pullback = self.reshape(next_pullback, new_shape)?;
                             dependent_pullbacks.push(self.reduce_sum(
                                 reshaped_pullback,
                                 dim,

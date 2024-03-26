@@ -213,8 +213,8 @@ fn load_mnist_batch(
         Err(_) => panic!("Failed to reshape MNIST image batch!"),
     };
 
-    let mut label_bytes = [0u8; 100 * 4];
-    labels.read_exact_at(&mut label_bytes, 8 + 100 * 4 * batch_idx)?;
+    let mut label_bytes = [0u8; 100];
+    labels.read_exact_at(&mut label_bytes, 8 + 100 * batch_idx)?;
     let labels_xla = xla::Literal::vec1(&label_bytes);
 
     Ok((images_xla, labels_xla))

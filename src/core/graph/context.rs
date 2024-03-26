@@ -27,6 +27,9 @@ pub enum ContextError {
     #[error("Mismatched types {0} {1} at {2}")]
     IncompatibleOperandTypes(xla::ElementType, xla::ElementType, Callsite),
 
+    #[error("Expected shape {0} to have size greater than shape {1} at {2}")]
+    ExpectedGreaterSize(Shape, Shape, Callsite),
+
     #[error("Tried to call reshape_const on non-constant node at {0}")]
     NonConstantReshape(Callsite),
 

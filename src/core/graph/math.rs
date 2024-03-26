@@ -678,6 +678,7 @@ impl Context {
 
     // Utility function for tiling a small tensor to a larger shape
     // when it is known that the smaller tensor's shape broadcasts to the larger shape
+    // This utility is very handy for dealing with tiled constants in fold_consts
     pub fn tile_to_shape(&mut self, a: NodeIdentifier, shape: Shape) -> Result<NodeIdentifier> {
         let node_a_shape = self.nodes[a].shape.clone();
 
@@ -693,9 +694,9 @@ impl Context {
             )),
             Some(s) => {
                 if s.size() > shape.size() {
-                    return Err(ContextError::IncompatibleOperandShapes(
-                        node_a_shape,
+                    return Err(ContextError::ExpectedGreaterSize(
                         shape.clone(),
+                        s.clone(),
                         callsite!(1),
                     ));
                 }
@@ -786,6 +787,49 @@ impl Context {
         });
         self.dependent_nodes.entry(a).or_default().push(node_id);
         self.maybe_keepdims(node_id, dim, keepdims)
+    }
+
+    // Utility function for summing a large tensor to a smaller shape
+    // when it is known that the smaller shape broadcasts to the larger tensor's shape
+    // This utility is very handy for dealing with broadcasted operands in autodiff
+    pub fn sum_to_shape(&mut self, a: NodeIdentifier, shape: Shape) -> Result<NodeIdentifier> {
+        let node_a_shape = self.nodes[a].shape.clone();
+
+        if node_a_shape == shape {
+            return Ok(a);
+        }
+
+        match node_a_shape.broadcast(&shape) {
+            None => Err(ContextError::IncompatibleOperandShapes(
+                node_a_shape,
+                shape.clone(),
+                callsite!(1),
+            )),
+            Some(s) => {
+                if shape.size() > s.size() {
+                    return Err(ContextError::ExpectedGreaterSize(
+                        s.clone(),
+                        shape.clone(),
+                        callsite!(1),
+                    ));
+                }
+                if shape.sizes.is_empty() {
+                    let mut summed = a;
+                    for _d in (0..s.ndims()).rev() {
+                        summed = self.reduce_sum(summed, 0, false)?;
+                    }
+                    Ok(summed)
+                } else {
+                    let mut summed = a;
+                    for d in 0..s.ndims() {
+                        if shape.sizes[d] == 1 {
+                            summed = self.reduce_sum(summed, d as i64, true)?;
+                        }
+                    }
+                    Ok(summed)
+                }
+            }
+        }
     }
 
     pub fn reduce_mean(
