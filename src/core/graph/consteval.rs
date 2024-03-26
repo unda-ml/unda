@@ -4,7 +4,11 @@ use super::*;
 
 impl Context {
     fn collect_deps(&self, node: NodeIdentifier) -> Vec<NodeIdentifier> {
-        self.dependent_nodes[&node].to_vec()
+        if self.dependent_nodes.contains_key(&node) {
+            return self.dependent_nodes[&node].to_vec();
+        } else {
+            return vec![];
+        }
     }
 
     pub(crate) fn replace_index(
