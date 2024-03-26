@@ -339,6 +339,33 @@ impl Context {
         Ok(changed)
     }
 
+    // Utility function for handling products with tiled and reshaped constants
+    // TODO: This should be made to handle arbitrary depth
+    fn replace_tiled_const(&mut self, a: NodeIdentifier, b: NodeIdentifier, top_level_node: NodeIdentifier) -> Result<bool> {
+        if let Operation::TileInDim { node, n_tiles: _, dim: _ } = self.nodes[a].operation {
+            if self.nodes[node].is_one()? {
+                println!("found tile {} {}", self.nodes[b].shape, self.nodes[top_level_node].shape);
+                let tiled_b = self.tile_to_shape(b, self.nodes[top_level_node].shape.clone())?;
+                self.replace_index(top_level_node, tiled_b)?;
+                Ok(true)
+            } else {
+                self.replace_tiled_const(node, b, top_level_node)
+            }
+        } else if let Operation::Reshape(node) = self.nodes[a].operation {
+            if self.nodes[node].is_one()? {
+                println!("found reshape {} {}", self.nodes[b].shape, self.nodes[top_level_node].shape);
+                let tiled_b = self.tile_to_shape(b, self.nodes[top_level_node].shape.clone())?;
+                self.replace_index(top_level_node, tiled_b)?;
+                Ok(true)
+            } else {
+                self.replace_tiled_const(node, b, top_level_node)
+            }
+        }
+        else {
+            Ok(false)
+        }
+    }
+
     /// Folds constants in place by replacing any node whose both inputs are Constant
     /// with a Constant of the result of the operation. All existing references to
     /// the old node will still point to it once its replaced, and this process is
@@ -396,26 +423,6 @@ impl Context {
                         modifications += 1;
                         changed = true;
                     }
-                    // TODO: Clean this up! Too many cases!!
-                    if let Operation::TileInDim { node, n_tiles: _, dim: _ } = self.nodes[a].operation {
-                        if self.nodes[node].is_one()? {
-                            self.replace_index(node_id, b)?;
-                            modifications += 1;
-                            changed = true;
-                        } else if let Operation::Reshape(x) = self.nodes[node].operation {
-                            if self.nodes[x].is_one()? {
-                                self.replace_index(node_id, b)?;
-                                modifications += 1;
-                                changed = true;
-                            } else if let Operation::Reshape(y) = self.nodes[x].operation {
-                                if self.nodes[y].is_one()? {
-                                    self.replace_index(node_id, b)?;
-                                    modifications += 1;
-                                    changed = true;
-                                }
-                            }
-                        }
-                    }
                     if self.nodes[b].is_zero()? {
                         self.replace_index(node_id, b)?;
                         modifications += 1;
@@ -426,25 +433,14 @@ impl Context {
                         modifications += 1;
                         changed = true;
                     }
-                    if let Operation::TileInDim { node, n_tiles: _, dim: _ } = self.nodes[b].operation {
-                        if self.nodes[node].is_one()? {
-                            self.replace_index(node_id, a)?;
-                            modifications += 1;
-                            changed = true;
-                        } else if let Operation::Reshape(x) = self.nodes[node].operation {
-                            if self.nodes[x].is_one()? {
-                                self.replace_index(node_id, a)?;
-                                modifications += 1;
-                                changed = true;
-                            } else if let Operation::Reshape(y) = self.nodes[x].operation {
-                                if self.nodes[y].is_one()? {
-                                    self.replace_index(node_id, a)?;
-                                    modifications += 1;
-                                    changed = true;
-                                }
-                            }
-                        }
-                    }
+                    if self.replace_tiled_const(a, b, node_id)? {
+                        modifications += 1;
+                        changed = true;
+                    };
+                    if self.replace_tiled_const(b, a, node_id)? {
+                        modifications += 1;
+                        changed = true;
+                    };
                     if self.nodes[a].is_const().is_none() {
                         to_visit.push(a);
                     }

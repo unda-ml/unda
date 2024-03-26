@@ -132,7 +132,7 @@ fn build_model_and_optimizer(client: &xla::PjRtClient) -> Result<PjRtLoadedExecu
         model.sub(w_out, w_out_update)?,
         model.sub(b_out, b_out_update)?,
     );
-    println!("GOT HERE");
+
     model.compile(
         "train_step",
         [

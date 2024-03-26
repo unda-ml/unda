@@ -560,7 +560,6 @@ impl Context {
 
     pub fn reshape(&mut self, a: NodeIdentifier, shape: Shape) -> Result<NodeIdentifier> {
         let a_size = self.nodes[a].shape.size();
-        println!("reshape: {} {}", self.nodes[a].shape, shape);
         if a_size != shape.size() {
             Err(ContextError::ShapeConversion(
                 ShapeConversionError::MismatchedSizes(
@@ -625,14 +624,9 @@ impl Context {
         stride: i64,
         dim: i64,
     ) -> Result<NodeIdentifier> {
-        let mut s = Shape::new();
-        for d in (0..self.nodes[a].shape.ndims()).rev() {
-            if d as i64 == dim {
-                s.sizes.push(((stop - start) / stride) as u32);
-            } else {
-                s.sizes.push(self.nodes[a].shape.sizes[d]);
-            }
-        }
+        let mut s = self.nodes[a].shape.clone();
+        s.sizes[dim as usize] = ((start - stop) / stride) as u32;
+
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: s,
@@ -656,7 +650,12 @@ impl Context {
         dim: i64,
     ) -> Result<NodeIdentifier> {
         let mut s = self.nodes[a].shape.clone();
-        s.sizes[dim as usize] *= n_tiles as u32;
+        if s.sizes.is_empty() {
+            s.sizes.push(n_tiles as u32);
+        } else {
+            s.sizes[dim as usize] *= n_tiles as u32;
+        }
+
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: s,
@@ -669,6 +668,48 @@ impl Context {
         });
         self.dependent_nodes.entry(a).or_default().push(node_id);
         Ok(node_id)
+    }
+
+    // Utility function for tiling a small tensor to a larger shape
+    // when it is known that the smaller tensor's shape broadcasts to the larger shape
+    pub fn tile_to_shape(&mut self, a: NodeIdentifier, shape: Shape) -> Result<NodeIdentifier> {
+        let node_a_shape = self.nodes[a].shape.clone();
+
+        if node_a_shape == shape {
+            return Ok(a);
+        }
+
+        match node_a_shape.broadcast(&shape) {
+            None => Err(ContextError::IncompatibleOperandShapes(
+                node_a_shape,
+                shape.clone(),
+                callsite!(1),
+            )),
+            Some(s) => {
+                if s.size() > shape.size() {
+                    return Err(ContextError::IncompatibleOperandShapes(
+                        node_a_shape,
+                        shape.clone(),
+                        callsite!(1),
+                    ));
+                }
+                if node_a_shape.sizes.is_empty() {
+                    let mut tiled = a;
+                    for d in (0..s.ndims()).rev() {
+                        tiled = self.tile_in_dim(tiled, s.sizes[d] as i64, 0)?;
+                    }
+                    Ok(tiled)
+                } else {
+                    let mut tiled = a;
+                    for d in 0..s.ndims() {
+                        if node_a_shape.sizes[d] == 1 {
+                            tiled = self.tile_in_dim(tiled, s.sizes[d] as i64, d as i64)?;
+                        }
+                    }
+                    Ok(tiled)
+                }
+            }
+        }
     }
 
     pub fn zeros_like(&mut self, a: NodeIdentifier) -> NodeIdentifier {
@@ -703,12 +744,12 @@ impl Context {
         dim: i64,
         keepdims: bool,
     ) -> Result<NodeIdentifier> {
-        let mut s = Shape::new();
-        for d in (0..self.nodes[a].shape.ndims()).rev() {
-            if d as i64 != dim {
-                s.sizes.push(self.nodes[a].shape.sizes[d])
-            }
+        let mut s = self.nodes[a].shape.clone();
+        if s.sizes.is_empty() {
+            return Ok(a)
         }
+        s.sizes.remove(dim as usize);
+
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: s,
@@ -725,12 +766,12 @@ impl Context {
         dim: i64,
         keepdims: bool,
     ) -> Result<NodeIdentifier> {
-        let mut s = Shape::new();
-        for d in (0..self.nodes[a].shape.ndims()).rev() {
-            if d as i64 != dim {
-                s.sizes.push(self.nodes[a].shape.sizes[d])
-            }
+        let mut s = self.nodes[a].shape.clone();
+        if s.sizes.is_empty() {
+            return Ok(a)
         }
+        s.sizes.remove(dim as usize);
+
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: s,
@@ -750,6 +791,9 @@ impl Context {
         let dtype = check_fp_type(self.nodes[a].dtype)?;
 
         let mut s = self.nodes[a].shape.clone();
+        if s.sizes.is_empty() {
+            return Ok(a)
+        }
         s.sizes.remove(dim as usize);
 
         let node_id = self.nodes.insert(Node {
@@ -771,6 +815,7 @@ impl Context {
     ) -> Result<NodeIdentifier> {
         let mut s = self.nodes[a].shape.clone();
         s.sizes.remove(dim as usize);
+
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: s,

@@ -35,16 +35,9 @@ impl Context {
             self.fold_consts(*a, usize::MAX)?;
         }
 
-        //while self.foldconsts(a, 1)? {
-        //    println!("{}", self.to_string(a));
-        //}
-
         for a in returns.iter() {
             self.extract_subterms(*a, usize::MAX)?;
         }
-        //while self.extract_subterms(a, 1)? {
-        //    println!("{}", self.to_string(a));
-        //}
 
         // Prepare to loop through the unda compute graph and construct the XLA compute graph
         let mut xla_op_slotmap: SlotMap<NodeIdentifier, xla::XlaOp> = SlotMap::with_key();
@@ -386,13 +379,6 @@ impl Context {
                         if unda_xla_map.contains_key(&node)
                             && xla_op_slotmap.contains_key(unda_xla_map[&node])
                         {
-                            println!(
-                                "{} {} {} {}",
-                                self.nodes[node].shape,
-                                this_node.shape,
-                                self.nodes[node].operation,
-                                self.nodes[node].callsite
-                            );
                             let xla_op = xla_op_slotmap[unda_xla_map[&node]].reshape(
                                 this_node
                                     .shape
