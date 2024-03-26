@@ -558,7 +558,12 @@ impl Context {
         node_id
     }
 
-    pub fn reshape(&mut self, a: NodeIdentifier, shape: Shape) -> Result<NodeIdentifier> {
+    pub fn reshape<S: Into<Shape>>(
+        &mut self,
+        a: NodeIdentifier,
+        shape: S,
+    ) -> Result<NodeIdentifier> {
+        let shape = shape.into();
         let a_size = self.nodes[a].shape.size();
         if a_size != shape.size() {
             Err(ContextError::ShapeConversion(
@@ -650,6 +655,11 @@ impl Context {
         dim: i64,
     ) -> Result<NodeIdentifier> {
         let mut s = self.nodes[a].shape.clone();
+        let node = if s.sizes.is_empty() {
+            self.reshape(a, [1])?
+        } else {
+            a
+        };
         if s.sizes.is_empty() {
             s.sizes.push(n_tiles as u32);
         } else {
@@ -659,11 +669,7 @@ impl Context {
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: s,
-            operation: Operation::TileInDim {
-                node: a,
-                n_tiles,
-                dim,
-            },
+            operation: Operation::TileInDim { node, n_tiles, dim },
             dtype: self.nodes[a].dtype,
         });
         self.dependent_nodes.entry(a).or_default().push(node_id);
@@ -746,7 +752,7 @@ impl Context {
     ) -> Result<NodeIdentifier> {
         let mut s = self.nodes[a].shape.clone();
         if s.sizes.is_empty() {
-            return Ok(a)
+            return Ok(a);
         }
         s.sizes.remove(dim as usize);
 
@@ -768,7 +774,7 @@ impl Context {
     ) -> Result<NodeIdentifier> {
         let mut s = self.nodes[a].shape.clone();
         if s.sizes.is_empty() {
-            return Ok(a)
+            return Ok(a);
         }
         s.sizes.remove(dim as usize);
 
@@ -792,7 +798,7 @@ impl Context {
 
         let mut s = self.nodes[a].shape.clone();
         if s.sizes.is_empty() {
-            return Ok(a)
+            return Ok(a);
         }
         s.sizes.remove(dim as usize);
 

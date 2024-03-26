@@ -244,12 +244,14 @@ fn main() {
     let test_labels = File::open(test_lbl_path).expect("Failed to open training label file");
 
     println!("Building model and optimizer . . .");
+    let now = Instant::now();
     let executable =
         build_model_and_optimizer(&client).expect("Failed to build model and optimizer");
+    println!("Finished build in {:.2?}", now.elapsed());
 
     let (mut w1, mut b1, mut w2, mut b2, mut w3, mut b3, mut w_out, mut b_out) = init_params();
 
-    println!("Beginning training.");
+    println!("Training model . . .");
     let now = Instant::now();
     for epoch in 0..EPOCHS {
         let mut train_accuracy = 0f32;
@@ -320,7 +322,7 @@ fn main() {
             train_accuracy / 600f32
         );
     }
-    println!("Finished training after {:.2?}", now.elapsed());
+    println!("Finished training in {:.2?}", now.elapsed());
 
     // ABSTRACT API REQUIREMENT 7: Serialization
     // The model is not worth very much if it disappears after our training loop.

@@ -344,7 +344,6 @@ impl Context {
     fn replace_tiled_const(&mut self, a: NodeIdentifier, b: NodeIdentifier, top_level_node: NodeIdentifier) -> Result<bool> {
         if let Operation::TileInDim { node, n_tiles: _, dim: _ } = self.nodes[a].operation {
             if self.nodes[node].is_one()? {
-                println!("found tile {} {}", self.nodes[b].shape, self.nodes[top_level_node].shape);
                 let tiled_b = self.tile_to_shape(b, self.nodes[top_level_node].shape.clone())?;
                 self.replace_index(top_level_node, tiled_b)?;
                 Ok(true)
@@ -353,7 +352,6 @@ impl Context {
             }
         } else if let Operation::Reshape(node) = self.nodes[a].operation {
             if self.nodes[node].is_one()? {
-                println!("found reshape {} {}", self.nodes[b].shape, self.nodes[top_level_node].shape);
                 let tiled_b = self.tile_to_shape(b, self.nodes[top_level_node].shape.clone())?;
                 self.replace_index(top_level_node, tiled_b)?;
                 Ok(true)
