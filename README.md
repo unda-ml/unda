@@ -87,23 +87,6 @@ Using the built in **Input** trait, practically any data type can be mapped to a
 
 Gradient descent currently can happen both syncronously as stochastic gradient descent or asynchronously through minibatch gradient descent.
 
-## TODO
-
-Currently, Unda is in a very beta stage, the following features are still in development:
-
-[Neural Network Goals]
-- [X] Create abstract representation for layers (Layer trait)
-    - [X] Dense
-    - [ ] Convolutional
-        - [X] Cateogorical Crossentropy
-        - [X] SoftMax
-    - [ ] Recurrent
-- [X] Allow for different activation functions and learning rates on each layer
-- [X] Adam Optimization in backprop
-- [X] Helper Function for parsing CSV data
-- [X] Helper Function for generating the MNIST dataset
-- [X] Helper Functions for generating and deriving categorical data
-
 #### If open source development is your thing, we at Unda would love additional work on anything that can be implemented, please contact **eversonb@msoe.edu** if you'd like to help out!
 
 # License
