@@ -55,7 +55,9 @@ macro_rules! create_test {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::graph::Context;
+    use std::collections::HashMap;
+
+    use crate::core::graph::{Context, Node};
     use xla::{FromRawBytes, Literal, Shape};
 
     create_test!(test_pow_f32_100_squared, pow, F32, 10f32, 2f32, 100f32);
@@ -65,6 +67,55 @@ mod tests {
     create_test!(test_ln_e, log, F32, 1f32, 0f32);
     create_test!(test_add_1_2, add, F32, 1f32, 2f32, 3f32);
     create_test!(test_sub_1_2, sub, F32, 1f32, 2f32, -1f32);
+
+    #[test]
+    fn test_cte_happened() {
+        let mut ctx = Context::new();
+        let a = ctx.parameter("a", [], xla::ElementType::F32).expect("a");
+        let b = ctx.parameter("b", [], xla::ElementType::F32).expect("b");
+
+        let a_p_b = ctx.add(a, b).expect("a + b");
+        let a_p_b_again = ctx.add(a, b).expect("a + b again");
+
+        let res = ctx.mul(a_p_b, a_p_b_again).expect("(a + b) * (a + b)");
+        let subterm_extract = ctx.extract_subterms(&[res], 10).expect("CTE");
+
+        assert!(subterm_extract);
+    }
+
+    #[test]
+    fn test_cte_no_false_positives() {
+        let mut ctx = Context::new();
+        let a = ctx.parameter("a", [], xla::ElementType::F32).expect("a");
+        let b = ctx.parameter("b", [], xla::ElementType::F32).expect("b");
+
+        let a_p_b = ctx.add(a, b).expect("a + b");
+
+        let c = ctx.parameter("c", [], xla::ElementType::F32).expect("c");
+        let res = ctx.mul(a_p_b, c).expect("(a+b) * c");
+        let subterm_extract = ctx.extract_subterms(&[res], 10).expect("CTE");
+
+        assert!(!subterm_extract);
+    }
+
+    #[test]
+    fn test_hash_node() {
+        let mut ctx = Context::new();
+        let mut hash_map: HashMap<Node, f32> = HashMap::new();
+        let x = ctx.parameter("x", [], xla::ElementType::F32).expect("x");
+
+        let three = ctx.scalar(3, xla::ElementType::F32).expect("three");
+        let three_x_b = ctx.mul(three, x).expect("3x");
+        let three_x_a = ctx.mul(three, x).expect("3x again");
+
+        let node_a = ctx.nodes[three_x_a].clone();
+        let node_b = ctx.nodes[three_x_b].clone();
+
+        hash_map.insert(node_a, 1.0);
+        hash_map.insert(node_b, 2.0);
+
+        assert_eq!(hash_map.keys().len(), 1)
+    }
 
     #[test]
     fn test_tanh(){
@@ -281,6 +332,46 @@ mod tests {
 
         assert_eq!(rust_result[0], 2f32);
     }
+
+
+    #[test]
+    fn test_mul_scalar_consts_and_params() {
+        let mut ctx = Context::new();
+
+        let one = ctx.scalar(1, xla::ElementType::F32).expect("Scalar 1");
+
+        let x = ctx.parameter("x", [], xla::ElementType::F32).expect("x");
+
+        let product = ctx.mul(x, one).expect("product");
+
+        // output XLA
+        // client must be exposed to the user, it is very nice to control device, memory fraction, and pre-allocation
+        let client = xla::PjRtClient::cpu().expect("client");//gpu(0.7, false).expect("client");
+        let name = "test";
+        /*let executable = ctx.compile(&name, [product], &client).expect("executable");
+
+        let x_input = xla::Literal::scalar(2f32);
+        // args are just provided in the order they are defined, would be nice to pass a dict or something
+        // a pjrtbuffer is just an array slice on some device
+        // but im not sure why its a nested vector instead of just one vector
+        let device_result = executable.execute(&[x_input]).expect("execute");
+        let host_result = device_result[0][0]
+            .to_literal_sync()
+            .expect("to_literal_sync");
+        let untupled_result = host_result.to_tuple1().expect("untuple");
+        let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
+        println!("{:?}", rust_result);*/
+        let fold_const = ctx.fold_consts(product, usize::MAX).expect("fold it");
+        ctx.compile(name, [product], &client).expect("Compile");
+        println!("{}", ctx.to_string(product));
+
+        for (_, val) in ctx.nodes {
+            println!("{}", val.to_string());
+        }
+
+        assert!(fold_const);
+    }
+
 
     #[test]
     fn test_mul_add_scalar_consts_and_params() {

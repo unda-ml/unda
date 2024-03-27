@@ -1,3 +1,5 @@
+
+
 use crate::core::{layer::{layers::{Layer, LayerTypes}, dense::Dense}, data::input::Input};
 
 pub struct SerializedLayer {
@@ -7,6 +9,7 @@ pub struct SerializedLayer {
     pub weights: String,
     pub bias: String
 }
+
 
 impl SerializedLayer {
     pub fn new(layer: &Box<dyn Layer>, _layer_type: &LayerTypes) -> Self {

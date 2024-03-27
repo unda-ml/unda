@@ -35,9 +35,16 @@ impl Context {
             self.fold_consts(*a, usize::MAX)?;
         }
 
-        for a in returns.iter() {
+        //while self.foldconsts(a, 1)? {
+        //    println!("{}", self.to_string(a));
+        //}
+        self.extract_subterms(&returns, usize::MAX)?;
+        /*for a in returns.iter() {
             self.extract_subterms(*a, usize::MAX)?;
-        }
+        }*/
+        //while self.extract_subterms(a, 1)? {
+        //    println!("{}", self.to_string(a));
+        //}
 
         // Prepare to loop through the unda compute graph and construct the XLA compute graph
         let mut xla_op_slotmap: SlotMap<NodeIdentifier, xla::XlaOp> = SlotMap::with_key();

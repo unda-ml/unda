@@ -1,0 +1,26 @@
+name: Cargo Clippy
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  CARGO_TERM_COLOR: always
+  XLA_EXTENSION_DIR: "/home/runner/work/unda/unda/xla_extension"
+  LD_LIBRARY_PATH: "/home/runner/work/unda/unda/xla_extension/lib"
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install XLA
+      run: wget https://github.com/elixir-nx/xla/releases/download/v0.6.0/xla_extension-x86_64-linux-gnu-cpu.tar.gz && tar -xzvf xla_extension-x86_64-linux-gnu-cpu.tar.gz
+    #- name: ensure xla location(test)
+    #  run: pwd && ls
+    - name: Clippy
+      run: cargo clippy --verbose

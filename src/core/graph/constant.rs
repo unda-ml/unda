@@ -1,5 +1,5 @@
 use super::*;
-use std::path::Path;
+use std::{path::Path, hash::Hash};
 use xla::FromRawBytes;
 
 #[derive(Debug, Clone)]
