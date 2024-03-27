@@ -69,6 +69,36 @@ mod tests {
     create_test!(test_sub_1_2, sub, F32, 1f32, 2f32, -1f32);
 
     #[test]
+    fn test_large_cte() {
+         let mut ctx = Context::new();
+        let a = ctx.parameter("a", [], xla::ElementType::F32).expect("a");
+        let two = ctx.scalar(2, xla::ElementType::F32).expect("2");
+
+        let a_2 = ctx.pow(a, two).expect("a^2");
+        let a_21 = ctx.pow(a, two).expect("a^2");
+        let a_22 = ctx.pow(a, two).expect("a^2");
+        let a_23 = ctx.pow(a, two).expect("a^2");
+        let a_24 = ctx.pow(a, two).expect("a^2");
+        let a_25 = ctx.pow(a, two).expect("a^2");
+        let a_26 = ctx.pow(a, two).expect("a^2");
+        let a_27 = ctx.pow(a, two).expect("a^2");
+
+
+        let sum1 = ctx.add(a_2, a_21).expect("a^2 + a^2");
+        let sum2 = ctx.add(a_22, a_23).expect("a^2 + a^2");
+        let sum3 = ctx.add(a_24, a_25).expect("a^2 + a^2");
+        let sum4 = ctx.add(a_26, a_27).expect("a^2 + a^2");
+        
+        let nest_sum1 = ctx.add(sum1, sum2).expect("(a^2 + a^2) + (a^2 + a^2)");
+        let nest_sum2 = ctx.add(sum3, sum4).expect("(a^2 + a^2) + (a^2 + a^2)");
+
+        let res = ctx.add(nest_sum1, nest_sum2).expect("((a^2 + a^2) + (a^2 + a^2)) + ((a^2 + a^2) + (a^2 + a^2))");
+        let subterm_extract = ctx.extract_subterms(&[res], usize::MAX).expect("CTE");
+
+        assert!(subterm_extract);
+    }
+
+    #[test]
     fn test_cte_happened() {
         let mut ctx = Context::new();
         let a = ctx.parameter("a", [], xla::ElementType::F32).expect("a");
