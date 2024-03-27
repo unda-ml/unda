@@ -114,7 +114,7 @@ impl Hash for Operation {
 
 impl PartialEq for Operation {
     fn eq(&self, other: &Self) -> bool {
-        return match (&self, &other) {
+        match (&self, &other) {
             //Order not matering. Ex: 1 + 2 equals 2 + 1, but 1 / 2 doesnt equal 2 /1 so we can
             //check these separately
             (&Self::Mul(a, b), &Self::Mul(c, d)) 
