@@ -1,5 +1,7 @@
 use smallvec::SmallVec;
 
+use self::dtypes::check_fp_type;
+
 use super::*;
 
 impl Context {
@@ -46,22 +48,8 @@ impl Context {
         with_respect_to: NodeIdentifier,
     ) -> Result<NodeIdentifier> {
         let wrt_shape = self.nodes[with_respect_to].shape.clone();
-        let wrt_dtype = self.nodes[with_respect_to].dtype;
+        let wrt_dtype = check_fp_type(self.nodes[with_respect_to].dtype)?;
 
-        if ![
-            xla::ElementType::F16,
-            xla::ElementType::Bf16,
-            xla::ElementType::F32,
-            xla::ElementType::F64,
-            xla::ElementType::C64,
-            xla::ElementType::C128,
-        ]
-        .contains(&wrt_dtype)
-        {
-            return Err(ContextError::NonDifferentiableTypeError(
-                self.nodes[with_respect_to].callsite.clone(),
-            ));
-        }
         if output == with_respect_to {
             return self.scalar(1, wrt_dtype);
         }
@@ -104,39 +92,6 @@ impl Context {
                             let node_sh = self.nodes[node].shape.clone();
                             let pullback = self.reshape(next_pullback, node_sh)?;
                             dependent_pullbacks.push(pullback);
-                            /*
-                            if self.nodes[next_pullback].shape.size() == node_sh.size() {
-                                let pullback = self.reshape(next_pullback, node_sh)?;
-                                dependent_pullbacks.push(pullback);
-                            } else if let Some(_s) = self.nodes[next_pullback]
-                                .shape
-                                .broadcast(&self.nodes[dependent_node].shape)
-                            {
-                                // this is the case where the gradients picked up some
-                                // broadcasted batch dimensions along the way
-                                let mut sum_pullback = next_pullback;
-                                if self.nodes[dependent_node].shape.sizes.is_empty() {
-                                    for _ in 0..self.nodes[next_pullback].shape.ndims() {
-                                        sum_pullback = self.reduce_sum(next_pullback, 0, false)?;
-                                    }
-                                    dependent_pullbacks.push(sum_pullback);
-                                } else {
-                                    for d in 0..self.nodes[next_pullback].shape.ndims() {
-                                        if self.nodes[dependent_node].shape.sizes[d] == 1 {
-                                            sum_pullback =
-                                                self.reduce_sum(next_pullback, d as i64, true)?
-                                        }
-                                    }
-                                    dependent_pullbacks.push(sum_pullback);
-                                }
-                            } else {
-                                return Err(ContextError::IncompatibleOperandShapes(
-                                    self.nodes[next_pullback].shape.clone(),
-                                    self.nodes[dependent_node].shape.clone(),
-                                    callsite!(1),
-                                ));
-                            }
-                            */
                         }
 
                         Operation::Transpose(a, p) => {
@@ -204,6 +159,7 @@ impl Context {
                         Operation::MatMul(a, b) => {
                             let next_pullback = self.diff(output, dependent_node)?;
 
+                            // TODO: Add case for a == b
                             if a == with_respect_to {
                                 let mut transpose_dims =
                                     Vec::from_iter(0..(self.nodes[b].shape.ndims() as i64));

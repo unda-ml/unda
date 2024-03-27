@@ -65,7 +65,7 @@ fn build_model_and_optimizer(client: &xla::PjRtClient) -> Result<PjRtLoadedExecu
     let image_fp = model.type_cast(image_input, F32);
     // MNIST bytes range from 0 to 255, neural network only wants to see 0 to 1
     let scale = model.scalar(1f32 / 255f32, F32)?;
-    let image_rescaled = model.div(image_fp, scale)?;
+    let image_rescaled = model.mul(image_fp, scale)?;
 
     let sparse_labels = model.parameter("sparse_labels", [100], U8)?;
     let one_hot_labels = model.one_hot(sparse_labels, 10, F32)?;

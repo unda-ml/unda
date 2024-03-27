@@ -319,7 +319,7 @@ mod tests {
         assert_eq!(rust_result[0], f32::exp(1f32));
 
     }
-    
+
     #[test]
     fn test_pow() {
         let mut ctx = Context::new();
@@ -601,7 +601,7 @@ mod tests {
         let quartic_term = ctx.mul(quarter, x4).expect("quartic_term");
         let y = ctx.sub(quartic_term, quadratic_term).expect("y");
 
-        let dydx = ctx.diff(y, x.into()).expect("dydx");
+        let dydx = ctx.diff(y, x).expect("dydx");
         ctx.fold_consts(dydx, usize::max_value())
             .expect("fold consts");
         println!("{}", ctx.to_string(dydx));
