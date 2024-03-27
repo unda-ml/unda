@@ -1,12 +1,12 @@
 use std::fs::File;
 use std::io;
-use std::time::Instant;
 use std::os::unix::fs::*;
+use std::time::Instant;
 use unda::core::graph::*;
 use xla::{ElementType::*, PjRtClient, PjRtLoadedExecutable};
 
 const USE_CPU: bool = false;
-const MNIST_DIRECTORY: &str = "/home/ekadile/mnist";
+const MNIST_DIRECTORY: &str = "/home/medusa/mnist";
 const EPOCHS: usize = 20;
 const INIT_LEARNING_RATE: f32 = 1e-3;
 const LEARNING_RATE_DECAY: f32 = 0.9;
@@ -172,6 +172,9 @@ fn init_param(shape: Shape) -> xla::Literal {
 // are declared in the model context. This becomes insanely hard
 // to keep track of as the architecture grows, and the user shouldn't
 // have to worry about it.
+// I think the simplest way to achieve this (which is akin to how JAX does it)
+// would be to have `Model` objects which are called with two Into<Vec<Literal>>
+// structures, one for inputs and one for parameters.
 fn init_params() -> (
     xla::Literal,
     xla::Literal,
@@ -288,7 +291,7 @@ fn main() {
             let xla_literal = xla_buffer[0][0]
                 .to_literal_sync()
                 .expect("Failed to copy buffer to host");
-            let untupled_literals = xla_literal
+            let mut untupled_literals = xla_literal
                 .to_tuple()
                 .expect("Failed to untuple XLA literals");
 
@@ -303,17 +306,14 @@ fn main() {
 
             // This is really very silly. Because model/optimizer are not separate
             // we move the weights to the CPU just to move them back
-            // Even without that, is there a way to get rid of the clone??
-            (w1, b1, w2, b2, w3, b3, w_out, b_out) = (
-                untupled_literals[2].clone(),
-                untupled_literals[3].clone(),
-                untupled_literals[4].clone(),
-                untupled_literals[5].clone(),
-                untupled_literals[6].clone(),
-                untupled_literals[7].clone(),
-                untupled_literals[8].clone(),
-                untupled_literals[9].clone()
-            );
+            b_out = untupled_literals.pop().unwrap();
+            w_out = untupled_literals.pop().unwrap();
+            b3 = untupled_literals.pop().unwrap();
+            w3 = untupled_literals.pop().unwrap();
+            b2 = untupled_literals.pop().unwrap();
+            w2 = untupled_literals.pop().unwrap();
+            b1 = untupled_literals.pop().unwrap();
+            w1 = untupled_literals.pop().unwrap();
         }
         println!(
             "Epoch {}: Training loss = {}; Training accuracy = {}",
@@ -333,9 +333,8 @@ fn main() {
     let mut test_loss = 0f32;
 
     for batch_idx in 0..100 {
-        let (test_imgs, test_lbls) =
-            load_mnist_batch(&test_images, &test_labels, batch_idx)
-                .expect("Failed to load MNIST batch");
+        let (test_imgs, test_lbls) = load_mnist_batch(&test_images, &test_labels, batch_idx)
+            .expect("Failed to load MNIST batch");
 
         // GOOFY!!
         // Another consequence of ABSTRACT API REQUIREMENT 4 Not being implemented
@@ -345,17 +344,7 @@ fn main() {
 
         let xla_buffer = executable
             .execute(&[
-                &test_imgs,
-                &test_lbls,
-                &w1,
-                &b1,
-                &w2,
-                &b2,
-                &w3,
-                &b3,
-                &w_out,
-                &b_out,
-                &lr,
+                &test_imgs, &test_lbls, &w1, &b1, &w2, &b2, &w3, &b3, &w_out, &b_out, &lr,
             ])
             .expect("Failed to run PjRt executable");
 
