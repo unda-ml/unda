@@ -5,7 +5,7 @@ authors = ["BradenEverson <bradeneverson@gmail.com>", "Ebanflo42", "Atlas Dostal
 description = "General purpose machine learning crate for neural network development and analysis"
 edition = "2021"
 license = "MIT"
-repository = "https://github.com/BradenEverson/unda"
+repository = "https://github.com/unda-ai/unda"
 categories = ["science"]
 keywords = [
     "machine-learning",
