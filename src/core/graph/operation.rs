@@ -243,7 +243,7 @@ impl PartialEq for Operation {
                 },
             ) => node == node2 && dim == dim2,
             _ => false,
-        };
+        }
     }
 }
 
