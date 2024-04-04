@@ -148,7 +148,7 @@ mod tests {
         let mut ctx = Context::new();
         let x = ctx.parameter("x", [], xla::ElementType::F32).expect("x");
 
-        let lr = ctx.leaky_relu(x).expect("leaky_relu x");
+        let lr = ctx.leaky_relu(x, 0.001).expect("leaky_relu x");
 
         let client = xla::PjRtClient::cpu().expect("client");
         let name = "test";

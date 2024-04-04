@@ -498,10 +498,10 @@ impl Context {
         self.maximum(const_zero, a)
     }
 
-    pub fn leaky_relu(&mut self, a: NodeIdentifier) -> Result<NodeIdentifier> {
+    pub fn leaky_relu(&mut self, a: NodeIdentifier, alpha: f32) -> Result<NodeIdentifier> {
         let a_dtype = self.nodes[a].dtype;
         //TODO: force dtype to be floating point or else this just becomes normal relu
-        let const_small = self.scalar(0.001, a_dtype)?;
+        let const_small = self.scalar(alpha, a_dtype)?;
         let small_x = self.mul(a, const_small)?;
 
         self.maximum(small_x, a)
