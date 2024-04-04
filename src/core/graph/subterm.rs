@@ -27,73 +27,57 @@ impl Context {
             if visited.contains(&node_id) || modifications >= modification_limit {
                 continue;
             }
-
-            if node_map.contains_key(&self.nodes[node_id]) {
+ 
+            if node_map.contains_key(&self.nodes[node_id]) && node_map[&self.nodes[node_id]] != node_id {
                 self.replace_index(node_id, node_map[&self.nodes[node_id]])?;
                 modifications += 1;
                 changed = true;
             } else {
+                visited.insert(node_id);
+                //Add operation nodes to the queue
+                match self.nodes[node_id].operation {
+                    Operation::Add(a, b) 
+                        | Operation::Sub(a, b) 
+                        | Operation::Mul(a, b)
+                        | Operation::Div(a, b)
+                        | Operation::NotEqual(a, b)
+                        | Operation::Equal(a, b)
+                        | Operation::LessThan(a, b)
+                        | Operation::GreaterThan(a, b)
+                        | Operation::GreaterThanEq(a, b)
+                        | Operation::LessThanEq(a, b)
+                        | Operation::MatMul(a, b)
+                        | Operation::Pow(a, b) => {
+                            to_visit.push(a);
+                            to_visit.push(b);
+                        }
+                    Operation::Neg(a) 
+                        | Operation::StopGradient(a)
+                        | Operation::Log(a)
+                        | Operation::Exp(a)
+                        | Operation::TypeCast(a, _) 
+                        | Operation::Transpose(a, _) 
+                        | Operation::SliceInDim { node: a, start: _, stop: _, stride: _, dim: _ } 
+                    | Operation::TileInDim { node: a, n_tiles: _, dim: _ }
+                    | Operation::Reshape(a)
+                        | Operation::ZerosLike(a) => {
+                            to_visit.push(a);
+                        }
+                    Operation::ReduceMax { node, dim: _ }
+                    | Operation::ReduceMean { node, dim: _ }
+                    | Operation::ReduceSum { node, dim: _ } => {
+                        to_visit.push(node);
+                    }
+                    Operation::Select { pred, on_true, on_false } => {
+                        to_visit.push(pred);
+                        to_visit.push(on_true);
+                        to_visit.push(on_false);
+                    }
+                    Operation::Constant(_) | Operation::Parameter(_) => {}
+                }
                 node_map.insert(self.nodes[node_id].clone(), node_id);
             }
-
-            visited.insert(node_id);
-            //Add operation nodes to the queue
-            match self.nodes[node_id].operation {
-                Operation::Add(a, b)
-                | Operation::Sub(a, b)
-                | Operation::Mul(a, b)
-                | Operation::Div(a, b)
-                | Operation::NotEqual(a, b)
-                | Operation::Equal(a, b)
-                | Operation::LessThan(a, b)
-                | Operation::GreaterThan(a, b)
-                | Operation::GreaterThanEq(a, b)
-                | Operation::LessThanEq(a, b)
-                | Operation::MatMul(a, b)
-                | Operation::Pow(a, b) => {
-                    to_visit.push(a);
-                    to_visit.push(b);
-                }
-                Operation::Neg(a)
-                | Operation::StopGradient(a)
-                | Operation::Log(a)
-                | Operation::Exp(a)
-                | Operation::TypeCast(a, _)
-                | Operation::Transpose(a, _)
-                | Operation::SliceInDim {
-                    node: a,
-                    start: _,
-                    stop: _,
-                    stride: _,
-                    dim: _,
-                }
-                | Operation::TileInDim {
-                    node: a,
-                    n_tiles: _,
-                    dim: _,
-                }
-                | Operation::Reshape(a)
-                | Operation::ZerosLike(a) => {
-                    to_visit.push(a);
-                }
-                Operation::ReduceMax { node, dim: _ }
-                | Operation::ReduceMean { node, dim: _ }
-                | Operation::ReduceSum { node, dim: _ }
-                | Operation::ReduceArgmax { node, dim: _ } => {
-                    to_visit.push(node);
-                }
-                Operation::OneHot(node) => to_visit.push(node),
-                Operation::Select {
-                    pred,
-                    on_true,
-                    on_false,
-                } => {
-                    to_visit.push(pred);
-                    to_visit.push(on_true);
-                    to_visit.push(on_false);
-                }
-                Operation::Constant(_) | Operation::Parameter(_) => {}
-            }
+            
         }
 
         //Recursive recall if we changed something and modifications are still available

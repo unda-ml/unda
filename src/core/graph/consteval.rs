@@ -5,9 +5,9 @@ use super::*;
 impl Context {
     fn collect_deps(&self, node: NodeIdentifier) -> Vec<NodeIdentifier> {
         if self.dependent_nodes.contains_key(&node) {
-            return self.dependent_nodes[&node].to_vec();
+            self.dependent_nodes[&node].to_vec()
         } else {
-            return vec![];
+            vec![]
         }
     }
 
