@@ -65,6 +65,7 @@ impl Context {
                         }
                     Operation::ReduceMax { node, dim: _ }
                     | Operation::ReduceMean { node, dim: _ }
+                    | Operation::ReduceArgmax { node, dim: _ }
                     | Operation::ReduceSum { node, dim: _ } => {
                         to_visit.push(node);
                     }
@@ -73,6 +74,7 @@ impl Context {
                         to_visit.push(on_true);
                         to_visit.push(on_false);
                     }
+                    Operation::OneHot(node) => to_visit.push(node),
                     Operation::Constant(_) | Operation::Parameter(_) => {}
                 }
                 node_map.insert(self.nodes[node_id].clone(), node_id);
