@@ -1,8 +1,18 @@
-use unda::{core::{data::{input::Input, matrix::Matrix}, network::Sequential, layer::{layers::{LayerTypes, InputTypes}, methods::{activations::Activations, errors::ErrorTypes}}}, util::{mnist::MnistEntry, categorical::to_categorical}};
+use unda::{
+    core::{
+        data::{input::Input, matrix::Matrix},
+        layer::{
+            layers::{InputTypes, LayerTypes},
+            methods::{activations::Activations, errors::ErrorTypes},
+        },
+        network::Sequential,
+    },
+    util::{categorical::to_categorical, mnist::MnistEntry},
+};
 
 fn main() {
     let mut inputs: Vec<&dyn Input> = vec![];
-    
+
     let mut true_outputs: Vec<Vec<f32>> = vec![];
 
     let inputs_undyn: Vec<Matrix>;
@@ -13,7 +23,7 @@ fn main() {
     println!("Done Generating MNIST");
 
     let outputs: Vec<Vec<f32>> = to_categorical(outputs_uncat);
-    for i in 0..600{
+    for i in 0..600 {
         inputs.push(&inputs_undyn[i]);
         true_outputs.push(outputs[i].clone());
     }
@@ -28,8 +38,17 @@ fn main() {
 
     network.compile();
 
-    network.fit(&inputs, &true_outputs, 1, ErrorTypes::CategoricalCrossEntropy);
-    for i in 0..10{
-        println!("predicted: {:?} \n\nactual: {:?}\n\n\n", network.predict(inputs[i]), true_outputs[i]);
+    network.fit(
+        &inputs,
+        &true_outputs,
+        1,
+        ErrorTypes::CategoricalCrossEntropy,
+    );
+    for i in 0..10 {
+        println!(
+            "predicted: {:?} \n\nactual: {:?}\n\n\n",
+            network.predict(inputs[i]),
+            true_outputs[i]
+        );
     }
 }

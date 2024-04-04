@@ -16,7 +16,7 @@ impl Context {
             return Ok(true);
         }
         let mut node_map: HashMap<Node, NodeIdentifier> = HashMap::new();
-        
+
         let mut modifications = 0;
         let mut changed = false;
 
@@ -27,7 +27,7 @@ impl Context {
             if visited.contains(&node_id) || modifications >= modification_limit {
                 continue;
             }
-            
+ 
             if node_map.contains_key(&self.nodes[node_id]) && node_map[&self.nodes[node_id]] != node_id {
                 self.replace_index(node_id, node_map[&self.nodes[node_id]])?;
                 modifications += 1;
@@ -65,6 +65,7 @@ impl Context {
                         }
                     Operation::ReduceMax { node, dim: _ }
                     | Operation::ReduceMean { node, dim: _ }
+                    | Operation::ReduceArgmax { node, dim: _ }
                     | Operation::ReduceSum { node, dim: _ } => {
                         to_visit.push(node);
                     }
@@ -73,6 +74,7 @@ impl Context {
                         to_visit.push(on_true);
                         to_visit.push(on_false);
                     }
+                    Operation::OneHot(node) => to_visit.push(node),
                     Operation::Constant(_) | Operation::Parameter(_) => {}
                 }
                 node_map.insert(self.nodes[node_id].clone(), node_id);
@@ -83,7 +85,9 @@ impl Context {
         //Recursive recall if we changed something and modifications are still available
         match changed {
             false => Ok(false),
-            true => Ok(changed || self.extract_subterms(outputs, modification_limit - modifications)?)
+            true => Ok(
+                changed || self.extract_subterms(outputs, modification_limit - modifications)?
+            ),
         }
     }
 }

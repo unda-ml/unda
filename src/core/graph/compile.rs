@@ -31,7 +31,6 @@ impl Context {
             Err(CompileError::NoReturn)?;
         }
 
-
         for a in returns.iter() {
             self.fold_consts(*a, usize::MAX)?;
         }
@@ -108,11 +107,11 @@ impl Context {
                 if covered_ops.contains(dependent_op) {
                     continue;
                 }
-                let node = &self.nodes[*dependent_op];
+                let this_node = &self.nodes[*dependent_op];
                 //TODO: Clone here is not great, we could & the node operation
                 //or come up with a better way of storing the Vec<i64> that Transpose
                 //uses(that's what causes the borrow checker error if we dont clone)
-                match node.operation.clone() {
+                match this_node.operation.clone() {
                     Operation::Parameter(_) => {
                         unreachable!("Parameters can't depend on other nodes")
                     }
@@ -185,11 +184,10 @@ impl Context {
                     }
 
                     Operation::Transpose(a, perm_index) => {
-                         if unda_xla_map.contains_key(&a)
+                        if unda_xla_map.contains_key(&a)
                             && xla_op_slotmap.contains_key(unda_xla_map[&a])
                         {
-                            let xla_op = xla_op_slotmap[unda_xla_map[&a]]
-                                .transpose(&perm_index)?;
+                            let xla_op = xla_op_slotmap[unda_xla_map[&a]].transpose(&perm_index)?;
                             let xla_id = xla_op_slotmap.insert(xla_op);
                             unda_xla_map.insert(*dependent_op, xla_id);
                             unda_op_queue.push_back(*dependent_op);
@@ -239,9 +237,8 @@ impl Context {
                         }
                     }
 
-
                     Operation::Exp(a) => {
-                        if unda_xla_map.contains_key(&a) 
+                        if unda_xla_map.contains_key(&a)
                             && xla_op_slotmap.contains_key(unda_xla_map[&a])
                         {
                             let xla_op = xla_op_slotmap[unda_xla_map[&a]].exp()?;
@@ -253,7 +250,7 @@ impl Context {
                     }
 
                     Operation::Log(a) => {
-                        if unda_xla_map.contains_key(&a) 
+                        if unda_xla_map.contains_key(&a)
                             && xla_op_slotmap.contains_key(unda_xla_map[&a])
                         {
                             let xla_op = xla_op_slotmap[unda_xla_map[&a]].log()?;
@@ -390,7 +387,7 @@ impl Context {
                             && xla_op_slotmap.contains_key(unda_xla_map[&node])
                         {
                             let xla_op = xla_op_slotmap[unda_xla_map[&node]].reshape(
-                                self.nodes[*dependent_op]
+                                this_node
                                     .shape
                                     .sizes
                                     .iter()
@@ -449,10 +446,21 @@ impl Context {
                             covered_ops.insert(*dependent_op);
                         }
                     }
-                    Operation::ReduceMax {
-                        node,
-                        dim,
-                    } => {
+                    Operation::OneHot(node) => {
+                        if unda_xla_map.contains_key(&node)
+                            && xla_op_slotmap.contains_key(unda_xla_map[&node])
+                        {
+                            let n_classes = this_node.shape.sizes[1];
+                            let dtype = this_node.dtype;
+                            let xla_op = xla_op_slotmap[unda_xla_map[&node]]
+                                .one_hot(n_classes as i64, dtype)?;
+                            let xla_id = xla_op_slotmap.insert(xla_op);
+                            unda_xla_map.insert(*dependent_op, xla_id);
+                            unda_op_queue.push_back(*dependent_op);
+                            covered_ops.insert(*dependent_op);
+                        }
+                    }
+                    Operation::ReduceMax { node, dim } => {
                         if xla_op_slotmap.contains_key(unda_xla_map[&node]) {
                             let xla_op =
                                 xla_op_slotmap[unda_xla_map[&node]].reduce_max(&[dim], false)?;
@@ -462,10 +470,7 @@ impl Context {
                             covered_ops.insert(*dependent_op);
                         }
                     }
-                    Operation::ReduceSum {
-                        node,
-                        dim,
-                    } => {
+                    Operation::ReduceSum { node, dim } => {
                         if xla_op_slotmap.contains_key(unda_xla_map[&node]) {
                             let xla_op =
                                 xla_op_slotmap[unda_xla_map[&node]].reduce_sum(&[dim], false)?;
@@ -475,13 +480,20 @@ impl Context {
                             covered_ops.insert(*dependent_op);
                         }
                     }
-                    Operation::ReduceMean {
-                        node,
-                        dim,
-                    } => {
+                    Operation::ReduceMean { node, dim } => {
                         if xla_op_slotmap.contains_key(unda_xla_map[&node]) {
                             let xla_op =
                                 xla_op_slotmap[unda_xla_map[&node]].reduce_mean(&[dim], false)?;
+                            let xla_id = xla_op_slotmap.insert(xla_op);
+                            unda_xla_map.insert(*dependent_op, xla_id);
+                            unda_op_queue.push_back(*dependent_op);
+                            covered_ops.insert(*dependent_op);
+                        }
+                    }
+                    Operation::ReduceArgmax { node, dim } => {
+                        if xla_op_slotmap.contains_key(unda_xla_map[&node]) {
+                            let xla_op =
+                                xla_op_slotmap[unda_xla_map[&node]].reduce_argmax(dim, false)?;
                             let xla_id = xla_op_slotmap.insert(xla_op);
                             unda_xla_map.insert(*dependent_op, xla_id);
                             unda_op_queue.push_back(*dependent_op);

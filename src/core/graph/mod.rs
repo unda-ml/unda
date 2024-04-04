@@ -4,6 +4,7 @@ mod compile;
 mod constant;
 mod consteval;
 mod context;
+mod dtypes;
 mod logic;
 mod math;
 mod node;

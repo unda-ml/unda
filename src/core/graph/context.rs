@@ -7,7 +7,7 @@ use slotmap::SlotMap;
 /// XLA computation graph context.
 // TODO: rename this to something meaningful
 pub struct Context {
-    pub(crate) nodes: SlotMap<NodeIdentifier, Node>,
+    pub nodes: SlotMap<NodeIdentifier, Node>,
     pub(crate) constants: Vec<NodeIdentifier>,
     pub(crate) parameters: Vec<NodeIdentifier>,
     pub(crate) dependent_nodes: HashMap<NodeIdentifier, Vec<NodeIdentifier>>,
@@ -27,13 +27,16 @@ pub enum ContextError {
     #[error("Mismatched types {0} {1} at {2}")]
     IncompatibleOperandTypes(xla::ElementType, xla::ElementType, Callsite),
 
+    #[error("Expected shape {0} to have size greater than shape {1} at {2}")]
+    ExpectedGreaterSize(Shape, Shape, Callsite),
+
     #[error("Tried to call reshape_const on non-constant node at {0}")]
     NonConstantReshape(Callsite),
 
     #[error("Tried to call typecast_const on non-constant node at {0}")]
     NonConstantTypecast(Callsite),
 
-    #[error("XLA error: {0}")]
+    #[error("XLA internal error: {0}. Unless this is a device error, Unda should not produce internal XLA errors. Please create a github issue.")]
     Xla(#[from] xla::Error),
 
     #[error("Unda internal graph processing error {0}")]
@@ -53,6 +56,21 @@ pub enum ContextError {
 
     #[error("Type is not differentiable, differentiable types are F16, Bf16, F32, F64, C64, C128")]
     NonDifferentiableTypeError(Callsite),
+
+    #[error("Expected integral type, got {0}. Integral types are S8, S16, S32, S64, U8, U16, U32, U64")]
+    IntegralTypeError(xla::ElementType, Callsite),
+
+    #[error("Expected real type, got {0}. Real types are F16, Bf16, F32, F64")]
+    RealTypeError(xla::ElementType, Callsite),
+
+    #[error("Expected floating point type, got {0}. Real types are F16, Bf16, F32, F64, C64, C128")]
+    FPTypeError(xla::ElementType, Callsite),
+
+    #[error("Expected tensor of rank {0}, got {1}")]
+    RankError(usize, usize, Callsite),
+
+    #[error("Invalid permutation passed to transpose. Expected permutation of length {0}, got {1}")]
+    TransposeLenError(usize, usize, Callsite),
 }
 
 pub type Result<T> = std::result::Result<T, ContextError>;
@@ -142,10 +160,20 @@ impl Context {
                 format!("TileInDim ({}) {} {}", self.to_string(node), n_tiles, dim)
             }
             Operation::ZerosLike(node) => format!("ZerosLike {}", self.to_string(node)),
+            Operation::OneHot(node) => format!(
+                "OneHot ({}) {} {}",
+                self.to_string(node),
+                input_node.shape.sizes[1],
+                input_node.dtype
+            ),
             Operation::ReduceMax {
                 node,
                 dim,
             } => format!("ReduceMax {} {}", self.to_string(node), dim),
+            Operation::ReduceArgmax {
+                node,
+                dim,
+            } => format!("ReduceArgmax {} {}", self.to_string(node), dim),
             Operation::ReduceSum {
                 node,
                 dim,
