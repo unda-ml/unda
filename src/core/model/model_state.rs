@@ -1,5 +1,6 @@
 use crate::core::graph::Context;
 
+#[allow(dead_code)]
 pub struct Model{
     model_ctx: Context
 }
