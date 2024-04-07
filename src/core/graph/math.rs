@@ -604,10 +604,10 @@ impl Context {
             ));
         }
         let mut new_shape = Shape::new();
-        for d in 0..index_perm.len() {
+        for idx in index_perm {
             new_shape
                 .sizes
-                .push(self.nodes[a].shape.sizes[index_perm[d] as usize]);
+                .push(self.nodes[a].shape.sizes[*idx as usize]);
         }
         let index_perms_deref = index_perm.to_vec();
         let node_id = self.nodes.insert(Node {
@@ -850,7 +850,7 @@ impl Context {
             callsite: callsite!(1),
             shape: s,
             operation: Operation::ReduceMean { node: a, dim },
-            dtype: dtype,
+            dtype,
         });
         self.dependent_nodes.entry(a).or_default().push(node_id);
 
@@ -869,12 +869,12 @@ impl Context {
         let node_id = self.nodes.insert(Node {
             callsite: callsite!(1),
             shape: s,
-            operation: Operation::ReduceArgmax { node: a, dim: dim },
+            operation: Operation::ReduceArgmax { node: a, dim },
             dtype: xla::ElementType::S64,
         });
         self.dependent_nodes
             .entry(a)
-            .or_insert(Vec::new())
+            .or_default()
             .push(node_id);
         self.maybe_keepdims(node_id, dim, keepdims)
     }
@@ -920,11 +920,11 @@ impl Context {
             callsite: callsite!(1),
             shape: Shape::from([label_len, n_classes as u32]),
             operation: Operation::OneHot(converted_labels),
-            dtype: dtype,
+            dtype,
         });
         self.dependent_nodes
             .entry(converted_labels)
-            .or_insert(Vec::new())
+            .or_default()
             .push(node_id);
         Ok(node_id)
     }
