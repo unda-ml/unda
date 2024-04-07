@@ -1,4 +1,5 @@
 use smallvec::SmallVec;
+use std::cmp::Ordering::{Less, Greater, Equal};
 
 use self::dtypes::*;
 
@@ -154,18 +155,19 @@ impl Context {
         default_dtype: xla::ElementType,
         default_shape: Shape,
     ) -> Result<NodeIdentifier> {
-        if nodes.len() == 1 {
-            Ok(nodes[0])
-        } else if nodes.len() > 1 {
-            let node0 = nodes.pop().unwrap();
-            let node1 = nodes.pop().unwrap();
-            let mut add_node = self.add(node0, node1)?;
-            for next_node in nodes.into_iter() {
-                add_node = self.add(add_node, next_node)?;
+        match nodes.len().cmp(&1) {
+            Less => self.zeroes(default_shape, default_dtype),
+            Equal => Ok(nodes[0]),
+            Greater => {
+                let node0 = nodes.pop().unwrap();
+                let node1 = nodes.pop().unwrap();
+                let mut add_node = self.add(node0, node1)?;
+                for next_node in nodes.into_iter() {
+                    add_node = self.add(add_node, next_node)?;
+                }
+                Ok(add_node)
             }
-            Ok(add_node)
-        } else {
-            self.zeroes(default_shape, default_dtype)
+            
         }
     }
 
