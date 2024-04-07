@@ -16,10 +16,11 @@ keywords = [
 ]
 
 [dependencies]
+rand = "0.8"
+rand_distr = "0.4"
 slotmap = "1"
 backtrace = "0.3"
 smallvec = "1.13"
-strum = "0.26"
 strum_macros = "0.26"
 xla = { git = "https://github.com/unda-ai/xla-rs", version = "0.1.6" , branch = "main" }
 thiserror = "1"
