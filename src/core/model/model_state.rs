@@ -1,8 +1,9 @@
-use crate::core::graph::Context;
+use crate::core::{graph::Context, neural_net::prelude::initializers::Initializers};
 
 #[allow(dead_code)]
 pub struct Model{
-    model_ctx: Context
+    model_ctx: Context,
+    initializer: Initializers
 }
 
 impl Default for Model {
@@ -13,7 +14,13 @@ impl Default for Model {
 
 impl Model {
     pub fn new() -> Self {
-        todo!();
+        Self { 
+            model_ctx: Context::new(),
+            initializer: Initializers::Default
+        }
+    }
+    pub fn set_initializer(&mut self, new_init: Initializers) {
+        self.initializer = new_init;
     }
     pub fn compile(&mut self) -> Self {
         todo!();
