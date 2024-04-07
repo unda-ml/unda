@@ -14,7 +14,7 @@ impl Model {
     pub fn new() -> Self {
         todo!();
     }
-    pub fn compile() -> Self {
+    pub fn compile(&mut self) -> Self {
         todo!();
     }
 }
