@@ -446,27 +446,27 @@ impl Context {
                     if self.nodes[a].is_const().is_none() {
                         to_visit.push(a);
                     }
-                    if let None = self.nodes[b].is_const() {
+                    if self.nodes[b].is_const().is_none() {
                         to_visit.push(b);
                     }
                 }
                 Operation::Neg(a) => {
-                    if let None = self.nodes[a].is_const() {
+                    if self.nodes[a].is_const().is_none() {
                         to_visit.push(a);
                     }
                 }
                 Operation::Exp(a) => {
-                    if let None = self.nodes[a].is_const() {
+                    if self.nodes[a].is_const().is_none() {
                         to_visit.push(a);
                     }
                 }
                 Operation::Log(a) => {
-                    if let None = self.nodes[a].is_const() {
+                    if self.nodes[a].is_const().is_none() {
                         to_visit.push(a);
                     }
                 }
                 Operation::Transpose(a, _) => {
-                    if let None = self.nodes[a].is_const() {
+                    if self.nodes[a].is_const().is_none() {
                         to_visit.push(a);
                     }
                 }
@@ -483,7 +483,7 @@ impl Context {
                         to_visit.push(a);
                     }
 
-                    if let None = self.nodes[b].is_const() {
+                    if self.nodes[b].is_const().is_none() {
                         to_visit.push(b);
                     }
                 }
@@ -492,7 +492,7 @@ impl Context {
                 | Operation::Reshape(a)
                 | Operation::ZerosLike(a)
                 | Operation::OneHot(a) => {
-                    if let None = self.nodes[a].is_const() {
+                    if self.nodes[a].is_const().is_none() {
                         to_visit.push(a);
                     }
                 }
@@ -507,7 +507,7 @@ impl Context {
                     if self.nodes[on_true].is_const().is_none() {
                         to_visit.push(on_true)
                     }
-                    if let None = self.nodes[on_false].is_const() {
+                    if self.nodes[on_false].is_const().is_none() {
                         to_visit.push(on_false)
                     }
                 }
@@ -518,12 +518,12 @@ impl Context {
                     stride: _,
                     dim: _,
                 } => {
-                    if let None = self.nodes[node].is_const() {
+                    if self.nodes[node].is_const().is_none() {
                         to_visit.push(node);
                     }
                 }
                 Operation::TileInDim { node, n_tiles: _, dim: _ } => {
-                    if let None = self.nodes[node].is_const() {
+                    if self.nodes[node].is_const().is_none() {
                         to_visit.push(node);
                     }
                 }
@@ -531,7 +531,7 @@ impl Context {
                 | Operation::ReduceSum { node, dim: _ }
                 | Operation::ReduceMean { node, dim:_  }
                 | Operation:: ReduceArgmax { node, dim: _ } => {
-                    if let None = self.nodes[node].is_const() {
+                    if self.nodes[node].is_const().is_none() {
                         to_visit.push(node);
                     }
                 }
