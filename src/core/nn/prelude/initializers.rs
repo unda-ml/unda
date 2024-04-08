@@ -7,8 +7,12 @@ pub enum Initializer {
 }
 
 impl Initializer {
-    pub fn initialize(&self, on_node: NodeIdentifier) -> Result<NodeIdentifier> {
-        //TODO Need XLA's random number generator functions as ops
+    pub fn initialize(&self, on_node: NodeIdentifier, n: usize) -> Result<NodeIdentifier> {
+        match self {
+            Initializer::He => {},
+            Initializer::Xavier => {},
+            Initializer::Default => {}
+        }
         Ok(on_node)
     }
 }
