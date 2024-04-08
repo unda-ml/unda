@@ -35,8 +35,6 @@ impl ModelBuilder {
         let matmul_node = model.matmul(input_node, weights_init)?;
         let dense_node = model.add(matmul_node, bias_init)?;
 
-        //TODO use initializer to initialize weights(Use XLA's random number generation functions)
-
         Ok((dense_node, (weights_init, bias_init)))
     }
 }
