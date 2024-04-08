@@ -61,7 +61,7 @@ impl Model {
         }
         Ok(())
     }
-    fn diff(&mut self) -> Result<()> {
+    pub fn diff(&mut self) -> Result<()> {
         if let Some(loss) = self.loss {
             for (weight, bias) in self.weight_bias_pairs.iter().rev() {
                 //Collect gradients of weights and biases
