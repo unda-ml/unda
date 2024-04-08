@@ -39,8 +39,10 @@ impl Model {
             self.curr_node = Some(out);
             self.weight_bias_pairs.push((weights_curr, bias_curr));
 
+            //TODO create backwards pass here too? Potentially.
+
         } else {
-            //Create initial dense layer
+            //Create initial dense layer with input params
             todo!();
         }
 
