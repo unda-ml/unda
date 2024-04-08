@@ -16,25 +16,29 @@ pub struct Model{
 
 impl Default for Model {
     fn default() -> Self {
-        Self::new(0.01).expect("Error constructing model")
+        Self::new(0.01)
     }
 }
 
 impl Model {
     //TODO: Maybe allow specifying a dtype as well,
     //could become the default dtype from there as well
-    pub fn new(learning_rate: f32) -> Result<Self> {
+    pub fn new(learning_rate: f32) -> Self {
         let mut ctx = Context::new();
-        let learn_rate = ctx.scalar(learning_rate, ElementType::F32)?;
 
-        Ok(Self { 
+        //Not sure if we want outward facing results unless its directly a user problem
+        //such as calling layer constructors incorrectly
+        let learn_rate = ctx.scalar(learning_rate, ElementType::F32)
+            .expect("Error constructing model with compute graph");
+
+        Self { 
             model_ctx: ctx,
             initializer: Initializer::Default,
             curr_node: None,
             loss: None,
             learning_rate: learn_rate,
             weight_bias_pairs: vec![]
-        })
+        }
     }
     pub fn set_initializer(&mut self, new_init: Initializer) {
         self.initializer = new_init;
@@ -49,7 +53,8 @@ impl Model {
             name.push_str(&(self.weight_bias_pairs.len() + 1).to_string());
 
             let (out, (weights_curr, bias_curr)) = ModelBuilder::dense(&mut self.model_ctx, 
-                                                                       node, out_size, &name)?;
+                                                                       node, out_size,
+                                                                       &self.initializer, &name)?;
             self.weight_bias_pairs.push((weights_curr, bias_curr));
             let activation_applied = activation.apply(out, &mut self.model_ctx)?;
 
@@ -72,9 +77,9 @@ impl Model {
 
                 //TODO store weight bias updates in context 
             }
+            Ok(())
         } else {
-            return Err(ContextError::InvalidDiffError())
+            Err(ContextError::InvalidDiffError())
         }
-        Ok(())
     }
 }

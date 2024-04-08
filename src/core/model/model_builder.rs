@@ -1,4 +1,4 @@
-use crate::core::graph::{NodeIdentifier, Context, Shape, Result};
+use crate::core::{graph::{NodeIdentifier, Context, Shape, Result}, nn::prelude::initializers::Initializer};
 
 pub struct ModelBuilder;
 
@@ -7,6 +7,7 @@ impl ModelBuilder {
         model: &mut Context,
         input_node: NodeIdentifier,
         out_size: u32,
+        initializer: &Initializer,
         name: &str) -> Result<(NodeIdentifier, (NodeIdentifier, NodeIdentifier))> {
     
         let shape = model.nodes[input_node].shape.clone();
@@ -29,6 +30,8 @@ impl ModelBuilder {
 
         let matmul_node = model.matmul(input_node, weights)?;
         let dense_node = model.add(matmul_node, bias)?;
+
+        //TODO use initializer to initialize weights(Use XLA's random number generation functions)
 
         Ok((dense_node, (weights, bias)))
     }
