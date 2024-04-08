@@ -1,3 +1,5 @@
+use xla::ElementType;
+
 use crate::core::{graph::{Context, Result, NodeIdentifier}, nn::prelude::{initializers::Initializer, activations::Activation}};
 
 use super::model_builder::ModelBuilder;
@@ -9,24 +11,31 @@ pub struct Model{
 
     curr_node: Option<NodeIdentifier>,
     loss: Option<NodeIdentifier>,
+    learning_rate: NodeIdentifier,
     weight_bias_pairs: Vec<(NodeIdentifier, NodeIdentifier)>,
 }
 
 impl Default for Model {
     fn default() -> Self {
-        Self::new()
+        Self::new(0.01).expect("Error constructing model")
     }
 }
 
 impl Model {
-    pub fn new() -> Self {
-        Self { 
-            model_ctx: Context::new(),
+    //TODO: Maybe allow specifying a dtype as well,
+    //could become the default dtype from there as well
+    pub fn new(learning_rate: f32) -> Result<Self> {
+        let mut ctx = Context::new();
+        let learn_rate = ctx.scalar(learning_rate, ElementType::F32)?;
+
+        Ok(Self { 
+            model_ctx: ctx,
             initializer: Initializer::Default,
             curr_node: None,
             loss: None,
+            learning_rate: learn_rate,
             weight_bias_pairs: vec![]
-        }
+        })
     }
     pub fn set_initializer(&mut self, new_init: Initializer) {
         self.initializer = new_init;
