@@ -1,4 +1,5 @@
 use smallvec::SmallVec;
+use xla::ArrayShape;
 
 use super::callsite::Callsite;
 
@@ -62,6 +63,10 @@ impl Shape {
                 sizes: s.dims().iter().map(|d| *d as u32).collect(),
             }),
         }
+    }
+
+    pub fn to_array_shape(&self, dtype: xla::ElementType) -> ArrayShape {
+        ArrayShape::new(self.sizes.iter().map(|d| *d as i64).collect(), dtype)
     }
 
     pub fn matmul_shape(&self, dim2: &[u32]) -> Option<Vec<u32>> {

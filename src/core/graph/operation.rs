@@ -70,6 +70,8 @@ pub enum Operation {
     },
 
     OneHot(NodeIdentifier),
+    RngUniform(NodeIdentifier, NodeIdentifier, Shape),
+    RngNormal(NodeIdentifier, NodeIdentifier, Shape)
 }
 
 impl Hash for Operation {
@@ -147,6 +149,12 @@ impl Hash for Operation {
                 n_tiles.hash(state);
                 dim.hash(state);
             }
+            Self::RngUniform(a, b, dim) 
+            | Self::RngNormal(a, b, dim) => {
+                a.hash(state);
+                b.hash(state);
+                dim.hash(state);
+            }
         }
     }
 }
@@ -190,6 +198,8 @@ impl PartialEq for Operation {
                 },
             ) => pred == pred2 && on_true == on_true2 && on_false == on_false2,
             (&Self::TypeCast(a, ty), &Self::TypeCast(b, ty2)) => a == b && ty == ty2,
+            (&Self::RngUniform(a, b, shape), &Self::RngUniform(a2, b2, shape2)) => a == a2 && b == b2 && shape == shape2,
+            (&Self::RngNormal(a, b, shape), &Self::RngNormal(a2, b2, shape2)) => a == a2 && b == b2 && shape == shape2,
             (&Self::Transpose(a, dim), &Self::Transpose(b, dim2)) => a == b && dim == dim2,
             (
                 &Self::SliceInDim {

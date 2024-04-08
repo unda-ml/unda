@@ -47,6 +47,8 @@ impl Context {
                         | Operation::GreaterThanEq(a, b)
                         | Operation::LessThanEq(a, b)
                         | Operation::MatMul(a, b)
+                        | Operation::RngNormal(a, b, _)
+                        | Operation::RngUniform(a, b, _)
                         | Operation::Pow(a, b) => {
                             to_visit.push(a);
                             to_visit.push(b);

@@ -1,6 +1,7 @@
 use super::*;
 use slotmap::SlotMap;
 use smallvec::SmallVec;
+use xla::{XlaOp, ArrayShape};
 use std::collections::{HashMap, HashSet, VecDeque};
 
 #[derive(thiserror::Error, Debug)]
@@ -168,6 +169,36 @@ impl Context {
                         }
                     }
 
+                    Operation::RngNormal(mu, sigma, shape) => {
+                        if unda_xla_map.contains_key(&mu)
+                            && unda_xla_map.contains_key(&sigma)
+                            && xla_op_slotmap.contains_key(unda_xla_map[&mu])
+                            && xla_op_slotmap.contains_key(unda_xla_map[&sigma])
+                        {
+                            let dtype = self.nodes[mu].dtype;
+                            let xla_op = XlaOp::rng_normal(&xla_op_slotmap[unda_xla_map[&mu]], 
+                                               &xla_op_slotmap[unda_xla_map[&sigma]], &shape.to_array_shape(dtype))?;
+                            let xla_id = xla_op_slotmap.insert(xla_op);
+                            unda_xla_map.insert(*dependent_op, xla_id);
+                            unda_op_queue.push_back(*dependent_op);
+                            covered_ops.insert(*dependent_op);
+                        }
+                    }
+                    Operation::RngUniform(min, max, shape) => {
+                        if unda_xla_map.contains_key(&min)
+                            && unda_xla_map.contains_key(&max)
+                            && xla_op_slotmap.contains_key(unda_xla_map[&min])
+                            && xla_op_slotmap.contains_key(unda_xla_map[&max])
+                        {
+                            let dtype = self.nodes[min].dtype;
+                            let xla_op = XlaOp::rng_uniform(&xla_op_slotmap[unda_xla_map[&min]], 
+                                               &xla_op_slotmap[unda_xla_map[&max]], &shape.to_array_shape(dtype))?;
+                            let xla_id = xla_op_slotmap.insert(xla_op);
+                            unda_xla_map.insert(*dependent_op, xla_id);
+                            unda_op_queue.push_back(*dependent_op);
+                            covered_ops.insert(*dependent_op);
+                        }
+                    }
                     Operation::Pow(a, b) => {
                         if unda_xla_map.contains_key(&a)
                             && unda_xla_map.contains_key(&b)

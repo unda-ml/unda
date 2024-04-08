@@ -35,6 +35,16 @@ impl Context {
                         changed = true;
                     }
                 }
+                Operation::RngUniform(a, b, shape)
+                    | Operation::RngNormal(a, b, shape) => {
+                    if a == to_remove {
+                        self.nodes[dep_node].operation = Operation::RngUniform(rep_with, b, shape);
+                        changed = true;
+                    } else if b == to_remove {
+                        self.nodes[dep_node].operation = Operation::RngUniform(a, rep_with, shape);
+                        changed = true;
+                    } 
+                }
                 Operation::Pow(a, b) => {
                     if a == to_remove && a == b {
                         self.nodes[dep_node].operation = Operation::Pow(rep_with, rep_with);
@@ -478,6 +488,8 @@ impl Context {
                 | Operation::NotEqual(a, b)
                 | Operation::Div(a, b)
                 | Operation::Pow(a, b)
+                | Operation::RngUniform(a, b, _)
+                | Operation::RngNormal(a, b, _)
                 | Operation::MatMul(a, b) => {
                     if self.nodes[a].is_const().is_none() {
                         to_visit.push(a);
