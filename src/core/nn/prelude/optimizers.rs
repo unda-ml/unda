@@ -1,9 +1,9 @@
-pub enum Optimizers{
+pub enum Optimizer {
     Adam,
     SGD,
     RMSProp
 }
 
-impl Optimizers {
+impl Optimizer {
 
 }

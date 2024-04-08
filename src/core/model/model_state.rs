@@ -1,4 +1,4 @@
-use crate::core::{graph::{Context, Result, NodeIdentifier}, neural_net::prelude::initializers::Initializers};
+use crate::core::{graph::{Context, Result, NodeIdentifier}, nn::prelude::{initializers::Initializers, activations::Activation}};
 
 use super::model_builder::ModelBuilder;
 
@@ -32,13 +32,14 @@ impl Model {
     pub fn compile(&mut self) -> Self {
         todo!();
     }
-    pub fn dense(&mut self, out_size: u32, name: &str) -> Result<()> {
+    pub fn dense(&mut self, out_size: u32, name: &str, activation: Activation) -> Result<()> {
         if let Some(node) = self.curr_node {
             //Append dense layer onto end of current context
             let (out, (weights_curr, bias_curr)) = ModelBuilder::dense(&mut self.model_ctx, node, out_size, name)?;
-            self.curr_node = Some(out);
             self.weight_bias_pairs.push((weights_curr, bias_curr));
+            let activation_applied = activation.apply(out, &mut self.model_ctx)?;
 
+            self.curr_node = Some(activation_applied);
             //TODO create backwards pass here too? Potentially.
 
         } else {

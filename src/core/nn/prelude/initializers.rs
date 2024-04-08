@@ -1,9 +1,9 @@
-pub enum Initializers {
+pub enum Initializer {
     He,
     Xavier,
     Default
 }
 
-impl Initializers {
+impl Initializer {
     
 }
