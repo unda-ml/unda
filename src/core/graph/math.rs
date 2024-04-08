@@ -102,6 +102,52 @@ impl Context {
         Ok(node_id)
     }
 
+    pub fn rng_uniform(&mut self, min: NodeIdentifier, max: NodeIdentifier, shape: &[u32]) -> Result<NodeIdentifier> {
+        if self.nodes[min].dtype != self.nodes[max].dtype {
+            Err(ContextError::IncompatibleOperandTypes(
+                self.nodes[min].dtype,
+                self.nodes[max].dtype,
+                callsite!(1),
+            ))
+        } else {
+            let shape_node = Shape::from(shape);
+            let node = Node {
+                callsite: callsite!(1),
+                shape: shape_node.clone(),
+                operation: Operation::RngUniform(min, max, shape_node),
+                dtype: self.nodes[min].dtype,
+            };
+            let node_id = self.nodes.insert(node);
+            self.dependent_nodes.entry(min).or_default().push(node_id);
+            self.dependent_nodes.entry(max).or_default().push(node_id);
+
+            Ok(node_id)
+        }
+    }
+
+    pub fn rng_normal(&mut self, mu: NodeIdentifier, sigma: NodeIdentifier, shape: &[u32]) -> Result<NodeIdentifier> {
+        if self.nodes[mu].dtype != self.nodes[sigma].dtype {
+            Err(ContextError::IncompatibleOperandTypes(
+                self.nodes[mu].dtype,
+                self.nodes[sigma].dtype,
+                callsite!(1),
+            ))
+        } else {
+            let shape_node = Shape::from(shape);
+            let node = Node {
+                callsite: callsite!(1),
+                shape: shape_node.clone(),
+                operation: Operation::RngNormal(mu, sigma, shape_node),
+                dtype: self.nodes[mu].dtype,
+            };
+            let node_id = self.nodes.insert(node);
+            self.dependent_nodes.entry(mu).or_default().push(node_id);
+            self.dependent_nodes.entry(sigma).or_default().push(node_id);
+
+            Ok(node_id)
+        }
+    }
+
     pub fn exp(&mut self, a: NodeIdentifier) -> Result<NodeIdentifier> {
         let node = Node {
             callsite: callsite!(1),

@@ -64,7 +64,9 @@ impl Context {
                     //Again again, clone() here is not wonderful, there's gotta be a better way to
                     //store the i64 vec for Transpose
                     match self.nodes[dependent_node].operation.clone() {
-                        Operation::Constant(_) => panic!("Constant found as dependent node!"),
+                        Operation::Constant(_) 
+                            | Operation::RngUniform(_, _, _) 
+                            | Operation::RngNormal(_, _, _) => panic!("Constant found as dependent node!"),
                         Operation::Parameter(_) => panic!("Parameter found as dependent node!"),
                         Operation::StopGradient(_) => continue,
 

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::format};
 
 use super::*;
 
@@ -112,6 +112,8 @@ impl Context {
             Operation::Exp(a) => format!("Exp ({})", self.to_string(a)),
             Operation::Log(a) => format!("Log ({})", self.to_string(a)),
             Operation::Transpose(a, b) => format!("Transpose: ({}) ({:?})", self.to_string(a), b),
+            Operation::RngUniform(a, b, shape) => format!("RngUniform: ({}) ({}) ({})", self.to_string(a), self.to_string(b), shape),
+            Operation::RngNormal(a, b, shape) => format!("RngNormal: ({}) ({}) ({})", self.to_string(a), self.to_string(b), shape),
             Operation::Equal(a, b) => {
                 format!("LessThan ({}) ({})", self.to_string(a), self.to_string(b))
             }
