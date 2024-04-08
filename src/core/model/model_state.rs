@@ -65,8 +65,11 @@ impl Model {
             Err(ContextError::InvalidLayerConstructionError("Dense".to_owned()))
         }
     }
-    pub fn diff(&mut self) -> Result<()> {
+    pub fn diff(&mut self) -> Result<Vec<(NodeIdentifier, NodeIdentifier)>> {
         if let Some(loss) = self.loss {
+
+            let mut res = Vec::new();
+
             for (weight, bias) in self.weight_bias_pairs.iter().rev() {
                 //Collect gradients of weights and biases
                 let weight_grad = self.model_ctx.diff(loss, *weight)?;
@@ -75,9 +78,13 @@ impl Model {
                 let weight_update = self.model_ctx.mul(weight_grad, self.learning_rate)?;
                 let bias_update = self.model_ctx.mul(bias_grad, self.learning_rate)?;
 
+                let weight_new = self.model_ctx.sub(*weight, weight_update)?;
+                let bias_new = self.model_ctx.sub(*bias, bias_update)?;
                 //TODO store weight bias updates in context 
+                //Storing and returning a vec might not be the best way we'll see
+                res.push((weight_new, bias_new));
             }
-            Ok(())
+            Ok(res)
         } else {
             Err(ContextError::InvalidDiffError())
         }
