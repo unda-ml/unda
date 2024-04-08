@@ -1,10 +1,9 @@
 use xla::ElementType;
 
-use crate::core::{graph::{Context, Result, NodeIdentifier}, nn::prelude::{initializers::Initializer, activations::Activation}};
+use crate::core::{graph::{Context, Result, NodeIdentifier, ContextError}, nn::prelude::{initializers::Initializer, activations::Activation}};
 
 use super::model_builder::ModelBuilder;
 
-#[allow(dead_code)]
 pub struct Model{
     model_ctx: Context,
     initializer: Initializer,
@@ -62,9 +61,20 @@ impl Model {
         }
         Ok(())
     }
-    pub fn diff(&mut self) -> Result<()> {
-        for (weight, bias) in self.weight_bias_pairs.iter().rev() {
-            //Collect gradients of weights and biases
+    fn diff(&mut self) -> Result<()> {
+        if let Some(loss) = self.loss {
+            for (weight, bias) in self.weight_bias_pairs.iter().rev() {
+                //Collect gradients of weights and biases
+                let weight_grad = self.model_ctx.diff(loss, *weight)?;
+                let bias_grad = self.model_ctx.diff(loss, *bias)?;
+
+                let weight_update = self.model_ctx.mul(weight_grad, self.learning_rate)?;
+                let bias_update = self.model_ctx.mul(bias_grad, self.learning_rate)?;
+
+                //TODO store weight bias updates in context 
+            }
+        } else {
+            return Err(ContextError::InvalidDiffError())
         }
         Ok(())
     }
