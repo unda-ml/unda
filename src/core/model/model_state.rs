@@ -1,11 +1,11 @@
-use crate::core::{graph::{Context, Result, NodeIdentifier}, nn::prelude::{initializers::Initializers, activations::Activation}};
+use crate::core::{graph::{Context, Result, NodeIdentifier}, nn::prelude::{initializers::Initializer, activations::Activation}};
 
 use super::model_builder::ModelBuilder;
 
 #[allow(dead_code)]
 pub struct Model{
     model_ctx: Context,
-    initializer: Initializers,
+    initializer: Initializer,
 
     curr_node: Option<NodeIdentifier>,
     weight_bias_pairs: Vec<(NodeIdentifier, NodeIdentifier)>
@@ -21,12 +21,12 @@ impl Model {
     pub fn new() -> Self {
         Self { 
             model_ctx: Context::new(),
-            initializer: Initializers::Default,
+            initializer: Initializer::Default,
             curr_node: None,
             weight_bias_pairs: vec![]
         }
     }
-    pub fn set_initializer(&mut self, new_init: Initializers) {
+    pub fn set_initializer(&mut self, new_init: Initializer) {
         self.initializer = new_init;
     }
     pub fn compile(&mut self) -> Self {
