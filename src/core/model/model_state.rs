@@ -7,6 +7,7 @@ use super::model_builder::ModelBuilder;
 pub struct Model{
     model_ctx: Context,
     initializer: Initializer,
+    dtype: ElementType,
 
     curr_node: Option<NodeIdentifier>,
     loss: Option<NodeIdentifier>,
@@ -16,19 +17,17 @@ pub struct Model{
 
 impl Default for Model {
     fn default() -> Self {
-        Self::new(0.01)
+        Self::new(0.01, ElementType::F32)
     }
 }
 
 impl Model {
-    //TODO: Maybe allow specifying a dtype as well,
-    //could become the default dtype from there as well
-    pub fn new(learning_rate: f32) -> Self {
+    pub fn new(learning_rate: f32, dtype: ElementType) -> Self {
         let mut ctx = Context::new();
 
         //Not sure if we want outward facing results unless its directly a user problem
         //such as calling layer constructors incorrectly
-        let learn_rate = ctx.scalar(learning_rate, ElementType::F32)
+        let learn_rate = ctx.scalar(learning_rate, dtype)
             .expect("Error constructing model with compute graph");
 
         Self { 
@@ -36,6 +35,7 @@ impl Model {
             initializer: Initializer::Default,
             curr_node: None,
             loss: None,
+            dtype,
             learning_rate: learn_rate,
             weight_bias_pairs: vec![]
         }
