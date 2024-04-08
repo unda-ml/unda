@@ -35,7 +35,8 @@ impl Model {
     pub fn dense(&mut self, out_size: u32, name: &str, activation: Activation) -> Result<()> {
         if let Some(node) = self.curr_node {
             //Append dense layer onto end of current context
-            let (out, (weights_curr, bias_curr)) = ModelBuilder::dense(&mut self.model_ctx, node, out_size, name)?;
+            let (out, (weights_curr, bias_curr)) = ModelBuilder::dense(&mut self.model_ctx, 
+                                                                       node, out_size, name)?;
             self.weight_bias_pairs.push((weights_curr, bias_curr));
             let activation_applied = activation.apply(out, &mut self.model_ctx)?;
 
