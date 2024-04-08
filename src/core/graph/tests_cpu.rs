@@ -69,8 +69,38 @@ mod tests {
     create_test!(test_sub_1_2, sub, F32, 1f32, 2f32, -1f32);
 
     #[test]
+    fn test_normal_dist() {
+        let mut ctx = Context::new();
+        let mu = ctx.scalar(0, xla::ElementType::F32).expect("mu = 0");
+        let sigma = ctx.scalar(1, xla::ElementType::F32).expect("sigma = 1");
+        let mat = ctx.rng_normal(mu, sigma, &[2,3]).expect("sample the normal distribution");
+
+        let client = xla::PjRtClient::cpu().expect("client");
+        let name = "test";
+        let executable = ctx.compile(&name, [mat], &client).expect("executable");
+
+        let device_result = executable.execute::<Literal>(&[]).expect("execute");
+        let host_result = device_result[0][0]
+            .to_literal_sync()
+            .expect("to_literal_sync");
+        let untupled_result = host_result.to_tuple1().expect("untuple");
+        let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
+        println!("{:?}", rust_result);
+
+        match untupled_result.shape().unwrap() {
+            Shape::Array(shape) => {
+                assert_eq!(shape.dims(), &[2,3]);
+            },
+            _ => {
+                panic!("Shape is not correct");
+            }
+        }
+    }
+
+
+    #[test]
     fn test_large_cte() {
-         let mut ctx = Context::new();
+        let mut ctx = Context::new();
         let a = ctx.parameter("a", [], xla::ElementType::F32).expect("a");
         let two = ctx.scalar(2, xla::ElementType::F32).expect("2");
 

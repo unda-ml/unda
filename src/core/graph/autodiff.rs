@@ -73,6 +73,8 @@ impl Context {
                         | Operation::LessThan(_, _)
                         | Operation::LessThanEq(_, _)
                         | Operation::GreaterThan(_, _)
+                        | Operation::RngNormal(_, _, _)
+                        | Operation::RngUniform(_, _, _)
                         | Operation::GreaterThanEq(_, _) => {
                             return Err(ContextError::NonDifferentiableOpError(
                                 self.nodes[dependent_node].callsite.clone(),
