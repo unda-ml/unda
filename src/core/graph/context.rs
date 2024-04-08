@@ -75,7 +75,10 @@ pub enum ContextError {
     //Might want to create a new error type for model errors instead of just using the graph error
     //type, sticking this here for now though.
     #[error("Tried calling model.diff() before model had a loss function")]
-    InvalidDiffError()
+    InvalidDiffError(),
+
+    #[error("{0} layer cannot be created without first implementing input parameters")]
+    InvalidLayerConstructionError(String),
 }
 
 pub type Result<T> = std::result::Result<T, ContextError>;

@@ -54,12 +54,11 @@ impl Model {
             let activation_applied = activation.apply(out, &mut self.model_ctx)?;
 
             self.curr_node = Some(activation_applied);
-
+            Ok(())
         } else {
-            //Create initial dense layer with input params
-            todo!();
+            //No input params have been set yet, error(at least I think this is valid behavior)
+            Err(ContextError::InvalidLayerConstructionError("Dense".to_owned()))
         }
-        Ok(())
     }
     pub fn diff(&mut self) -> Result<()> {
         if let Some(loss) = self.loss {
