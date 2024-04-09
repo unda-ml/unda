@@ -29,12 +29,10 @@ impl ModelBuilder {
         let mut bias_name = name.to_owned();
         bias_name.push_str("_bias");
         let bias = model.parameter(bias_name, bias_shape, dtype)?;
-        let bias_init = initializer.initialize(model, bias, 
-                                                  model.nodes[input_node].shape.sizes[1] as usize)?;
         
         let matmul_node = model.matmul(input_node, weights_init)?;
-        let dense_node = model.add(matmul_node, bias_init)?;
+        let dense_node = model.add(matmul_node, bias)?;
 
-        Ok((dense_node, (weights_init, bias_init)))
+        Ok((dense_node, (weights_init, bias)))
     }
 }

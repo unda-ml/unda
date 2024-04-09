@@ -26,7 +26,6 @@ impl Initializer {
                 let rand_vals = ctx.rng_normal(mu, sigma, dep_size.as_slice())?;
 
                 ctx.add(on_node, rand_vals)
-
             },
             Initializer::Xavier => {
                 let dep_size = ctx.nodes[on_node].shape.sizes.to_owned();
@@ -44,7 +43,6 @@ impl Initializer {
                 let rand_vals = ctx.rng_uniform(min, max, dep_size.as_slice())?;
 
                 ctx.add(on_node, rand_vals)
-
             },
             Initializer::Default => {
                 let dep_size = ctx.nodes[on_node].shape.sizes.to_owned();

@@ -70,7 +70,7 @@ impl Model {
 
             let mut res = Vec::new();
 
-            for (weight, bias) in self.weight_bias_pairs.iter().rev() {
+            for (weight, bias) in self.weight_bias_pairs.iter() {
                 //Collect gradients of weights and biases
                 let weight_grad = self.model_ctx.diff(loss, *weight)?;
                 let bias_grad = self.model_ctx.diff(loss, *bias)?;
@@ -80,6 +80,7 @@ impl Model {
 
                 let weight_new = self.model_ctx.sub(*weight, weight_update)?;
                 let bias_new = self.model_ctx.sub(*bias, bias_update)?;
+
                 //TODO store weight bias updates in context 
                 //Storing and returning a vec might not be the best way we'll see
                 res.push((weight_new, bias_new));
