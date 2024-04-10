@@ -1,4 +1,4 @@
-use xla::ElementType;
+use xla::{ElementType, PjRtClient};
 
 use crate::core::{graph::{Context, Result, NodeIdentifier, ContextError}, nn::prelude::{initializers::Initializer, activations::Activation}};
 
@@ -6,6 +6,7 @@ use super::model_builder::ModelBuilder;
 
 pub struct Model{
     model_ctx: Context,
+    client: PjRtClient,
     initializer: Initializer,
     dtype: ElementType,
 
@@ -18,6 +19,20 @@ pub struct Model{
 impl Default for Model {
     fn default() -> Self {
         Self::new(0.01, ElementType::F32)
+    }
+}
+
+pub enum ClientType {
+    GPU(f64),
+    CPU
+}
+
+impl ClientType {
+    fn to_client(&self) -> xla::Result<PjRtClient> {
+        match self {
+            ClientType::GPU(mem_frac) => PjRtClient::gpu(*mem_frac, false),
+            ClientType::CPU => PjRtClient::cpu()
+        }
     }
 }
 
@@ -35,14 +50,21 @@ impl Model {
             initializer: Initializer::Default,
             curr_node: None,
             loss: None,
+            client: ClientType::CPU.to_client().expect("Error initializing CPU client"),
             dtype,
             learning_rate: learn_rate,
             weight_bias_pairs: vec![]
         }
     }
+    
     pub fn set_initializer(&mut self, new_init: Initializer) {
         self.initializer = new_init;
     }
+
+    pub fn set_client(&mut self, client: ClientType) {
+        self.client = client.to_client().expect("Error setting client type");
+    }
+
     pub fn compile(&mut self) -> Self {
         todo!();
     }
