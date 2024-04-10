@@ -5,15 +5,15 @@ use crate::core::{graph::{Context, Result, NodeIdentifier, ContextError}, nn::pr
 use super::model_builder::ModelBuilder;
 
 pub struct Model{
-    model_ctx: Context,
-    client: PjRtClient,
-    initializer: Initializer,
-    dtype: ElementType,
+    pub(crate) model_ctx: Context,
+    pub(crate) client: PjRtClient,
+    pub(crate) initializer: Initializer,
+    pub(crate) dtype: ElementType,
 
-    optimizer: Optimizer,
+    pub(crate) optimizer: Optimizer,
+    pub(crate) learning_rate: NodeIdentifier,
     curr_node: Option<NodeIdentifier>,
     loss: Option<NodeIdentifier>,
-    learning_rate: NodeIdentifier,
     weight_bias_pairs: Vec<(NodeIdentifier, NodeIdentifier)>,
 }
 
@@ -29,7 +29,7 @@ pub enum ClientType {
 }
 
 impl ClientType {
-    fn to_client(&self) -> xla::Result<PjRtClient> {
+    pub(crate) fn to_client(&self) -> xla::Result<PjRtClient> {
         match self {
             ClientType::GPU(mem_frac) => PjRtClient::gpu(*mem_frac, false),
             ClientType::CPU => PjRtClient::cpu()
@@ -58,25 +58,6 @@ impl Model {
             weight_bias_pairs: vec![]
         }
     }
-    
-    pub fn set_initializer(&mut self, new_init: Initializer) {
-        self.initializer = new_init;
-    }
-
-    pub fn set_client(&mut self, client: ClientType) {
-        self.client = client.to_client().expect("Error setting client type");
-    }
-
-    pub fn set_learning_rate(&mut self, rate: f64, dtype: ElementType) -> Result<()> {
-        self.dtype = dtype;
-        self.learning_rate = self.model_ctx.scalar(rate, dtype)?;
-        Ok(())
-    }
-
-    pub fn set_optimizer(&mut self, optimizer: Optimizer) {
-        self.optimizer = optimizer;
-    }
-
     pub fn compile(&mut self) -> Self {
         todo!();
     }
