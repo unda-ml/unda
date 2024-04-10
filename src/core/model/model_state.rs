@@ -65,6 +65,12 @@ impl Model {
         self.client = client.to_client().expect("Error setting client type");
     }
 
+    pub fn set_learning_rate(&mut self, rate: f64, dtype: ElementType) -> Result<()> {
+        self.learning_rate = self.model_ctx.scalar(rate, dtype)?;
+
+        Ok(())
+    }
+
     pub fn compile(&mut self) -> Self {
         todo!();
     }
