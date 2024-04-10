@@ -68,6 +68,7 @@ impl Model {
     }
 
     pub fn set_learning_rate(&mut self, rate: f64, dtype: ElementType) -> Result<()> {
+        self.dtype = dtype;
         self.learning_rate = self.model_ctx.scalar(rate, dtype)?;
         Ok(())
     }
