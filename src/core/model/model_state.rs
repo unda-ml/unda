@@ -1,6 +1,6 @@
 use xla::{ElementType, PjRtClient};
 
-use crate::core::{graph::{Context, Result, NodeIdentifier, ContextError}, nn::prelude::{initializers::Initializer, activations::Activation}};
+use crate::core::{graph::{Context, Result, NodeIdentifier, ContextError}, nn::prelude::{initializers::Initializer, activations::Activation, optimizers::Optimizer}};
 
 use super::model_builder::ModelBuilder;
 
@@ -10,6 +10,7 @@ pub struct Model{
     initializer: Initializer,
     dtype: ElementType,
 
+    optimizer: Optimizer,
     curr_node: Option<NodeIdentifier>,
     loss: Option<NodeIdentifier>,
     learning_rate: NodeIdentifier,
@@ -52,6 +53,7 @@ impl Model {
             loss: None,
             client: ClientType::CPU.to_client().expect("Error initializing CPU client"),
             dtype,
+            optimizer: Optimizer::SGD,
             learning_rate: learn_rate,
             weight_bias_pairs: vec![]
         }
@@ -67,8 +69,11 @@ impl Model {
 
     pub fn set_learning_rate(&mut self, rate: f64, dtype: ElementType) -> Result<()> {
         self.learning_rate = self.model_ctx.scalar(rate, dtype)?;
-
         Ok(())
+    }
+
+    pub fn set_optimizer(&mut self, optimizer: Optimizer) {
+        self.optimizer = optimizer;
     }
 
     pub fn compile(&mut self) -> Self {
@@ -100,17 +105,11 @@ impl Model {
 
             for (weight, bias) in self.weight_bias_pairs.iter() {
                 //Collect gradients of weights and biases
-                let weight_grad = self.model_ctx.diff(loss, *weight)?;
-                let bias_grad = self.model_ctx.diff(loss, *bias)?;
-
-                let weight_update = self.model_ctx.mul(weight_grad, self.learning_rate)?;
-                let bias_update = self.model_ctx.mul(bias_grad, self.learning_rate)?;
-
-                let weight_new = self.model_ctx.sub(*weight, weight_update)?;
-                let bias_new = self.model_ctx.sub(*bias, bias_update)?;
-
-                //TODO store weight bias updates in context 
-                //Storing and returning a vec might not be the best way we'll see
+                let (weight_new, bias_new) = self.optimizer.apply(&mut self.model_ctx,
+                                                                  *weight,
+                                                                  *bias,
+                                                                  loss,
+                                                                  self.learning_rate)?;
                 res.push((weight_new, bias_new));
             }
             Ok(res)
