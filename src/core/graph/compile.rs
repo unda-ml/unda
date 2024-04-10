@@ -1,7 +1,7 @@
 use super::*;
 use slotmap::SlotMap;
 use smallvec::SmallVec;
-use xla::{XlaOp, ArrayShape};
+use xla::XlaOp;
 use std::collections::{HashMap, HashSet, VecDeque};
 
 #[derive(thiserror::Error, Debug)]
