@@ -77,10 +77,6 @@ where ```example_name``` is the name of the file/folder you wish to run, omittin
 
 **Important**! When using running the MNIST example, please make sure to put the appropriate ubyte files into the /src/util/mnist directory of this repository. We are currently working on using reqwest to automatically build the dataset, but for now it must be done manually
 
-Here are google drive links to the necessary ubyte files
-- [labels](https://drive.google.com/file/d/191BR4awTN-XvIISPeB4_zaHJZ0EgC4-o/view?usp=drive_link)
-- [images](https://drive.google.com/file/d/1vsltbfn7D3ZYFmAhN2fexomUaqr5oG6P/view?usp=drive_link)
-
 ## Implications for the future of ML
 
 Using the built in **Input** trait, practically any data type can be mapped to an input for a neural network without the need for cutting corners, and the inner trait for layers allows for a plug and play style to neural network development. Currently, Unda has full support for Dense layers, Adam Optimization for Backprop, Activation functions (Sigmoid, TanH, ReLU and LeakyReLU), and even loss analysis per model and per layer.
