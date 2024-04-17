@@ -8,7 +8,7 @@
 [![Documentation](https://docs.rs/unda/badge.svg)](https://docs.rs/unda)
 [![Unit Tests](https://github.com/BradenEverson/unda/actions/workflows/rust.yml/badge.svg)](https://github.com/BradenEverson/unda/actions/workflows/rust.yml)
 
-Unda aims to bring the future of deep learning to the world of rust. With dynamic input traits, concurrent minibatch processing, and full Dense network support(with convolutions soon to come), Unda is quickly emerging and making neural network development easy and ***blazingly fast***.
+Unda aims to bring the future of deep learning to the world of rust. With dynamic input traits, concurrent minibatch processing, and full Dense network support, Unda is quickly emerging and making neural network development easy and ***blazingly fast***.
 
 ## Installation
 
