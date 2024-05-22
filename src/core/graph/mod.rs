@@ -1,10 +1,10 @@
 mod autodiff;
-mod callsite;
+pub(crate) mod callsite;
 mod compile;
 mod constant;
 mod consteval;
 mod context;
-mod dtypes;
+pub(crate) mod dtypes;
 mod logic;
 mod math;
 mod node;
@@ -15,7 +15,7 @@ mod subterm;
 //mod tests;
 mod tests_cpu;
 
-use callsite::{callsite, Callsite};
+pub(crate) use callsite::{callsite, Callsite};
 pub use compile::CompileError;
 pub use constant::ConstantBinding;
 pub use context::{Context, ContextError, Result};

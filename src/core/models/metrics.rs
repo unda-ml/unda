@@ -1,5 +1,7 @@
 use crate::core::graph::*;
 
+use self::dtypes::check_int_type;
+
 impl Context {
 
     // assumes dense_predictions is rank 2 with dimension 0 being batch and dimension 1 being predictions
@@ -18,5 +20,4 @@ impl Context {
         let converted = self.type_cast(compare, xla::ElementType::F32);
         self.reduce_mean(converted, 0, false)
     }
-
 }

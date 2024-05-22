@@ -1,5 +1,7 @@
 use crate::core::graph::*;
 
+use self::dtypes::check_fp_type;
+
 impl Context {
 
     pub fn relu(&mut self, a: NodeIdentifier) -> Result<NodeIdentifier> {
