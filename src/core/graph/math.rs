@@ -213,7 +213,7 @@ impl Context {
                 }
                 Ok(add_node)
             }
-            
+
         }
     }
 
@@ -538,60 +538,6 @@ impl Context {
     pub fn maximum(&mut self, a: NodeIdentifier, b: NodeIdentifier) -> Result<NodeIdentifier> {
         let pred = self.gt(a, b)?;
         self.select(pred, a, b)
-    }
-
-    pub fn relu(&mut self, a: NodeIdentifier) -> Result<NodeIdentifier> {
-        let a_dtype = self.nodes[a].dtype;
-        let const_zero = self.scalar(0, a_dtype)?;
-        self.maximum(const_zero, a)
-    }
-
-    pub fn leaky_relu(&mut self, a: NodeIdentifier, alpha: f32) -> Result<NodeIdentifier> {
-        let a_dtype = self.nodes[a].dtype;
-        //TODO: force dtype to be floating point or else this just becomes normal relu
-        let const_small = self.scalar(alpha, a_dtype)?;
-        let small_x = self.mul(a, const_small)?;
-
-        self.maximum(small_x, a)
-    }
-
-    pub fn sigmoid(&mut self, a: NodeIdentifier) -> Result<NodeIdentifier> {
-        let a_dtype = self.nodes[a].dtype;
-        let one = self.scalar(1, a_dtype)?;
-        let neg_x = self.neg(a);
-        let exp_x = self.exp(neg_x)?;
-
-        let one_p_exp_x = self.add(one, exp_x)?;
-
-        self.div(one, one_p_exp_x)
-    }
-
-    pub fn softmax(&mut self, a: NodeIdentifier) -> Result<NodeIdentifier> {
-        let dtype = check_fp_type(self.nodes[a].dtype)?;
-
-        let max = self.reduce_max(a, 0, true)?;
-        let stop_grad = self.stop_gradient(max);
-        let unnormalized = self.sub(a, stop_grad)?;
-        let unnormalized_exp = self.exp(unnormalized)?;
-
-        let sum = self.reduce_sum(unnormalized_exp, 0, true)?;
-        let eps = self.scalar(1e-8, dtype)?;
-        // prevent division by 0
-        let sum = self.add(sum, eps)?;
-
-        self.div(unnormalized_exp, sum)
-    }
-
-    pub fn tanh(&mut self, a: NodeIdentifier) -> Result<NodeIdentifier> {
-        let a_dtype = self.nodes[a].dtype;
-        let two = self.scalar(2, a_dtype)?;
-        let one = self.scalar(1, a_dtype)?;
-
-        let two_a = self.mul(two, a)?;
-        let sigmoid_a_2 = self.sigmoid(two_a)?;
-
-        let two_sigmoid = self.mul(two, sigmoid_a_2)?;
-        self.sub(two_sigmoid, one)
     }
 
     pub fn type_cast(&mut self, a: NodeIdentifier, dtype: xla::ElementType) -> NodeIdentifier {
@@ -927,23 +873,6 @@ impl Context {
         self.maybe_keepdims(node_id, dim, keepdims)
     }
 
-    // assumes dense_predictions is rank 2 with dimension 0 being batch and dimension 1 being predictions
-    // assumes sparse_label_vector is rank 1 i64 of class labels
-    pub fn accuracy(
-        &mut self,
-        dense_predictions: NodeIdentifier,
-        sparse_label_vector: NodeIdentifier,
-    ) -> Result<NodeIdentifier> {
-        let converted_labels = match check_int_type(self.nodes[sparse_label_vector].dtype) {
-            Ok(_) => self.type_cast(sparse_label_vector, xla::ElementType::S64),
-            Err(e) => return Err(e),
-        };
-        let sparse_predictions = self.reduce_argmax(dense_predictions, 1, false)?;
-        let compare = self.eq(sparse_predictions, converted_labels)?;
-        let converted = self.type_cast(compare, xla::ElementType::F32);
-        self.reduce_mean(converted, 0, false)
-    }
-
     pub fn one_hot(
         &mut self,
         sparse_label_vector: NodeIdentifier,
@@ -977,27 +906,4 @@ impl Context {
         Ok(node_id)
     }
 
-    pub fn mean_cross_entropy(
-        &mut self,
-        prediction_probabilities: NodeIdentifier,
-        one_hot_labels: NodeIdentifier,
-    ) -> Result<NodeIdentifier> {
-        let dtype = check_real_type(self.nodes[prediction_probabilities].dtype)?;
-        if dtype != self.nodes[one_hot_labels].dtype {
-            return Err(ContextError::IncompatibleOperandTypes(
-                dtype,
-                self.nodes[one_hot_labels].dtype,
-                callsite!(1),
-            ));
-        }
-
-        let eps = self.scalar(1e-8, dtype)?;
-        // prevent logarithm of zero
-        let offset = self.add(prediction_probabilities, eps)?;
-        let log = self.log(offset)?;
-        let neglog = self.neg(log);
-        let mul = self.mul(one_hot_labels, neglog)?;
-        let sum = self.reduce_sum(mul, 1, false)?;
-        self.reduce_mean(sum, 0, false)
-    }
 }
