@@ -1,9 +1,6 @@
-use xla::{ElementType, PjRtBuffer, PjRtClient, XlaComputation};
+use xla::PjRtBuffer;
 
-use crate::core::{
-    graph::{Context, ContextError, NodeIdentifier, Result},
-    nn::prelude::{activations::Activation, initializers::Initializer, optimizers::Optimizer},
-};
+use crate::core::graph::Result;
 
 pub struct LoadedInferenceModel {
     pub(crate) executable: xla::PjRtLoadedExecutable,

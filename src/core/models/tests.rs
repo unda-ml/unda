@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::core::{graph::Context, models::activations};
+    use crate::core::graph::Context;
     use xla::Literal;
 
     /*
