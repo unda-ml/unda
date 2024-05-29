@@ -1,9 +1,8 @@
 use xla::{ElementType, PjRtBuffer, PjRtClient, XlaComputation};
 
 use super::loaded_model::{LoadedEvalModel, LoadedGradientModel, LoadedInferenceModel};
-use crate::core::{
+use crate::{
     graph::{Context, ContextError, NodeIdentifier, Result},
-    nn::prelude::{activations::Activation, initializers::Initializer, optimizers::Optimizer},
 };
 
 pub struct Model<P> {

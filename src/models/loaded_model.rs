@@ -1,8 +1,7 @@
 use xla::{ElementType, PjRtBuffer, PjRtClient, XlaComputation};
 
-use crate::core::{
+use crate::{
     graph::{Context, ContextError, NodeIdentifier, Result},
-    nn::prelude::{activations::Activation, initializers::Initializer, optimizers::Optimizer},
 };
 
 pub struct LoadedInferenceModel {

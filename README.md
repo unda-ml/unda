@@ -36,10 +36,10 @@ unda = "{version}"
 ## Usage
 
 ```rust
-use unda::core::network::Network;
-use unda::core::layer::{methods::activations::Activations, layers::{LayerTypes, InputTypes}};
-use unda::core::data::input::Input;
-use unda::core::layer::{methods::errors::ErrorTypes};
+use unda::network::Network;
+use unda::layer::{methods::activations::Activations, layers::{LayerTypes, InputTypes}};
+use unda::data::input::Input;
+use unda::layer::{methods::errors::ErrorTypes};
 
 fn main() {
     let inputs = vec![vec![0.0,0.0],vec![1.0,0.0],vec![0.0,1.0], vec![1.0,1.0]];

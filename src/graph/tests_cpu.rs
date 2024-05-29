@@ -57,7 +57,7 @@ macro_rules! create_test {
 mod tests {
     use std::collections::HashMap;
 
-    use crate::core::graph::{Context, Node};
+    use crate::graph::{Context, Node};
     use xla::{FromRawBytes, Literal, Shape};
 
     create_test!(test_pow_f32_100_squared, pow, F32, 10f32, 2f32, 100f32);

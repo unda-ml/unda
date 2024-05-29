@@ -56,7 +56,7 @@ macro_rules! create_test {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::graph::{callsite::callsite, ConstantBinding, Context, Node, Operation};
+    use crate::graph::{callsite::callsite, ConstantBinding, Context, Node, Operation};
     use xla::{FromRawBytes, Literal, Shape};
 
     create_test!(test_pow_f32_100_squared, pow, F32, 10f32, 2f32, 100f32);

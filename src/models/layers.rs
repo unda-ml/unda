@@ -1,6 +1,5 @@
-use crate::core::{
+use crate::{
     graph::{Context, NodeIdentifier, Result, Shape},
-    nn::prelude::initializers::Initializer,
 };
 
 impl Context {
@@ -8,9 +7,11 @@ impl Context {
         &mut self,
         input_node: NodeIdentifier,
         out_size: u32,
-        initializer: &Initializer,
+        //initializer: &Initializer,
         name: &str,
     ) -> Result<(NodeIdentifier, (NodeIdentifier, NodeIdentifier))> {
+        panic!("Not implemented!")
+        /*
         let shape = self.nodes[input_node].shape.clone();
         let last_dim = shape.sizes[shape.ndims() - 1];
         let dtype = self.nodes[input_node].dtype;
@@ -38,5 +39,6 @@ impl Context {
         let dense_node = self.add(matmul_node, bias)?;
 
         Ok((dense_node, (weights_init, bias)))
+        */
     }
 }
