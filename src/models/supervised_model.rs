@@ -4,7 +4,7 @@ use crate::{
     graph::{Context, ContextError, NodeIdentifier, Result},
 };
 
-pub struct Model<P> {
+pub struct SupervisedModel<P> {
     // forward computation of the network without loss
     pub(crate) network: Context,
     // wraps the node identifiers for the parameters of the network
@@ -29,16 +29,16 @@ pub struct Model<P> {
     // executes the network context without Evaluationuating metrics
     pub(crate) inference_computation: xla::XlaComputation,
     // executes the network and training metrics
-    pub(crate) Evaluationutation_computation: xla::XlaComputation,
+    pub(crate) evaluation_computation: xla::XlaComputation,
     // executes the network and training metrics and returns derivatives of the parameters
-    pub(crate) Training_computation: xla::XlaComputation,
+    pub(crate) training_computation: xla::XlaComputation,
 }
 
-impl<P: From<Vec<NodeIdentifier>> + Into<Vec<NodeIdentifier>>> Model<P> {
+impl<P: From<Vec<NodeIdentifier>> + Into<Vec<NodeIdentifier>>> SupervisedModel<P> {
     // this function should
     // build the inference_computation from the network context
-    // fuse the network and compute_metrics contexts and build the Evaluationuation_computation
-    // further augment the context to return derivatives of all params and then build the Training_computation
+    // fuse the network and compute_metrics contexts and build the evaluation_computation
+    // further augment the context to return derivatives of all params and then build the training_computation
     pub fn new(
         network: Context,
         params: P,
