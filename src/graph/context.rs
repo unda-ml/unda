@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::format};
+use std::collections::HashMap;
 
 use super::*;
 
@@ -71,6 +71,14 @@ pub enum ContextError {
 
     #[error("Invalid permutation passed to transpose. Expected permutation of length {0}, got {1}")]
     TransposeLenError(usize, usize, Callsite),
+
+    //Might want to create a new error type for model errors instead of just using the graph error
+    //type, sticking this here for now though.
+    #[error("Tried calling model.diff() before model had a loss function")]
+    InvalidDiffError(),
+
+    #[error("{0} layer cannot be created without first implementing input parameters")]
+    InvalidLayerConstructionError(String),
 }
 
 pub type Result<T> = std::result::Result<T, ContextError>;
