@@ -1,11 +1,11 @@
 pub trait Tree<A, S> {
-    fn flatten<'a, 'b: 'a>(&'a self) -> (&'b [&'a A], S);
+    fn flatten<'a, 'b: 'a>(unflat: Box<Self>) -> (&'a [Box<A>], S);
     fn unflatten<'a, 'b: 'a>(flat: &'b [&'a A], structure: S) -> &'b Self;
 }
 
 impl<A> Tree<A, ()> for A {
-    fn flatten<'a, 'b: 'a>(&'a self) -> (&'b [&'a A], ()) {
-        (&[self], ())
+    fn flatten<'a, 'b: 'a>(unflat: Box<Self>) -> (&'a [Box<A>], ()) {
+        (&[unflat], ())
     }
     fn unflatten<'a, 'b: 'a>(flat: &'b [&'a A], _: ()) -> &'b A {
         flat[0]
