@@ -4,7 +4,7 @@ use crate::{
     graph::{Context, ContextError, NodeIdentifier, Result},
 };
 
-pub struct SupervisedModel<P> {
+pub struct SupervisedModel<P: Into<Vec<NodeIdentifier>> + From<Vec<NodeIdentifier>>> {
     // forward computation of the network without loss
     pub(crate) network: Context,
     // wraps the node identifiers for the parameters of the network
@@ -28,17 +28,17 @@ pub struct SupervisedModel<P> {
 
     // executes the network context without Evaluationuating metrics
     pub(crate) inference_computation: xla::XlaComputation,
-    // executes the network and training metrics
+    // executes the network and gradient metrics
     pub(crate) evaluation_computation: xla::XlaComputation,
-    // executes the network and training metrics and returns derivatives of the parameters
-    pub(crate) training_computation: xla::XlaComputation,
+    // executes the network and gradient metrics and returns derivatives of the parameters
+    pub(crate) gradient_computation: xla::XlaComputation,
 }
 
 impl<P: From<Vec<NodeIdentifier>> + Into<Vec<NodeIdentifier>>> SupervisedModel<P> {
     // this function should
     // build the inference_computation from the network context
     // fuse the network and compute_metrics contexts and build the evaluation_computation
-    // further augment the context to return derivatives of all params and then build the training_computation
+    // further augment the context to return derivatives of all params and then build the gradient_computation
     pub fn new(
         network: Context,
         params: P,
@@ -64,10 +64,10 @@ impl<P: From<Vec<NodeIdentifier>> + Into<Vec<NodeIdentifier>>> SupervisedModel<P
     ) -> Result<SupervisedEvaluationExecutable> {
         panic!("Not yet implemented")
     }
-    pub fn compile_training(
+    pub fn compile_gradient(
         &self,
         client: xla::PjRtClient,
-    ) -> Result<LoadedTrainingModel> {
+    ) -> Result<SupervisedGradientExecutable> {
         panic!("Not yet implemented")
     }
 }
@@ -129,7 +129,7 @@ impl SupervisedEvaluationExecutable {
     }
 }
 
-pub struct LoadedTrainingModel {
+pub struct SupervisedGradientExecutable {
     pub(crate) executable: xla::PjRtLoadedExecutable,
     pub(crate) n_params: usize,
     pub(crate) n_inputs: usize,
@@ -137,7 +137,7 @@ pub struct LoadedTrainingModel {
     pub(crate) n_metrics: usize,
 }
 
-impl LoadedTrainingModel {
+impl SupervisedGradientExecutable {
     pub fn run<P: Into<Vec<xla::PjRtBuffer>> + From<Vec<xla::PjRtBuffer>>>(
         &self,
         parameters: P,
@@ -148,7 +148,7 @@ impl LoadedTrainingModel {
         Vec<PjRtBuffer>,
         // metrics
         Vec<PjRtBuffer>,
-        // Trainings,
+        // gradients,
         P
     )> {
         let param_vec = parameters.into();

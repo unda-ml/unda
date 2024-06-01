@@ -6,10 +6,31 @@ use crate::{
 use super::initializers::Initializer;
 
 pub struct ConvParams<T> {
-    kernel: Box<T>,
-    bias: Box<T>,
+    kernel: T,
+    bias: T,
 }
 
+impl<T> Into<Vec<T>> for ConvParams<T> {
+    fn into(self) -> Vec<T> {
+        vec![self.kernel, self.bias]
+    }
+}
+
+impl<T> From<Vec<T>> for ConvParams<T> {
+    fn from(mut value: Vec<T>) -> Self {
+        match value.pop() {
+            None => panic!("Tried to unflatten empty vector into ConvParams!"),
+            Some(kernel) => {
+                match value.pop() {
+                    None => panic!("Tried to unflatten vector of length 1 into ConvParams!"),
+                    Some(bias) => ConvParams{kernel, bias}
+                }
+            }
+        }
+    }
+}
+
+/*
 impl<T> Tree<T, ()> for ConvParams<T> {
     fn flatten(self) -> (Vec<Box<T>>, ()) {
         (vec![self.kernel, self.bias], ())
@@ -26,7 +47,7 @@ impl<T> Tree<T, ()> for ConvParams<T> {
         ConvParams { kernel, bias }
     }
 }
-
+*/
 impl Context {
     pub fn dense<IW: Initializer, IB: Initializer>(
         &mut self,
