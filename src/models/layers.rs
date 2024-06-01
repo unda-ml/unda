@@ -1,33 +1,11 @@
-use crate::{
-    graph::{Context, NodeIdentifier, Result, Shape},
-    tree::Tree,
-};
+use crate::graph::{Context, NodeIdentifier, Result, Shape};
 
 use super::initializers::Initializer;
 
+#[repr(C)]
 pub struct ConvParams<T> {
     kernel: T,
     bias: T,
-}
-
-impl<T> Into<Vec<T>> for ConvParams<T> {
-    fn into(self) -> Vec<T> {
-        vec![self.kernel, self.bias]
-    }
-}
-
-impl<T> From<Vec<T>> for ConvParams<T> {
-    fn from(mut value: Vec<T>) -> Self {
-        match value.pop() {
-            None => panic!("Tried to unflatten empty vector into ConvParams!"),
-            Some(kernel) => {
-                match value.pop() {
-                    None => panic!("Tried to unflatten vector of length 1 into ConvParams!"),
-                    Some(bias) => ConvParams{kernel, bias}
-                }
-            }
-        }
-    }
 }
 
 impl Context {
@@ -40,7 +18,11 @@ impl Context {
         kernel_seed: i64,
         bias_seed: i64,
         name: &str,
-    ) -> Result<(NodeIdentifier, ConvParams<NodeIdentifier>, ConvParams<xla::Literal>)> {
+    ) -> Result<(
+        NodeIdentifier,
+        ConvParams<NodeIdentifier>,
+        ConvParams<xla::Literal>,
+    )> {
         let shape = self.nodes[input_node].shape.clone();
         let last_dim = shape.sizes[shape.ndims() - 1];
         let dtype = self.nodes[input_node].dtype;
@@ -64,6 +46,16 @@ impl Context {
         let matmul_node = self.matmul(input_node, kernel_id)?;
         let dense_node = self.add(matmul_node, bias_id)?;
 
-        Ok((dense_node, ConvParams{kernel: kernel_id, bias: bias_id}, ConvParams{kernel: kernel_val, bias: bias_val}))
+        Ok((
+            dense_node,
+            ConvParams {
+                kernel: kernel_id,
+                bias: bias_id,
+            },
+            ConvParams {
+                kernel: kernel_val,
+                bias: bias_val,
+            },
+        ))
     }
 }

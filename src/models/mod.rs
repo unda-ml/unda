@@ -1,4 +1,4 @@
-pub mod supervised_model;
+pub mod supervised;
 pub mod layers;
 pub mod activations;
 pub mod metrics;
