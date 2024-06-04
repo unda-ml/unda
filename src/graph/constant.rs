@@ -46,6 +46,18 @@ impl std::fmt::Display for ConstantBinding {
 }
 
 impl Context {
+    pub fn literal_const(&mut self, value: xla::Literal) -> Result<NodeIdentifier> {
+        let dtype = value.element_type()?;
+        let node_id = self.nodes.insert(Node {
+            callsite: callsite!(1),
+            shape: Shape::new(),
+            operation: Operation::Constant(ConstantBinding { value }),
+            dtype: dtype,
+        });
+        self.constants.push(node_id);
+        Ok(node_id)
+    }
+
     pub fn scalar<T: xla::ArrayElement + xla::NativeType>(
         &mut self,
         value: T,
