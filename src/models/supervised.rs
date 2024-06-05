@@ -1,4 +1,4 @@
-use xla::{Literal, PjRtBuffer};
+use xla::{Literal, PjRtBuffer, PjRtLoadedExecutable};
 
 use crate::graph::{Context, ContextError, Node, NodeIdentifier, Result};
 
@@ -55,8 +55,8 @@ impl<const P: usize, const I: usize, const O: usize, const T: usize, const M: us
         loss: NodeIdentifier,
         auxiliary_metrics: [NodeIdentifier; M],
     ) -> Result<Self> {
+        let inference_computation = network.build("inference_computation", outputs)?;
         let mut eval_context = network.clone();
-        let inference_comp = network.build("inference_computation", outputs)?;
 
 
         //Fuse compute_metrics to the end of eval_context
@@ -65,8 +65,9 @@ impl<const P: usize, const I: usize, const O: usize, const T: usize, const M: us
         //targets are supplied in constructor
 
         //TODO
+        
 
-        let eval_comp = eval_context.build("evaluation_computation", [loss])?;
+        let evaluation_computation = eval_context.build("evaluation_computation", [loss])?;
         let mut grad_context = eval_context.clone();
 
         //Gradient computation: diff loss of eval_context wrt all params
@@ -75,7 +76,7 @@ impl<const P: usize, const I: usize, const O: usize, const T: usize, const M: us
             grads[i] = grad_context.diff(loss, params[i])?;
         }
 
-        let grad_comp = grad_context.build("gradient_computation", grads)?;
+        let gradient_computation = grad_context.build("gradient_computation", grads)?;
 
         Ok(Self { 
             network,
@@ -86,9 +87,9 @@ impl<const P: usize, const I: usize, const O: usize, const T: usize, const M: us
             targets,
             loss,
             auxiliary_metrics,
-            inference_computation: inference_comp,
-            evaluation_computation: eval_comp,
-            gradient_computation: grad_comp
+            inference_computation,
+            evaluation_computation,
+            gradient_computation
         })
     }
 
@@ -96,19 +97,31 @@ impl<const P: usize, const I: usize, const O: usize, const T: usize, const M: us
         &self,
         client: xla::PjRtClient,
     ) -> Result<SupervisedInferenceExecutable<P, I, O>> {
-        panic!("Not yet implemented")
+        let loaded_inf_exec = self.inference_computation.compile(&client)?;
+
+        let supervised_inf = SupervisedInferenceExecutable::from_executable(loaded_inf_exec);
+
+        Ok(supervised_inf)
     }
     pub fn compile_evaluation(
         &self,
         client: xla::PjRtClient,
     ) -> Result<SupervisedEvaluationExecutable<P, I, O, T, M>> {
-        panic!("Not yet implemented")
+        let loaded_eval_exec = self.evaluation_computation.compile(&client)?;
+
+        let supervised_eval = SupervisedEvaluationExecutable::from_executable(loaded_eval_exec);
+
+        Ok(supervised_eval)
     }
     pub fn compile_gradient(
         &self,
         client: xla::PjRtClient,
     ) -> Result<SupervisedGradientExecutable<P, I, O, T, M>> {
-        panic!("Not yet implemented")
+        let loaded_grad_exec = self.gradient_computation.compile(&client)?;
+
+        let supervised_grad = SupervisedGradientExecutable::from_executable(loaded_grad_exec);
+
+        Ok(supervised_grad)
     }
 }
 
@@ -125,7 +138,11 @@ impl<const P: usize, const I: usize, const O: usize> SupervisedInferenceExecutab
         // network outputs
         [PjRtBuffer; O],
     )> {
-        panic!("Not yet implemented")
+        todo!()
+    }
+
+    pub fn from_executable(executable: xla::PjRtLoadedExecutable) -> Self {
+        SupervisedInferenceExecutable { executable }
     }
 }
 
@@ -155,8 +172,12 @@ impl<const P: usize, const I: usize, const O: usize, const T: usize, const M: us
         // auxiliary metrics
         [PjRtBuffer; M],
     )> {
-        panic!("Not yet implemented")
+        todo!()
     }
+    pub fn from_executable(executable: xla::PjRtLoadedExecutable) -> Self {
+        SupervisedEvaluationExecutable { executable }
+    }
+
 }
 
 pub struct SupervisedGradientExecutable<
@@ -187,6 +208,9 @@ impl<const P: usize, const I: usize, const O: usize, const T: usize, const M: us
         // gradients
         [PjRtBuffer; P],
     )> {
-        panic!("Not yet implemented")
+        todo!()
+    }
+    pub fn from_executable(executable: xla::PjRtLoadedExecutable) -> Self {
+        SupervisedGradientExecutable { executable }
     }
 }
