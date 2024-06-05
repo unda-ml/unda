@@ -46,7 +46,7 @@ impl<const P: usize, const I: usize, const O: usize, const T: usize, const M: us
     // fuse the network and compute_metrics contexts and build the evaluation_computation
     // further augment the context to return derivatives of all params and then build the gradient_computation
     pub fn new(
-        network: Context,
+        mut network: Context,
         params: [NodeIdentifier; P],
         inputs: [NodeIdentifier; I],
         outputs: [NodeIdentifier; O],
@@ -54,8 +54,42 @@ impl<const P: usize, const I: usize, const O: usize, const T: usize, const M: us
         targets: [NodeIdentifier; T],
         loss: NodeIdentifier,
         auxiliary_metrics: [NodeIdentifier; M],
-    ) {
-        panic!("Not yet implemented");
+    ) -> Result<Self> {
+        let mut eval_context = network.clone();
+        let inference_comp = network.build("inference_computation", outputs)?;
+
+
+        //Fuse compute_metrics to the end of eval_context
+        //compute_metrics will take in outputs and targets as inputs
+        //outputs is a direct output of inference context
+        //targets are supplied in constructor
+
+        //TODO
+
+        let eval_comp = eval_context.build("evaluation_computation", [loss])?;
+        let mut grad_context = eval_context.clone();
+
+        //Gradient computation: diff loss of eval_context wrt all params
+        let mut grads = [NodeIdentifier::default(); P];
+        for i in 0..P {
+            grads[i] = grad_context.diff(loss, params[i])?;
+        }
+
+        let grad_comp = grad_context.build("gradient_computation", grads)?;
+
+        Ok(Self { 
+            network,
+            params,
+            inputs,
+            outputs,
+            compute_metrics,
+            targets,
+            loss,
+            auxiliary_metrics,
+            inference_computation: inference_comp,
+            evaluation_computation: eval_comp,
+            gradient_computation: grad_comp
+        })
     }
 
     pub fn compile_inference(

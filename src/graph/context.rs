@@ -6,6 +6,7 @@ use slotmap::SlotMap;
 
 /// XLA computation graph context.
 // TODO: rename this to something meaningful
+#[derive(Clone)]
 pub struct Context {
     pub nodes: SlotMap<NodeIdentifier, Node>,
     pub(crate) constants: Vec<NodeIdentifier>,
