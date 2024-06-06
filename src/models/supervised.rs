@@ -1,4 +1,4 @@
-use xla::{Literal, PjRtBuffer, PjRtLoadedExecutable};
+use xla::{Literal, PjRtBuffer, PjRtDevice, PjRtLoadedExecutable};
 
 use crate::graph::{Context, ContextError, Node, NodeIdentifier, Result};
 
@@ -134,11 +134,33 @@ impl<const P: usize, const I: usize, const O: usize> SupervisedInferenceExecutab
         &self,
         parameters: [PjRtBuffer; P],
         inputs: [Literal; I],
-    ) -> Result<(
+    ) -> Result<
         // network outputs
-        [PjRtBuffer; O],
-    )> {
-        todo!()
+        [PjRtBuffer; O]
+        > {
+        let mut input_buff = vec![];
+
+        //Probably some better way to get the device than just first index
+        //Potentially could cross against parameters client devices and seeing matches
+        //Using None for now as it will use the default device.. I don't see a problem with that
+        //let device = self.executable.client().devices()[0];
+
+        for input in inputs {
+            input_buff.push(self.executable.client().buffer_from_host_literal(None, &input)?);
+        }
+
+        input_buff.extend(parameters.into_iter());
+
+        let res: std::result::Result<[PjRtBuffer; O], _> = self.executable.execute_b(&input_buff)?
+            .into_iter()
+            .flatten()
+            .collect::<Vec<PjRtBuffer>>()
+            .try_into();
+
+        match res {
+            Ok(out_slice) => Ok(out_slice),
+            Err(_) => Err(ContextError::IncorrectOutputSizeError(O, input_buff.len()))
+        }
     }
 
     pub fn from_executable(executable: xla::PjRtLoadedExecutable) -> Self {
