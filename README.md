@@ -16,7 +16,7 @@ Unda aims to bring the future of deep learning to the world of rust. With dynami
 
 2) Install `clang` and `libclang1`.
 
-3) Download and extract [xla_extension](https://github.com/elixir-nx/xla/releases/tag/v0.6.0).
+3) Download and extract [xla_extension](https://github.com/elixir-nx/xla/releases/tag/v0.6.0) to the root directory of your target project.
 
 4) Make sure `LD_LIBRARY_PATH` includes `/path/to/xla_extension/lib`, and make sure the relevant CUDA paths are also visible to the system.
 
