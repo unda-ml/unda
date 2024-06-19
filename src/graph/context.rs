@@ -81,7 +81,7 @@ pub enum ContextError {
     #[error("{0} layer cannot be created without first implementing input parameters")]
     InvalidLayerConstructionError(String),
 
-    #[error("Expected output size {0} does not match actual output size {1}")]
+    #[error("Expected output size {0} does not match actual size {1}")]
     IncorrectOutputSizeError(usize, usize)
 }
 
