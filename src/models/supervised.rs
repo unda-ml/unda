@@ -58,7 +58,6 @@ impl<const P: usize, const I: usize, const O: usize, const T: usize, const M: us
         let inference_computation = network.build("inference_computation", outputs)?;
         let mut eval_context = network.clone();
 
-
         //Fuse compute_metrics to the end of eval_context
         //compute_metrics will take in outputs and targets as inputs
         //outputs is a direct output of inference context
@@ -133,10 +132,10 @@ impl<const P: usize, const I: usize, const O: usize> SupervisedInferenceExecutab
         &self,
         parameters: [PjRtBuffer; P],
         inputs: [Literal; I],
-    ) -> Result<
+    ) -> Result<(
         // network outputs
-        [PjRtBuffer; O]
-        > {
+        [PjRtBuffer; O],
+        )> {
         let mut input_buff = vec![];
 
         //Probably some better way to get the device than just first index
@@ -157,7 +156,7 @@ impl<const P: usize, const I: usize, const O: usize> SupervisedInferenceExecutab
             .try_into();
 
         match res {
-            Ok(out_slice) => Ok(out_slice),
+            Ok(out_slice) => Ok((out_slice,)),
             Err(_) => Err(ContextError::IncorrectOutputSizeError(O, input_buff.len()))
         }
     }
