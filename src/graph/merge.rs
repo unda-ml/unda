@@ -25,10 +25,6 @@ impl Context {
             };
         }
 
-
-
-        
-
         while let Some(old_node) = addition_queue.pop() {
             //Add node to self's slotmap based on matching operation. Add old id and new id to
             //old_to_new map and if operation uses any NodeIdentifiers access those from old_to_new
@@ -120,7 +116,7 @@ impl Context {
         let mut queue = outputs.to_vec();
 
         while let Some(current_node) = queue.pop() {
-            
+            todo!()
         }
 
         Ok(inputs)
