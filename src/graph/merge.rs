@@ -13,64 +13,8 @@ impl Context {
         let mut old_to_new: HashMap<NodeIdentifier, NodeIdentifier> = HashMap::new();
         let mut addition_queue = other.inputs(other_outputs)?;
 
-        macro_rules! generate_operation {
-            ($OpType:ident, $($id:ident),+) => {
-                Operation::$OpType($($id),+)
-            }
-        }
-
-        macro_rules! generate_call {
-            ($operation:ident, $($id:ident),+) => {
-                self.$operation($(old_to_new[&$id]),+)
-            };
-        }
-
         while let Some(old_node) = addition_queue.pop() {
-            //Add node to self's slotmap based on matching operation. Add old id and new id to
-            //old_to_new map and if operation uses any NodeIdentifiers access those from old_to_new
-            //before creating new node
-            let new_id = match other.nodes[old_node].operation {
-                generate_operation!(Add, a, b) => generate_call!(add, a, b),
-                generate_operation!(Pow, a, b) => generate_call!(pow, a, b),
-                generate_operation!(Sub, a, b) => generate_call!(sub, a, b),
-                generate_operation!(Mul, a, b) => generate_call!(mul, a, b),
-                generate_operation!(Div, a, b) => generate_call!(div, a, b),
-                generate_operation!(Equal, a, b) => generate_call!(eq, a, b),
-                generate_operation!(NotEqual, a, b) => generate_call!(neq, a, b),
-                generate_operation!(LessThan, a, b) => generate_call!(lt, a, b),
-                generate_operation!(GreaterThan, a, b) => generate_call!(gt, a, b),
-                generate_operation!(GreaterThanEq, a, b) => generate_call!(ge, a, b),
-                generate_operation!(LessThanEq, a, b) => generate_call!(le, a, b),
-                generate_operation!(MatMul, a, b) => generate_call!(matmul, a, b),
-                
-                generate_operation!(Exp, a) => generate_call!(exp, a),
-                generate_operation!(Log, a) => generate_call!(log, a),
-                generate_operation!(StopGradient, a) => Ok(generate_call!(stop_gradient, a)),
-                generate_operation!(Neg, a) => Ok(generate_call!(neg, a)),
-                generate_operation!(ZerosLike, a) => Ok(generate_call!(zeros_like, a)),
-
-                /* TODO
-                 * TypeCast(ID, ELementType)
-                 * ReShape(ID),
-                 * Transpose(ID, Vec<I64>)
-                 * Constants (gonna suck cause dims)
-                 * Parameter(String)
-                 * SliceInDim(ID, i64, i64, i64, i64)
-                 * TileInDim(ID, i64, i64)
-                 * ReduceMax{ID, i64}
-                 * ReduceSum{ID, i64}
-                 * ReduceMean{ID, i64}
-                 * ReduceArgmax{ID, i64}
-                 *
-                 * OneHot(ID)
-                 *
-                 * RngUniform(ID, ID, Shape)
-                 * RngNormal(ID, ID, Shape)
-                 *
-                 */
-                Operation::Select { pred, on_true, on_false } => generate_call!(select, pred, on_true, on_false),
-                _ => panic!()
-            }?;
+            let new_id = self.nodes.insert(other.nodes[old_node].clone());
 
             if let Some(deps) = other.dependent_nodes.clone().get(&old_node) {
                 for node in deps {
@@ -79,6 +23,10 @@ impl Context {
             }
 
             old_to_new.insert(old_node, new_id);
+        }
+
+        for (old, new) in old_to_new.iter() {
+            self.replace_index(*old, *new)?;
         }
 
         let mut new_remaps = vec![];
