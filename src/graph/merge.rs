@@ -8,10 +8,10 @@ use super::Context;
 
 
 impl Context {
-    pub fn merge_graphs(&mut self, other: &Context, other_outputs: &[NodeIdentifier], desired_remaps: &[NodeIdentifier]) -> Result<Vec<NodeIdentifier>> {
+    pub fn merge_graphs(&mut self, other: &Context, desired_remaps: &[NodeIdentifier]) -> Result<Vec<NodeIdentifier>> {
 
         let mut old_to_new: HashMap<NodeIdentifier, NodeIdentifier> = HashMap::new();
-        let mut addition_queue = other.inputs(other_outputs)?;
+        let mut addition_queue = other.inputs();
 
         while let Some(old_node) = addition_queue.pop() {
             let new_id = self.nodes.insert(other.nodes[old_node].clone());
@@ -59,14 +59,20 @@ impl Context {
         Ok(())
     }
 
-    fn inputs(&self, outputs: &[NodeIdentifier]) -> Result<Vec<NodeIdentifier>> {
-        let mut inputs = vec![];
+    fn inputs(&self) -> Vec<NodeIdentifier> {
+        /*let mut inputs = vec![];
         let mut queue = outputs.to_vec();
 
         while let Some(current_node) = queue.pop() {
             todo!()
         }
 
-        Ok(inputs)
+        Ok(inputs)*/
+        self.nodes.clone().into_iter().filter(|(_, node)| {
+            match node.operation {
+                Operation::Constant(_) | Operation::Parameter(_) => true,
+                _ => false
+            }
+        }).map(|(id, _)| id).collect::<Vec<NodeIdentifier>>()
     }
 }

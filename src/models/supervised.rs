@@ -63,9 +63,8 @@ impl<const P: usize, const I: usize, const O: usize, const T: usize, const M: us
         //compute_metrics will take in outputs and targets as inputs
         //outputs is a direct output of inference context
         //targets are supplied in constructor
-        let loss_update = eval_context.merge_graphs(&compute_metrics, &[loss], &[loss])?[0];
+        let loss_update = eval_context.merge_graphs(&compute_metrics, &[loss])?[0];
         eval_context.find_and_replace_params(&[("outputs", &outputs), ("targets", &targets)])?;
-        
 
         let evaluation_computation = eval_context.build("evaluation_computation", [loss_update])?;
         let mut grad_context = eval_context.clone();
