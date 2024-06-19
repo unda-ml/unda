@@ -22,7 +22,7 @@ slotmap = "1"
 backtrace = "0.3"
 smallvec = "1.13"
 strum_macros = "0.26"
-xla = { git = "https://github.com/unda-ai/xla-rs", version = "0.1.6" , branch = "main" }
+xla = { git = "https://github.com/unda-ml/xla-rs", version = "0.1.6" , branch = "main" }
 thiserror = "1"
 half = "2.4.0"
 byteorder = "1.5"
