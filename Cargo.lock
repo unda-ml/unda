@@ -905,7 +905,7 @@ checksum = "32b752e52a2da0ddfbdbcc6fceadfeede4c939ed16d13e648833a61dfb611ed8"
 [[package]]
 name = "xla"
 version = "0.1.6"
-source = "git+https://github.com/unda-ai/xla-rs?branch=main#30a75ee643b560021805ff90f32c551f9ca26220"
+source = "git+https://github.com/unda-ml/xla-rs?branch=main#a05a80ac2594638188a728a5820cbf6cebf62896"
 dependencies = [
  "bindgen",
  "cc",
