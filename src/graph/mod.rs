@@ -1,6 +1,7 @@
 pub mod autodiff;
 pub(crate) mod callsite;
 pub mod compile;
+pub mod merge;
 pub mod constant;
 pub mod consteval;
 pub mod context;

@@ -56,7 +56,7 @@ impl<const P: usize, const I: usize, const O: usize, const T: usize, const M: us
         auxiliary_metrics: [NodeIdentifier; M],
     ) -> Result<Self> {
         let inference_computation = network.build("inference_computation", outputs)?;
-        let mut eval_context = network.clone();
+        let mut eval_context = compute_metrics.clone();
 
 
         //Fuse compute_metrics to the end of eval_context
@@ -65,6 +65,8 @@ impl<const P: usize, const I: usize, const O: usize, const T: usize, const M: us
         //targets are supplied in constructor
 
         //TODO
+        eval_context.merge_graphs(&network.clone())?;
+        eval_context.find_and_replace_params(&[("outputs", &outputs), ("targets", &targets)])?;
         
 
         let evaluation_computation = eval_context.build("evaluation_computation", [loss])?;
