@@ -56,26 +56,24 @@ impl<const P: usize, const I: usize, const O: usize, const T: usize, const M: us
         auxiliary_metrics: [NodeIdentifier; M],
     ) -> Result<Self> {
         let inference_computation = network.build("inference_computation", outputs)?;
-        let mut eval_context = compute_metrics.clone();
+        let mut eval_context = network.clone();
 
 
         //Fuse compute_metrics to the end of eval_context
         //compute_metrics will take in outputs and targets as inputs
         //outputs is a direct output of inference context
         //targets are supplied in constructor
-
-        //TODO
-        eval_context.merge_graphs(&network.clone())?;
+        let loss_update = eval_context.merge_graphs(&compute_metrics, &[loss], &[loss])?[0];
         eval_context.find_and_replace_params(&[("outputs", &outputs), ("targets", &targets)])?;
         
 
-        let evaluation_computation = eval_context.build("evaluation_computation", [loss])?;
+        let evaluation_computation = eval_context.build("evaluation_computation", [loss_update])?;
         let mut grad_context = eval_context.clone();
 
         //Gradient computation: diff loss of eval_context wrt all params
         let mut grads = [NodeIdentifier::default(); P];
         for i in 0..P {
-            grads[i] = grad_context.diff(loss, params[i])?;
+            grads[i] = grad_context.diff(loss_update, params[i])?;
         }
 
         let gradient_computation = grad_context.build("gradient_computation", grads)?;
@@ -87,7 +85,7 @@ impl<const P: usize, const I: usize, const O: usize, const T: usize, const M: us
             outputs,
             compute_metrics,
             targets,
-            loss,
+            loss: loss_update,
             auxiliary_metrics,
             inference_computation,
             evaluation_computation,
