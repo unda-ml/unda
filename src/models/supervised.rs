@@ -136,16 +136,12 @@ impl<const P: usize, const I: usize, const O: usize> SupervisedInferenceExecutab
         // network outputs
         [PjRtBuffer; O],
         )> {
-        let mut input_buff = vec![];
-
-        //Probably some better way to get the device than just first index
-        //Potentially could cross against parameters client devices and seeing matches
-        //Using None for now as it will use the default device.. I don't see a problem with that
-        //let device = self.executable.client().devices()[0];
-
-        for input in inputs {
-            input_buff.push(self.executable.client().buffer_from_host_literal(None, &input)?);
-        }
+        let mut input_buff: Vec<PjRtBuffer> = inputs
+            .iter()
+            .map(|literal| self.executable.client().buffer_from_host_literal(None, literal))
+            .filter(|buff| std::result::Result::is_ok(&buff))
+            .map(|buff| buff.unwrap())
+            .collect();
 
         input_buff.extend(parameters.into_iter());
 
@@ -192,7 +188,67 @@ impl<const P: usize, const I: usize, const O: usize, const T: usize, const M: us
         // auxiliary metrics
         [PjRtBuffer; M],
     )> {
-        todo!()
+        let mut input_buff: Vec<PjRtBuffer> = inputs
+            .iter()
+            .map(|literal| self.executable.client().buffer_from_host_literal(None, literal))
+            .filter(|buff| std::result::Result::is_ok(&buff))
+            .map(|buff| buff.unwrap())
+            .collect();
+
+        let target_buff: Vec<PjRtBuffer> = targets
+            .iter()
+            .map(|literal| self.executable.client().buffer_from_host_literal(None, literal))
+            .filter(|buff| std::result::Result::is_ok(&buff))
+            .map(|buff| buff.unwrap())
+            .collect();
+
+        input_buff.extend(target_buff.into_iter());
+
+        input_buff.extend(parameters.into_iter());
+
+        let mut res_unsplit: Vec<Vec<PjRtBuffer>> = self.executable.execute_b(&input_buff)?;
+
+        if res_unsplit.len() != 3 {
+            return Err(ContextError::IncorrectOutputSizeError(3, res_unsplit.len()));
+        }
+
+        let auxilary_vec_option = res_unsplit.pop();
+        let loss_vec_option = res_unsplit.pop();
+        let output_vec_option = res_unsplit.pop();
+
+        if auxilary_vec_option.is_none() || loss_vec_option.is_none() || output_vec_option.is_none() {
+            return Err(ContextError::IncorrectOutputSizeError(3, res_unsplit.len()))
+        }
+
+        let auxilary_vec = auxilary_vec_option.unwrap();
+        let mut loss_vec = loss_vec_option.unwrap();
+        let output_vec = output_vec_option.unwrap();
+
+        let aux_len = auxilary_vec.len();
+        let output_len = output_vec.len();
+
+
+        let outputs_option: std::result::Result<[PjRtBuffer; O], _> = output_vec
+            .try_into();
+
+        let loss_option = loss_vec.pop();
+
+        let auxilary_option: std::result::Result<[PjRtBuffer; M], _> = auxilary_vec
+            .try_into();
+
+        if let Ok(outputs) = outputs_option {
+            if let Some(loss) = loss_option {
+                if let Ok(auxilary_metrics) = auxilary_option {
+                    Ok((outputs, loss, auxilary_metrics))
+                } else {
+                    Err(ContextError::IncorrectOutputSizeError(M, aux_len))
+                }
+            } else {
+                Err(ContextError::IncorrectOutputSizeError(1, 0))
+            }
+        } else {
+            Err(ContextError::IncorrectOutputSizeError(O, output_len))
+        }
     }
     pub fn from_executable(executable: xla::PjRtLoadedExecutable) -> Self {
         SupervisedEvaluationExecutable { executable }
