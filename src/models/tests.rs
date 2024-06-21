@@ -3,15 +3,6 @@ mod tests {
     use crate::{graph::Context, models::activations};
     use xla::Literal;
 
-    /*
-    #[test]
-    fn model_panics_on_dense_before_param_init() {
-        let mut model = Model::default();
-
-        assert!(model.dense(10, Activation::ReLU).is_err());
-    }
-    */
-
     #[test]
     fn test_tanh(){
         let mut ctx = Context::new();
@@ -136,6 +127,37 @@ mod tests {
         let untupled_result = host_result.to_tuple1().expect("untuple");
         let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
         println!("{:?}", rust_result);
+    }
+
+    #[test]
+    fn test_fusion() {
+        let mut f = Context::new();
+        let x = f.parameter("x", [], xla::ElementType::F32).expect("x");
+        let two = f.scalar(2, xla::ElementType::F32).expect("2");
+        let mult = f.mul(x, two).expect("2x");
+
+        let mut g = Context::new();
+        let y = g.parameter("y", [], xla::ElementType::F32).expect("y");
+        let two = g.scalar(2, xla::ElementType::F32).expect("2 2");
+        let square = g.pow(y, two).expect("y^2");
+
+        let output = f.merge_graphs(&g, &[square]).expect("Merge f and g");
+        let name = "y";
+        f.find_and_replace_params(&[(name, &[mult])]).expect("Fuse mult to y");
+
+        let client = xla::PjRtClient::cpu().expect("Client");
+        let name = "test";
+        let exec = f.compile(&name, [output[0]], &client).expect("executable");
+
+        let x_in = xla::Literal::scalar(2);
+        let device_result = exec.execute::<Literal>(&[x_in]).expect("execute");
+        let host_result = device_result[0][0]
+            .to_literal_sync()
+            .expect("to_literal_sync");
+        let untupled_result = host_result.to_tuple1().expect("untuple");
+        let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
+
+        assert_eq!(16f32, rust_result[0])
     }
 
 }
