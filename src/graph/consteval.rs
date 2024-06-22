@@ -357,15 +357,11 @@ impl Context {
         for (id, deps) in self.dependent_nodes.clone().iter().filter(|(_, nodes)| nodes.contains(&to_remove)) {
             let deps_without = deps.clone().into_iter().filter(|node| node != &to_remove).collect::<Vec<NodeIdentifier>>();
 
-            /*if !deps_without.contains(&rep_with) {
-                deps_without.push(rep_with);
-            }*/
-
             self.dependent_nodes.insert(*id, deps_without);
         }
 
         if self.dependent_nodes.contains_key(&to_remove) {
-            let mut new_deps = self.dependent_nodes[&to_remove].clone();
+            let mut new_deps = self.dependent_nodes.remove(&to_remove).unwrap();
             new_deps.extend(self.dependent_nodes.get(&rep_with).unwrap_or(&vec![]).iter());
             self.dependent_nodes.insert(rep_with, new_deps);
         }
@@ -387,7 +383,6 @@ impl Context {
             self.constants.remove(idx);
         }
 
-        self.dependent_nodes.remove(&to_remove);
         self.nodes.remove(to_remove);
 
         Ok(changed)
