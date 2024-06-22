@@ -67,29 +67,16 @@ impl Context {
 
             for i in 0..params_with_name.len() {
                 self.replace_index(params_with_name[i], rep_with[i])?;
-                let mut new_deps = self.dependent_nodes[&params_with_name[i]].clone();
-                new_deps.extend(self.dependent_nodes.get(&rep_with[i]).unwrap_or(&vec![]).iter());
-                self.dependent_nodes.insert(rep_with[i], new_deps);
-            }
+                            }
         }
 
         Ok(())
     }
 
     fn inputs(&self) -> Vec<NodeIdentifier> {
-        /*let mut inputs = vec![];
-        let mut queue = outputs.to_vec();
+        let mut res = self.parameters.clone();
+        res.extend(self.constants.iter());
 
-        while let Some(current_node) = queue.pop() {
-            todo!()
-        }
-
-        Ok(inputs)*/
-        self.nodes.clone().into_iter().filter(|(_, node)| {
-            match node.operation {
-                Operation::Constant(_) | Operation::Parameter(_) => true,
-                _ => false
-            }
-        }).map(|(id, _)| id).collect::<Vec<NodeIdentifier>>()
+        res
     }
 }

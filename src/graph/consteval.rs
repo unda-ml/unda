@@ -364,9 +364,11 @@ impl Context {
             self.dependent_nodes.insert(*id, deps_without);
         }
 
-        let mut new_deps = self.dependent_nodes[&to_remove].clone();
-        new_deps.extend(self.dependent_nodes.get(&rep_with).unwrap_or(&vec![]).iter());
-        self.dependent_nodes.insert(rep_with, new_deps);
+        if self.dependent_nodes.contains_key(&to_remove) {
+            let mut new_deps = self.dependent_nodes[&to_remove].clone();
+            new_deps.extend(self.dependent_nodes.get(&rep_with).unwrap_or(&vec![]).iter());
+            self.dependent_nodes.insert(rep_with, new_deps);
+        }
 
 
         /*if let Some(deps) = self.dependent_nodes.remove(&to_remove) {
@@ -436,7 +438,7 @@ impl Context {
         let mut visitied: HashSet<NodeIdentifier> = HashSet::new();
 
         while let Some(node_id) = to_visit.pop() {
-            if visitied.contains(&node_id) || modifications >= modification_limit {
+            if visitied.contains(&node_id) || modifications >= modification_limit || !self.nodes.contains_key(node_id) {
                 continue;
             }
             match self.nodes[node_id].operation {
