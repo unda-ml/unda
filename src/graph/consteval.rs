@@ -350,6 +350,41 @@ impl Context {
                 }
             }
         }
+
+        //iterate through all dependent node vecs that contain the to_remove node, and replace them
+        //with rep_with node
+        
+        for (id, deps) in self.dependent_nodes.clone().iter().filter(|(_, nodes)| nodes.contains(&to_remove)) {
+            let deps_without = deps.clone().into_iter().filter(|node| node != &to_remove).collect::<Vec<NodeIdentifier>>();
+
+            self.dependent_nodes.insert(*id, deps_without);
+        }
+
+        if self.dependent_nodes.contains_key(&to_remove) {
+            let mut new_deps = self.dependent_nodes.remove(&to_remove).unwrap();
+            new_deps.extend(self.dependent_nodes.get(&rep_with).unwrap_or(&vec![]).iter());
+            self.dependent_nodes.insert(rep_with, new_deps);
+        }
+
+
+        /*if let Some(deps) = self.dependent_nodes.remove(&to_remove) {
+            let mut prev_deps = self.dependent_nodes.get(&rep_with).unwrap_or(&Vec::new()).clone();
+            prev_deps.extend(deps.iter());
+
+            self.dependent_nodes.insert(rep_with, prev_deps);
+        }*/
+
+
+        if let Some((idx, _)) = self.parameters.iter().enumerate().find(|(_, node)| *node == &to_remove) {
+            self.parameters.remove(idx);
+        }
+
+        if let Some((idx, _)) = self.constants.iter().enumerate().find(|(_, node)| *node == &to_remove) {
+            self.constants.remove(idx);
+        }
+
+        self.nodes.remove(to_remove);
+
         Ok(changed)
     }
 
@@ -398,7 +433,7 @@ impl Context {
         let mut visitied: HashSet<NodeIdentifier> = HashSet::new();
 
         while let Some(node_id) = to_visit.pop() {
-            if visitied.contains(&node_id) || modifications >= modification_limit {
+            if visitied.contains(&node_id) || modifications >= modification_limit || !self.nodes.contains_key(node_id) {
                 continue;
             }
             match self.nodes[node_id].operation {

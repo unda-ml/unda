@@ -24,7 +24,7 @@ impl Context {
         let mut visited: HashSet<NodeIdentifier> = HashSet::new();
 
         while let Some(node_id) = to_visit.pop() {
-            if visited.contains(&node_id) || modifications >= modification_limit {
+            if visited.contains(&node_id) || modifications >= modification_limit || !self.nodes.contains_key(node_id) {
                 continue;
             }
  

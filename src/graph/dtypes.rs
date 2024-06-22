@@ -1,6 +1,6 @@
 use super::*;
 
-pub(crate) fn check_fp_type(dtype: xla::ElementType) -> Result<xla::ElementType> {
+pub fn check_fp_type(dtype: xla::ElementType) -> Result<xla::ElementType> {
     match dtype {
         xla::ElementType::F16
         | xla::ElementType::Bf16
@@ -12,7 +12,7 @@ pub(crate) fn check_fp_type(dtype: xla::ElementType) -> Result<xla::ElementType>
     }
 }
 
-pub(crate) fn check_int_type(dtype: xla::ElementType) -> Result<xla::ElementType> {
+pub fn check_int_type(dtype: xla::ElementType) -> Result<xla::ElementType> {
     match dtype {
         xla::ElementType::U8
         | xla::ElementType::S8
@@ -26,7 +26,7 @@ pub(crate) fn check_int_type(dtype: xla::ElementType) -> Result<xla::ElementType
     }
 }
 
-pub(crate) fn check_real_type(dtype: xla::ElementType) -> Result<xla::ElementType> {
+pub fn check_real_type(dtype: xla::ElementType) -> Result<xla::ElementType> {
     match dtype {
         xla::ElementType::F16
         | xla::ElementType::Bf16

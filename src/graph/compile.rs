@@ -1,7 +1,7 @@
 use super::*;
 use slotmap::SlotMap;
 use smallvec::SmallVec;
-use xla::{XlaOp, ArrayShape};
+use xla::XlaOp;
 use std::collections::{HashMap, HashSet, VecDeque};
 
 #[derive(thiserror::Error, Debug)]
@@ -20,12 +20,11 @@ pub enum CompileError {
 }
 
 impl Context {
-    pub fn compile<const N: usize>(
+    pub fn build<const N: usize>(
         &mut self,
         name: &str,
         returns: [NodeIdentifier; N],
-        client: &xla::PjRtClient,
-    ) -> Result<xla::PjRtLoadedExecutable> {
+    ) -> Result<xla::XlaComputation> {
         // TODO: gate debug mode behind a feature flag
 
         if returns.is_empty() {
@@ -176,7 +175,7 @@ impl Context {
                             && xla_op_slotmap.contains_key(unda_xla_map[&sigma])
                         {
                             let dtype = self.nodes[mu].dtype;
-                            let xla_op = XlaOp::rng_normal(&xla_op_slotmap[unda_xla_map[&mu]], 
+                            let xla_op = XlaOp::rng_normal(&xla_op_slotmap[unda_xla_map[&mu]],
                                                &xla_op_slotmap[unda_xla_map[&sigma]], &shape.to_array_shape(dtype))?;
                             let xla_id = xla_op_slotmap.insert(xla_op);
                             unda_xla_map.insert(*dependent_op, xla_id);
@@ -191,7 +190,7 @@ impl Context {
                             && xla_op_slotmap.contains_key(unda_xla_map[&max])
                         {
                             let dtype = self.nodes[min].dtype;
-                            let xla_op = XlaOp::rng_uniform(&xla_op_slotmap[unda_xla_map[&min]], 
+                            let xla_op = XlaOp::rng_uniform(&xla_op_slotmap[unda_xla_map[&min]],
                                                &xla_op_slotmap[unda_xla_map[&max]], &shape.to_array_shape(dtype))?;
                             let xla_id = xla_op_slotmap.insert(xla_op);
                             unda_xla_map.insert(*dependent_op, xla_id);
@@ -542,6 +541,14 @@ impl Context {
 
         let xla_computation = xla_return_tuple.build()?;
 
-        Ok(xla_computation.compile(client)?)
+        Ok(xla_computation)
+    }
+
+    pub fn compile<const N: usize>(&mut self, name: &str, returns: [NodeIdentifier; N], client: &xla::PjRtClient) -> Result<xla::PjRtLoadedExecutable> {
+        let comp = self.build(name, returns)?;
+        match comp.compile(client) {
+            Ok(exe) => Ok(exe),
+            Err(err) => Err(ContextError::Xla(err)),
+        }
     }
 }

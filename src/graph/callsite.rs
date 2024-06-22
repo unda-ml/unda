@@ -21,7 +21,7 @@ pub struct Callsite {
 /// In deeper apis you can pass higher levels to still point at user code
 macro_rules! callsite {
     ($( $arg:expr ),*) => {
-        Callsite {
+        crate::graph::callsite::Callsite {
             file: file!(),
             line: line!(),
             backtrace: backtrace::Backtrace::new_unresolved(),
