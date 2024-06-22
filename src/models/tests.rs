@@ -130,6 +130,63 @@ mod tests {
     }
 
     #[test]
+    fn test_param_replace() {
+        let mut f = Context::new();
+        let x = f.parameter("x", [], xla::ElementType::F32).expect("x");
+        let two = f.scalar(2, xla::ElementType::F32).expect("2");
+        let mult = f.mul(x, two).expect("2x");
+
+        let y = f.parameter("y", [], xla::ElementType::F32).expect("y");
+        let square = f.pow(y, two).expect("y^2");
+        let name = "y";
+
+        f.find_and_replace_params(&[(name, &[mult])]).expect("Fuse mult to y");
+
+        let client = xla::PjRtClient::cpu().expect("Client");
+        let name = "test";
+        let exec = f.compile(&name, [square], &client).expect("executable");
+
+        let x_in = xla::Literal::scalar(2);
+        let device_result = exec.execute::<Literal>(&[x_in]).expect("execute");
+        let host_result = device_result[0][0]
+            .to_literal_sync()
+            .expect("to_literal_sync");
+        let untupled_result = host_result.to_tuple1().expect("untuple");
+        let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
+
+        assert_eq!(16f32, rust_result[0])
+    }
+
+    #[test]
+    fn test_merge() {
+        let mut f = Context::new();
+        let x = f.parameter("x", [], xla::ElementType::F32).expect("x");
+        let two = f.scalar(2, xla::ElementType::F32).expect("2");
+        let mult = f.mul(x, two).expect("2x");
+
+        let mut g = Context::new();
+        let y = g.parameter("y", [], xla::ElementType::F32).expect("y");
+        let two = g.scalar(2, xla::ElementType::F32).expect("2 2");
+        let square = g.pow(y, two).expect("y^2");
+
+        let _ = f.merge_graphs(&g, &[square]).expect("Merge f and g");
+
+        let client = xla::PjRtClient::cpu().expect("Client");
+        let name = "test";
+        let exec = f.compile(&name, [mult], &client).expect("executable");
+
+        let x_in = xla::Literal::scalar(2);
+        let device_result = exec.execute::<Literal>(&[x_in]).expect("execute");
+        let host_result = device_result[0][0]
+            .to_literal_sync()
+            .expect("to_literal_sync");
+        let untupled_result = host_result.to_tuple1().expect("untuple");
+        let rust_result = untupled_result.to_vec::<f32>().expect("to_vec");
+
+        assert_eq!(4f32, rust_result[0])
+    }
+
+    #[test]
     fn test_fusion() {
         let mut f = Context::new();
         let x = f.parameter("x", [], xla::ElementType::F32).expect("x");

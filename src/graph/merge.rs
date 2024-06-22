@@ -16,6 +16,12 @@ impl Context {
         while let Some(old_node) = addition_queue.pop() {
             let new_id = self.nodes.insert(other.nodes[old_node].clone());
 
+            match self.nodes[new_id].operation {
+                Operation::Constant(_) => self.constants.push(new_id),
+                Operation::Parameter(_) => self.parameters.push(new_id),
+                _ => (),
+            }
+
             if let Some(deps) = other.dependent_nodes.clone().get(&old_node) {
                 for node in deps {
                     addition_queue.insert(0, *node);
@@ -23,6 +29,13 @@ impl Context {
             }
 
             old_to_new.insert(old_node, new_id);
+        }
+
+        for (old_node, old_deps) in other.dependent_nodes.clone() {
+            let new_node = old_to_new[&old_node];
+            let new_deps = old_deps.iter().map(|old| old_to_new[old]).collect::<Vec<NodeIdentifier>>();
+
+            self.dependent_nodes.insert(new_node, new_deps);
         }
 
         for (old, new) in old_to_new.iter() {
@@ -34,6 +47,7 @@ impl Context {
         for old in desired_remaps {
             new_remaps.push(old_to_new[old])
         }
+
 
         Ok(new_remaps)
     }
@@ -53,6 +67,9 @@ impl Context {
 
             for i in 0..params_with_name.len() {
                 self.replace_index(params_with_name[i], rep_with[i])?;
+                let mut new_deps = self.dependent_nodes[&params_with_name[i]].clone();
+                new_deps.extend(self.dependent_nodes.get(&rep_with[i]).unwrap_or(&vec![]).iter());
+                self.dependent_nodes.insert(rep_with[i], new_deps);
             }
         }
 
